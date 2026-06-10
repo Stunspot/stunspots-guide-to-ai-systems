@@ -571,3 +571,5 @@ The model adaptation lifecycle interacts directly with surrounding architectural
 54. How Contaminated Is Your Benchmark? Measuring Dataset Leakage in Large Language Models with Kernel Divergence \- ICML 2026, accessed June 8, 2026, [https://icml.cc/virtual/2025/poster/43619](https://icml.cc/virtual/2025/poster/43619)
 
 ---
+
+[← Back to Canon Map](../canon-map.md)

@@ -601,3 +601,5 @@ To sustain economic control over production AI systems, architects must maintain
 44. Google Gemini API Pricing 2026: Complete Cost Guide per 1M Tokens \- Metacto, accessed June 6, 2026, [https://www.metacto.com/blogs/the-true-cost-of-google-gemini-a-guide-to-api-pricing-and-integration](https://www.metacto.com/blogs/the-true-cost-of-google-gemini-a-guide-to-api-pricing-and-integration)
 
 ---
+
+[← Back to Canon Map](../canon-map.md)

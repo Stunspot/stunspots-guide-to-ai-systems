@@ -819,3 +819,5 @@ Every generated response must maintain a clear, auditable trail back to its exac
 44. From RAG to Agentic RAG for Faithful Islamic Question Answering \- arXiv, accessed June 6, 2026, [https://arxiv.org/pdf/2601.07528](https://arxiv.org/pdf/2601.07528)
 
 ---
+
+[← Back to Canon Map](../canon-map.md)

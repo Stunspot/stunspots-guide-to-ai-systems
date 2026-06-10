@@ -615,3 +615,5 @@ To establish systemic control over model steering and runtime behavior, four dur
 47. What is dialogue state tracking (DST)? \- Decagon, accessed June 6, 2026, [https://decagon.ai/glossary/what-is-dialogue-state-tracking-dst](https://decagon.ai/glossary/what-is-dialogue-state-tracking-dst)
 
 ---
+
+[← Back to Canon Map](../canon-map.md)

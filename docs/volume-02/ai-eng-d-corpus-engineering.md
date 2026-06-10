@@ -811,3 +811,5 @@ Corpus engineering defines the governed data substrate beneath retrieval mechani
 31. \[2605.14473\] Does RAG Know When Retrieval Is Wrong? Diagnosing Context Compliance under Knowledge Conflict \- arXiv, accessed June 6, 2026, [https://arxiv.org/abs/2605.14473](https://arxiv.org/abs/2605.14473)
 
 ---
+
+[← Back to Canon Map](../canon-map.md)

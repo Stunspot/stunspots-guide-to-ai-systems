@@ -754,3 +754,5 @@ This research report establishes four memorably phrased, durable principles to g
 64. SGLang in Production: A Developer's Guide to Structured Generation, RadixAttention, and Multi-Step LLM Pipelines \- Runpod, accessed June 8, 2026, [https://www.runpod.io/articles/guides/blog-sglang-production-llm-pipelines](https://www.runpod.io/articles/guides/blog-sglang-production-llm-pipelines)
 
 ---
+
+[← Back to Canon Map](../canon-map.md)

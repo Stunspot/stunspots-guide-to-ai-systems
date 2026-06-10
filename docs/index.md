@@ -26,7 +26,6 @@ Use it as doctrine for AI agents tasked with designing, critiquing, or improving
 ## Start Here
 
 - [Canon Map](./canon-map.md)
-- [How to Use This Canon](./how-to-use-this-canon.md)
 
 ---
 
@@ -103,6 +102,147 @@ Example instruction:
 ```
 Use the AI Engineering Systems Canon as governing reference material for this task. Apply its vocabulary, doctrine, design patterns, failure modes, and evaluation logic when reasoning about the system. Do not merely summarize the Canon; use it to improve the quality, precision, and operational realism of your recommendations.
 ```
+
+---
+
+## Suggested Reading Paths
+
+### For RAG and Knowledge Systems
+
+Start with:
+
+1. [AI-ENG-A — Model Steering](./volume-01/ai-eng-a-model-steering.md)
+2. [AI-ENG-B — Context Architecture](./volume-01/ai-eng-b-context-architecture.md)
+3. [AI-ENG-D — Corpus Engineering](./volume-02/ai-eng-d-corpus-engineering.md)
+4. [AI-ENG-E — The Retrieval Pipeline](./volume-02/ai-eng-e-retrieval-pipeline.md)
+5. [AI-ENG-F — Knowledge Freshness, Conflict Detection & Context Rot Prevention](./volume-02/ai-eng-f-knowledge-freshness-conflict-detection-context-rot-prevention.md)
+
+### For Agentic Systems
+
+Start with:
+
+1. [AI-ENG-A — Model Steering](./volume-01/ai-eng-a-model-steering.md)
+2. [AI-ENG-M — Agentic Orchestration](./volume-05/ai-eng-m-agentic-orchestration.md)
+3. [AI-ENG-N — Tool Contracts](./volume-05/ai-eng-n-tool-contracts.md)
+4. [AI-ENG-O — Action Verification](./volume-05/ai-eng-o-action-verification.md)
+5. [AI-ENG-S — Production Pathologies](./volume-07/ai-eng-s-production-pathologies.md)
+
+### For Model Selection, Adaptation, and Serving
+
+Start with:
+
+1. [AI-ENG-C — The Economic Physics of Inference](./volume-01/ai-eng-c-economic-physics-of-inference.md)
+2. [AI-ENG-G — Model Selection](./volume-03/ai-eng-g-model-selection.md)
+3. [AI-ENG-H — Model Adaptation](./volume-03/ai-eng-h-model-adaptation.md)
+4. [AI-ENG-J — Throughput Mechanics](./volume-04/ai-eng-j-throughput-mechanics.md)
+5. [AI-ENG-K — Weight Dynamics](./volume-04/ai-eng-k-weight-dynamics.md)
+6. [AI-ENG-L — Model Serving Architecture](./volume-04/ai-eng-l-model-serving-architecture.md)
+
+### For Security, Reliability, and Governance
+
+Start with:
+
+1. [AI-ENG-S — Production Pathologies](./volume-07/ai-eng-s-production-pathologies.md)
+2. [AI-ENG-T — Boundary Defense](./volume-07/ai-eng-t-boundary-defense.md)
+3. [AI-ENG-U — AI Supply Chain Security](./volume-07/ai-eng-u-ai-supply-chain-security.md)
+4. [AI-ENG-Z — Strategic Telemetry](./volume-09/ai-eng-z-strategic-telemetry.md)
+5. [AI-ENG-AA — Evals Architecture](./volume-09/ai-eng-aa-evals-architecture.md)
+6. [AI-ENG-AC — AI Operations](./volume-10/ai-eng-ac-ai-operations.md)
+7. [AI-ENG-AD — Governance Architecture](./volume-10/ai-eng-ad-governance-architecture.md)
+
+### For Product, Adoption, and Organizational Design
+
+Start with:
+
+1. [AI-ENG-X — Human-System Interface](./volume-08/ai-eng-x-human-system-interface.md)
+2. [AI-ENG-Y — High-Impact Workflow Design](./volume-08/ai-eng-y-high-impact-workflow-design.md)
+3. [AI-ENG-AF — AI Product Architecture](./volume-11/ai-eng-af-ai-product-architecture.md)
+4. [AI-ENG-AG — Adoption Systems](./volume-11/ai-eng-ag-adoption-systems.md)
+5. [AI-ENG-AH — Build, Buy, Open Source & Vendor Strategy](./volume-11/ai-eng-ah-build-buy-open-source-vendor-strategy.md)
+
+### For the Doctrinal Spine
+
+Read:
+
+1. [AI-ENG-AI — Contract Thinking](./volume-12/ai-eng-ai-contract-thinking.md)
+2. [AI-ENG-AJ — AI System Design Patterns](./volume-12/ai-eng-aj-ai-system-design-patterns.md)
+3. [AI-ENG-AK — The AI Engineering Mindset](./volume-12/ai-eng-ak-ai-engineering-mindset.md)
+
+---
+
+## Repository Structure
+
+```text
+.
+├── README.md
+├── LICENSE.md
+├── CITATION.cff
+└── docs/
+    ├── index.md
+    ├── canon-map.md
+    ├── how-to-use-this-canon.md
+    ├── volume-01/
+    ├── volume-02/
+    ├── volume-03/
+    ├── volume-04/
+    ├── volume-05/
+    ├── volume-06/
+    ├── volume-07/
+    ├── volume-08/
+    ├── volume-09/
+    ├── volume-10/
+    ├── volume-11/
+    └── volume-12/
+```
+
+Each volume folder contains a local `README.md` and its corresponding AI-ENG reports.
+
+---
+
+## Attribution
+
+Created by **Sam “stunspot” Walker** / **Collaborative Dynamics**.
+
+* [stunspot Prompting Discord server](https://discord.gg/stunspot)
+* [Collaborative Dynamics](https://www.collaborative-dynamics.com)
+
+---
+
+## Citation
+
+If you use or reference this Canon, please cite it.
+
+See [CITATION.cff](../CITATION.cff) for citation metadata.
+
+Suggested plain-text citation:
+
+> Walker, Sam “stunspot.” *The AI Engineering Systems Canon: A Doctrinal Knowledge Base for High-Dimensional AI System Architecture*. Collaborative Dynamics.
+
+---
+
+## License
+
+See [LICENSE.md](../LICENSE.md).
+
+Unless otherwise stated, the written materials in this repository are licensed under:
+
+**Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International**
+**CC BY-NC-SA 4.0**
+
+Commercial use, resale, paid redistribution, inclusion in commercial training products, or incorporation into paid knowledge-base products requires prior written permission.
+
+---
+
+## Status
+
+**~1/4 complete as of 6-9-26**
+
+The Canon is structured as a 12-volume intellectual artifact. Corrections, clarifications, and future expansions may be added over time.
+
+---
+
+## Disclaimer
+
 
 This corpus was constructed with a mix of GPT and Gemini Deep Research. Its specific nature severely mitigates against Deep Research's rare hallucination, and I have seen maybe 5 instances of such across dozens of similar knowledge bases, but errors ARE possible with AI. 
 

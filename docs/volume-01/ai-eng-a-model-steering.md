@@ -417,3 +417,5 @@ This report establishes the baseline concepts of model steering, serving as the 
 46. Judge's Verdict: A Comprehensive Analysis of LLM Judge Capability Through Human Agreement | OpenReview, accessed June 5, 2026, [https://openreview.net/forum?id=jVyUlri4Rw](https://openreview.net/forum?id=jVyUlri4Rw)
 
 ---
+
+[← Back to Canon Map](../canon-map.md)

@@ -6,7 +6,6 @@ The AI Engineering Systems Canon is a structured field manual for designing, ste
 
 ## Start Here
 
-- [How to Use This Canon](./how-to-use-this-canon.md)
 - [Volume 1 — The Informational/Epistemic Layer](./volume-01/)
 - [Volume 2 — Knowledge, Data, and Corpus Engineering](./volume-02/)
 - [Volume 3 — Model Lifecycle and Adaptation](./volume-03/)

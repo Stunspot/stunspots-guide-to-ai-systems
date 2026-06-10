@@ -283,3 +283,5 @@ This integrated schema provides the foundation for consistent, audit-compliant, 
 32. AI-ENG-D — Corpus Engineering \- Data Provenance, Knowledge Hygiene & Source Authority.md
 
 ---
+
+[← Back to Canon Map](../canon-map.md)

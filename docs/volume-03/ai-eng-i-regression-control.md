@@ -607,3 +607,5 @@ When relying on upstream provider endpoints, model behavior will change without 
 46. 6 AI Tools for Cross-Repo Dependency Mapping at Scale | Augment Code, accessed June 8, 2026, [https://www.augmentcode.com/tools/6-ai-tools-for-cross-repo-dependency-mapping-at-scale](https://www.augmentcode.com/tools/6-ai-tools-for-cross-repo-dependency-mapping-at-scale)
 
 ---
+
+[← Back to Canon Map](../canon-map.md)

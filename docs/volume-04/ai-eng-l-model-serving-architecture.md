@@ -664,3 +664,5 @@ In high-dimensional serving environments, network drops, hardware faults, and bu
 51. PCIe Bandwidth-Aware Scheduling for Multi-Instance GPUs | Request PDF \- ResearchGate, accessed June 9, 2026, [https://www.researchgate.net/publication/390241224\_PCIe\_Bandwidth-Aware\_Scheduling\_for\_Multi-Instance\_GPUs](https://www.researchgate.net/publication/390241224_PCIe_Bandwidth-Aware_Scheduling_for_Multi-Instance_GPUs)
 
 ---
+
+[← Back to Canon Map](../canon-map.md)

@@ -514,3 +514,5 @@ This report establishes five core, durable principles for model selection:
 32. LK losses: Training speculative decoding draft models to directly maximize acceptance rate, accessed June 7, 2026, [https://nebius.com/blog/posts/lk-losses](https://nebius.com/blog/posts/lk-losses)
 
 ---
+
+[← Back to Canon Map](../canon-map.md)

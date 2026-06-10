@@ -25,7 +25,6 @@ Use it as doctrine for AI agents tasked with designing, critiquing, or improving
 ## Start Here
 
 - [Canon Map](./docs/canon-map.md)
-- [How to Use This Canon](./docs/how-to-use-this-canon.md)
 
 ### Core Volumes
 

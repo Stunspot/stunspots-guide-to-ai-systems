@@ -560,3 +560,5 @@ Throughput failures often originate upstream in prompt design.8 Dynamic context 
 31. GitHub \- sgl-project/sglang: SGLang is a high-performance serving framework for large language models and multimodal models., accessed June 8, 2026, [https://github.com/sgl-project/sglang](https://github.com/sgl-project/sglang)
 
 ---
+
+[← Back to Canon Map](../canon-map.md)
