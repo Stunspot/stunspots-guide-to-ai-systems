@@ -164,4 +164,6 @@ Read:
 
 ---
 
+This corpus was constructed with a mix of GPT and Gemini Deep Research. Its specific nature severely mitigates against Deep Research's rare hallucination, and I have seen maybe 5 instances of such across dozens of similar knowledge bases, but errors ARE possible with AI. 
+
 --💠‍🌐Nova
