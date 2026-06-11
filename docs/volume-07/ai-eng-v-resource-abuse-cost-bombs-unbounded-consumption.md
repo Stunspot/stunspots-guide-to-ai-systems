@@ -39,18 +39,19 @@ The systems-engineering parameters governing resource control and containment ar
 
 To establish strict boundary controls, the system must differentiate among the primary modes of resource exhaustion:
 
+```
                               RESOURCE EXHAUSTION MATRIX  
                                           │  
          ┌────────────────────────────────┴────────────────────────────────┐  
          ▼                                                                 ▼  
- \[ Availability Exhaustion \]                                      \[ Financial Exhaustion \]  
+ [ Availability Exhaustion ]                                      [ Financial Exhaustion ]  
  ├─ GPU memory saturation (prefill storms)                        ├─ Pay-per-token pricing spikes  
  ├─ Worker thread starvation (Slowloris LLM)                      ├─ Upstream API credit depletion  
  └─ Connection pool lockups (hung tools)                          └─ Unmonitored recursive loops  
          │                                                                 │  
          ├────────────────────────────────┼────────────────────────────────┤  
          ▼                                                                 ▼  
- \[ Quota Exhaustion \]                                             \[ Latency Inflation \]  
+ [ Quota Exhaustion ]                                             [ Latency Inflation ]  
  ├─ Upstream TPM/RPM rate limits hit                              ├─ Attention dilution in prefill  
  ├─ Multi-tenant rate-limit cascades                              ├─ Slow layout-aware parsing (OCR)  
  └─ Downstream third-party API lockout                            └─ Dynamic page rendering waits  
@@ -68,6 +69,7 @@ To establish strict boundary controls, the system must differentiate among the p
                              ├─ Cascading low-confidence escalations  
                              ├─ Malformed OCR layout failures  
                              └─ Repetitive formatting repair loops
+```
 
 * **Availability Exhaustion**: Renders the system unresponsive to legitimate users. In AI serving runtimes, this occurs when long-context prefill operations saturate the GPU memory cache, triggering preemption storms, execution swaps, or out-of-memory (OOM) kernel panics that crash the active container.  
 * **Financial Exhaustion**: Depletes the deployer's operating budget without necessarily triggering hardware downtime. Attackers exploit unauthenticated endpoints, submitting prompts designed to maximize generation length or reasoning tokens, incurring high financial costs.  
@@ -199,13 +201,13 @@ To mitigate retrieval flooding while preserving retrieval quality, the system mu
                              
                                       │  
                                       ▼  
-                       \[ Verification & Feedback Gate \]  
+                       [ Verification & Feedback Gate ]  
                          ├─ Answer sufficient? ──\> Return Grounded Answer  
                          └─ Stalled/Misaligned? ──\> Trigger Skill Router  
                                       │  
               ┌───────────────────────┼───────────────────────┐  
               ▼                       ▼                       ▼  
-             \[ Evidence Focusing \]  
+             [ Evidence Focusing ]  
       ├─ Reformulates terms  ├─ Splits multi-hop steps  ├─ Crops precise regions  
       └─ Rectifies synonyms  └─ Solves logical chains   └─ Reduces token waste
 
@@ -263,7 +265,7 @@ To protect serving availability, the platform must enforce stage-wise latency bu
 
                          STAGE-WISE LATENCY BUDGETS  
                                       │  
-                             \[ Input Validation \] (10ms)  
+                             [ Input Validation ] (10ms)  
                                       │  
                                  (120ms)  
                                       │  
@@ -271,7 +273,7 @@ To protect serving availability, the platform must enforce stage-wise latency bu
                                       │  
                                     (80ms)  
                                       │  
-                             \[ Model Prefill \]    (150ms)  
+                             [ Model Prefill ]    (150ms)  
                                       │  
                                  (250ms)  
                                       │  
@@ -339,7 +341,7 @@ Because the exact number of output tokens cannot be predicted prior to generatio
                  (Passes Quota Check)  
                          │  
                          ▼  
-            \[ LLM Generation Execution \]  
+            [ LLM Generation Execution ]  
                          │  
                (Generation Completes)  
                          │  
@@ -430,13 +432,13 @@ When an alert triggers a resource incident, the platform executes a structured, 
                          SIEM Alert / Anomaly Trigger  
                                       │  
                                       ▼  
-                           \[ Containment Phase \]  
+                           [ Containment Phase ]  
                            ├─ Freeze actor JWT credentials  
                            ├─ Terminate runaway batch jobs  
                            └─ Stop loop-offending threads  
                                       │  
                                       ▼  
-                           \[ Mitigation Phase \]  
+                           [ Mitigation Phase ]  
                            ├─ Pause compromised queues  
                            ├─ Lower model routing tiers  
                            └─ Rotate exposed integration keys  
@@ -484,7 +486,7 @@ The resource-control architecture established in this report interfaces directly
 5. AI-ENG-S — Production Pathologies \- Hallucination, Malformed Output & Runaway Behavior  
 6. AI-ENG-T — Boundary Defense \- Prompt Injection, Data Leakage & Tenant Isolation  
 7. AI-ENG-U — AI Supply Chain Security \- Models, Datasets, Dependencies & Tool Surfaces  
-8. \[KNOWLEDGE\] \- AI Engineering \- Volume 6\. P-R Multimodal and Interface-Controlling Systems  
+8. [KNOWLEDGE] \- AI Engineering \- Volume 6\. P-R Multimodal and Interface-Controlling Systems  
 9. Rate Limiting AI Agents: Preventing LLM API Exhaustion with a 3 ..., accessed June 10, 2026, [https://www.truefoundry.com/blog/rate-limiting-ai-agents-preventing-llm-api-exhaustion](https://www.truefoundry.com/blog/rate-limiting-ai-agents-preventing-llm-api-exhaustion)  
 10. Agentic Loop \- Albert Masoliver's learning site, accessed June 10, 2026, [https://albertml.com/Permanent/AI/AI+Agents+and+Patterns/Agentic+Loop](https://albertml.com/Permanent/AI/AI+Agents+and+Patterns/Agentic+Loop)  
 11. Context Flooding | DeepTeam by Confident AI \- The LLM Red Teaming Framework, accessed June 10, 2026, [https://www.trydeepteam.com/docs/red-teaming-adversarial-attacks-context-flooding](https://www.trydeepteam.com/docs/red-teaming-adversarial-attacks-context-flooding)  
@@ -496,7 +498,7 @@ The resource-control architecture established in this report interfaces directly
 17. What Is an Agent Loop? The Real Definition Business Leaders Need Right Now, accessed June 10, 2026, [https://rmgassociatesllc.com/insights/what-is-an-agent-loop](https://rmgassociatesllc.com/insights/what-is-an-agent-loop)  
 18. What Is Loop Engineering? The New Meta for AI Coding Agents | MindStudio, accessed June 10, 2026, [https://www.mindstudio.ai/blog/what-is-loop-engineering-ai-coding-agents](https://www.mindstudio.ai/blog/what-is-loop-engineering-ai-coding-agents)  
 19. A simple idea: separating a "Thinker" and "Observer" model to detect reasoning loops, accessed June 10, 2026, [https://discuss.huggingface.co/t/a-simple-idea-separating-a-thinker-and-observer-model-to-detect-reasoning-loops/174134](https://discuss.huggingface.co/t/a-simple-idea-separating-a-thinker-and-observer-model-to-detect-reasoning-loops/174134)  
-20. \[Bug\]: Midscene aiAct may get stuck in local interaction loops during, accessed June 10, 2026, [https://github.com/web-infra-dev/midscene/issues/2115](https://github.com/web-infra-dev/midscene/issues/2115)  
+20. [Bug]: Midscene aiAct may get stuck in local interaction loops during, accessed June 10, 2026, [https://github.com/web-infra-dev/midscene/issues/2115](https://github.com/web-infra-dev/midscene/issues/2115)  
 21. Rate Limiting in LLM Applications: Why You Need It and How to Build It \- DEV Community, accessed June 10, 2026, [https://dev.to/pranay\_batta/rate-limiting-in-llm-applications-why-you-need-it-and-how-to-build-it-5gf4](https://dev.to/pranay_batta/rate-limiting-in-llm-applications-why-you-need-it-and-how-to-build-it-5gf4)  
 22. Multi-Tenant LLM Serving on GPU Cloud: Per-Customer Isolation, Token Quotas, and Production SaaS Architecture Guide (2026) | Spheron Blog, accessed June 10, 2026, [https://www.spheron.network/blog/multi-tenant-llm-serving-gpu-cloud/](https://www.spheron.network/blog/multi-tenant-llm-serving-gpu-cloud/)  
 23. Benchmarking Noisy-Neighbor Isolation on an A100: Shared vLLM vs 1g.5gb MIG Slices | by Owumi Festus | Medium, accessed June 10, 2026, [https://medium.com/@owumifestus/benchmarking-noisy-neighbor-isolation-on-an-a100-shared-vllm-vs-1g-5gb-mig-slices-d45f777d99f0](https://medium.com/@owumifestus/benchmarking-noisy-neighbor-isolation-on-an-a100-shared-vllm-vs-1g-5gb-mig-slices-d45f777d99f0)  
@@ -521,7 +523,7 @@ The resource-control architecture established in this report interfaces directly
 42. Denial of Wallet: Cost-Aware Rate Limiting for Generative AI ..., accessed June 10, 2026, [https://handsonarchitects.com/blog/2026/denial-of-wallet-cost-aware-rate-limiting-part-3/](https://handsonarchitects.com/blog/2026/denial-of-wallet-cost-aware-rate-limiting-part-3/)  
 43. Denial of Wallet: Cost-Aware Rate Limiting for Generative AI Applications \- Hands-On Implementation (Part 3), accessed June 10, 2026, [https://handsonarchitects.com/blog/2026/denial-of-wallet-cost-aware-rate-limiting-part-3/?utm\_source=jvm-bloggers.com\&utm\_medium=link\&utm\_campaign=jvm-bloggers](https://handsonarchitects.com/blog/2026/denial-of-wallet-cost-aware-rate-limiting-part-3/?utm_source=jvm-bloggers.com&utm_medium=link&utm_campaign=jvm-bloggers)  
 44. Dual-Pool Token-Budget Routing for Cost-Efficient and Reliable LLM Serving, accessed June 10, 2026, [https://www.researchgate.net/publication/403683060\_Dual-Pool\_Token-Budget\_Routing\_for\_Cost-Efficient\_and\_Reliable\_LLM\_Serving](https://www.researchgate.net/publication/403683060_Dual-Pool_Token-Budget_Routing_for_Cost-Efficient_and_Reliable_LLM_Serving)  
-45. \[2604.09613\] Token-Budget-Aware Pool Routing for Cost-Efficient LLM Inference \- arXiv, accessed June 10, 2026, [https://arxiv.org/abs/2604.09613](https://arxiv.org/abs/2604.09613)
+45. [2604.09613] Token-Budget-Aware Pool Routing for Cost-Efficient LLM Inference \- arXiv, accessed June 10, 2026, [https://arxiv.org/abs/2604.09613](https://arxiv.org/abs/2604.09613)
 
 ---
 
