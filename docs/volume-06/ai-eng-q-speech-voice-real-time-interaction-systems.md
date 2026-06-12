@@ -10,66 +10,68 @@ The following glossary defines the core terms and operational metrics governing 
 
 | Term | Technical Definition | Primary Operational Metric | Standard Production Target |
 | :---- | :---- | :---- | :---- |
-| **Speech-to-Text (STT)** | The conversion of continuous acoustic audio frames into structured text tokens or word hypotheses via streaming neural decoders.10 | Word Error Rate (WER) / Entity-specific WER 12 | \< 5% English WER, \< 2% Entity-WER 12 |
-| **Text-to-Speech (TTS)** | The synthesis of structured text tokens into audible streaming waveforms with specified prosodic and expressive parameters.10 | Time-to-First-Audio (TTFA) / Mean Opinion Score (MOS) 4 | \< 200 ms TTFA, \> 4.2 MOS 4 |
-| **Realtime Session** | A persistent, stateful, bi-directional network connection handling concurrent media streaming, event signaling, and state updates.15 | Jitter / Packet Loss / Session Reconnection Latency 14 | \< 10 ms Jitter, 0% Packet Loss, \< 30 s Reconnect 14 |
-| **Streaming Transcription** | The ongoing emission of transcripts as audio frames arrive, returning both unstable intermediate guesses and locked historical frames.10 | Partial-to-Final Latency / Revision Rate 6 | \< 150 ms Partial Latency, \< 5% Revision Rate 12 |
+| **Speech-to-Text (STT)** | The conversion of continuous acoustic audio frames into structured text tokens or word hypotheses via streaming neural decoders.10 | Word Error Rate (WER) / Entity-specific WER 12 | < 5% English WER, < 2% Entity-WER 12 |
+| **Text-to-Speech (TTS)** | The synthesis of structured text tokens into audible streaming waveforms with specified prosodic and expressive parameters.10 | Time-to-First-Audio (TTFA) / Mean Opinion Score (MOS) 4 | < 200 ms TTFA, > 4.2 MOS 4 |
+| **Realtime Session** | A persistent, stateful, bi-directional network connection handling concurrent media streaming, event signaling, and state updates.15 | Jitter / Packet Loss / Session Reconnection Latency 14 | < 10 ms Jitter, 0% Packet Loss, < 30 s Reconnect 14 |
+| **Streaming Transcription** | The ongoing emission of transcripts as audio frames arrive, returning both unstable intermediate guesses and locked historical frames.10 | Partial-to-Final Latency / Revision Rate 6 | < 150 ms Partial Latency, < 5% Revision Rate 12 |
 | **Partial Transcript** | A speculative, volatile transcript hypothesis generated from incomplete audio context, subject to downstream correction by the STT engine.4 | Stability index / Token volatility 6 | Display-only; never sent to high-risk tools 4 |
 | **Final Transcript** | An immutable, locked transcript segment emitted once the STT decoder establishes high confidence over the accumulated acoustic context.4 | Segment Commit Latency 4 | 300 ms to 500 ms post-utterance 4 |
-| **Transcript Stability** | A probabilistic metric indicating the likelihood that currently generated partial transcript tokens will match the final emitted tokens.6 | Stability Confidence Score 6 | Threshold \> 0.85 for speculative execution 6 |
-| **Voice Activity Detection (VAD)** | A lightweight binary classification process identifying the presence or absence of human speech within short, sequential audio frames.1 | Frame-level Precision/Recall, False Trigger Rate 18 | Precision \> 0.98, False Trigger \< 2 per hour 1 |
-| **Endpointing** | The decision logic determining whether a speaker has completed a conversational turn based on silence, prosodic cues, and semantic completeness.1 | Turn-End Detection Latency / Cutoff Error Rate 4 | \< 300 ms Latency, \< 1.5% Cutoff Error 4 |
+| **Transcript Stability** | A probabilistic metric indicating the likelihood that currently generated partial transcript tokens will match the final emitted tokens.6 | Stability Confidence Score 6 | Threshold > 0.85 for speculative execution 6 |
+| **Voice Activity Detection (VAD)** | A lightweight binary classification process identifying the presence or absence of human speech within short, sequential audio frames.1 | Frame-level Precision/Recall, False Trigger Rate 18 | Precision > 0.98, False Trigger < 2 per hour 1 |
+| **Endpointing** | The decision logic determining whether a speaker has completed a conversational turn based on silence, prosodic cues, and semantic completeness.1 | Turn-End Detection Latency / Cutoff Error Rate 4 | < 300 ms Latency, < 1.5% Cutoff Error 4 |
 | **Turn-Taking** | The protocol and state machine governing conversational floor transitions, preventing simultaneous speech while maintaining responsiveness.22 | Turn Gap Duration / Overtalk Overlap Time 22 | 200 ms to 450 ms Turn Gap 5 |
-| **Backchannel** | Minimal vocal gestures (e.g., "uh-huh", "mm-hmm") emitted to indicate active listening and floor preservation without claiming the floor. | Backchannel Precision / False Interruption Rate | Precision \> 0.90 under noise |
-| **Barge-In** | The user action of speaking while the agent is playing audio, requiring the agent to immediately halt output and process the new input.5 | Interruption Detection Latency / Playback Flush Time 5 | \< 150 ms from Speech Onset to TTS Flush 5 |
-| **Interruption** | A conversational event where one speaker's active turn is terminated prematurely by the speech onset of another speaker.5 | Interruption False Alarm Rate | \< 1.0% on environmental noise/laughter |
-| **Floor Holding** | Acoustic and linguistic signals used by a speaker to retain the conversational floor during pauses, preventing premature agent endpointing.22 | Hold vs Shift Classification Accuracy 22 | Hold classification \> 0.95 on trailing fillers |
-| **Conversational Repair** | Interactive sequences where the system or user resolves speaking, hearing, or understanding breakdowns to restore mutual comprehension.7 | Repair Completion Rate / Conversation Abandonment Rate 26 | \> 92% Repair Success, \< 3% Abandonment 26 |
-| **Speaker Diarization** | The process of partitioning an audio stream into distinct segments associated with individual speaker identities ("who spoke when").3 | Diarization Error Rate (DER) / Turn-Boundary DER 3 | DER \< 10% in multi-speaker environments 3 |
-| **Speaker Recognition** | The biometric verification or identification of a speaker based on the unique acoustic characteristics of their voice profile.3 | Equal Error Rate (EER) / False Acceptance Rate (FAR) 27 | EER \< 0.1% under clean conditions 27 |
-| **Voice Identity** | The unique, auditable representation of a speaker's vocal characteristics used for access control, styling, or authentication.3 | Identity Match Confidence / Authentication F1-score 27 | F1-score \> 0.99 for gated mutations 27 |
-| **Synthetic Voice** | Programmatically synthesized speech designed to sound like a specific human or styled persona.10 | Naturalness MOS / Persona Alignment Score 10 | MOS \> 4.3 10 |
-| **Latency Budget** | The end-to-end allocation of time segments across all processing components in a streaming interaction loop.4 | End-to-End Latency (T\_streaming) 4 | Target \< 700 ms, Hard Limit \< 1000 ms 4 |
+| **Backchannel** | Minimal vocal gestures (e.g., "uh-huh", "mm-hmm") emitted to indicate active listening and floor preservation without claiming the floor. | Backchannel Precision / False Interruption Rate | Precision > 0.90 under noise |
+| **Barge-In** | The user action of speaking while the agent is playing audio, requiring the agent to immediately halt output and process the new input.5 | Interruption Detection Latency / Playback Flush Time 5 | < 150 ms from Speech Onset to TTS Flush 5 |
+| **Interruption** | A conversational event where one speaker's active turn is terminated prematurely by the speech onset of another speaker.5 | Interruption False Alarm Rate | < 1.0% on environmental noise/laughter |
+| **Floor Holding** | Acoustic and linguistic signals used by a speaker to retain the conversational floor during pauses, preventing premature agent endpointing.22 | Hold vs Shift Classification Accuracy 22 | Hold classification > 0.95 on trailing fillers |
+| **Conversational Repair** | Interactive sequences where the system or user resolves speaking, hearing, or understanding breakdowns to restore mutual comprehension.7 | Repair Completion Rate / Conversation Abandonment Rate 26 | > 92% Repair Success, < 3% Abandonment 26 |
+| **Speaker Diarization** | The process of partitioning an audio stream into distinct segments associated with individual speaker identities ("who spoke when").3 | Diarization Error Rate (DER) / Turn-Boundary DER 3 | DER < 10% in multi-speaker environments 3 |
+| **Speaker Recognition** | The biometric verification or identification of a speaker based on the unique acoustic characteristics of their voice profile.3 | Equal Error Rate (EER) / False Acceptance Rate (FAR) 27 | EER < 0.1% under clean conditions 27 |
+| **Voice Identity** | The unique, auditable representation of a speaker's vocal characteristics used for access control, styling, or authentication.3 | Identity Match Confidence / Authentication F1-score 27 | F1-score > 0.99 for gated mutations 27 |
+| **Synthetic Voice** | Programmatically synthesized speech designed to sound like a specific human or styled persona.10 | Naturalness MOS / Persona Alignment Score 10 | MOS > 4.3 10 |
+| **Latency Budget** | The end-to-end allocation of time segments across all processing components in a streaming interaction loop.4 | End-to-End Latency (T_streaming) 4 | Target < 700 ms, Hard Limit < 1000 ms 4 |
 | **Voice-to-Action Gating** | The protective verification layers preventing unconfirmed, volatile, or unauthorized speech from triggering high-impact system mutations. | Gating Precision / Unintended Action Rate | 100% precision on irreversible tools |
 
 ## **Realtime Voice Interaction Pipeline**
 
 A production-grade real-time voice system operates as a distributed, stream-aligned architecture. The end-to-end pipeline must coordinate multiple asynchronous systems, each running on distinct clocks, over low-latency media transport protocols.4
 
-\+--------------------------------------------------------------------------------------------------------+  
+```
++--------------------------------------------------------------------------------------------------------+  
 |                                  REALTIME VOICE INTERACTION PIPELINE                                   |  
-\+--------------------------------------------------------------------------------------------------------+  
++--------------------------------------------------------------------------------------------------------+  
 |                                                                                                        |  
 |                                                                                    |  
-|  Microphone Capture \---\> WebRTC AEC3 \---\> Opus Encoder \---\> WebRTC Transceiver Edge                    |  
+|  Microphone Capture ---> WebRTC AEC3 ---> Opus Encoder ---> WebRTC Transceiver Edge                    |  
 |                                                                     |                                  |  
 |                                                                     v                                  |  
 |                                                                                 |  
-|  WebRTC Termination/Decrypt (DTLS/SRTP) \<--- Routing on ICE credentials (ufrag hint)                  |  
+|  WebRTC Termination/Decrypt (DTLS/SRTP) <--- Routing on ICE credentials (ufrag hint)                  |  
 |          |                                                                                             |  
-|          ├──────\> Edge VAD (Wasm/Silero) ───\> Instant Client Mute / Playback Buffer Flush              |  
+|          ├──────> Edge VAD (Wasm/Silero) ───> Instant Client Mute / Playback Buffer Flush              |  
 |          │                                                                                             |  
-|          └──────\> Audio Stream (PCM Int16, 16kHz)                                                      |  
+|          └──────> Audio Stream (PCM Int16, 16kHz)                                                      |  
 |                          |                                                                             |  
 |                          v                                                                             |  
 |                                                                            |  
 |  Streaming STT (Deepgram/AssemblyAI)                                                                   |  
-|          ├──────\> Partial Hypotheses (is\_final=False) ───\> Prewarming / Speculative Planning           |  
-|          └──────\> Final Utterances (is\_final=True)                                                     |  
+|          ├──────> Partial Hypotheses (is_final=False) ───> Prewarming / Speculative Planning           |  
+|          └──────> Final Utterances (is_final=True)                                                     |  
 |                          |                                                                             |  
 |                          v                                                                             |  
 |                                                                          |  
 |  Turn-Taking Dialogue State Machine                                                                    |  
-|          ├──────\> Spoken Turn Completed (speech\_final=True)                                            |  
-|          ├──────\> Think-Before-Speak Agent Loop                                                        |  
-|          │               ├──────\> Tool Gating & Execution (Confirmed Payloads Only)                    |  
-|          │               └──────\> Context / History Preservation                                       |  
+|          ├──────> Spoken Turn Completed (speech_final=True)                                            |  
+|          ├──────> Think-Before-Speak Agent Loop                                                        |  
+|          │               ├──────> Tool Gating & Execution (Confirmed Payloads Only)                    |  
+|          │               └──────> Context / History Preservation                                       |  
 |          │                                                                                             |  
 |          ▼                                                                                             |  
 |                                                                         |  
-|  Streaming LLM Tokens ───\> Sentence Buffer ───\> Streaming TTS ───\> Playback Jitter Buffer ───\> Speaker |  
+|  Streaming LLM Tokens ───> Sentence Buffer ───> Streaming TTS ───> Playback Jitter Buffer ───> Speaker |  
 |                                                                                                        |  
-\+--------------------------------------------------------------------------------------------------------+
++--------------------------------------------------------------------------------------------------------+
+```
 
 ### **Media Transport Infrastructure and Session Edge Architecture**
 
@@ -92,20 +94,20 @@ The execution flow of the real-time voice pipeline translates physical acoustic 
 
 | Sequence Stage | Local Pipeline Step | Executing Infrastructure Layer | Local Protocol / Format | Critical Failure Risk |
 | :---- | :---- | :---- | :---- | :---- |
-| **1\. Capture** | Microphone Audio Ingestion | Client-side App (Native SDK) | Linear PCM 16-bit, 16kHz, Mono 33 | Audio capture permission block 28 |
-| **2\. Preprocess** | WebRTC AEC3 Echo & Noise Filtering | Client AudioWorklet (WebAssembly) 34 | Float32 Internal \-\> PCM conversion 34 | Adaptive filter divergence on Android 35 |
-| **3\. Encode** | Audio Frame Compression | Client Opus Encoder | Opus packets over UDP (WebRTC) 34 | Packet dropped due to local thread lag 34 |
-| **4\. Transport** | Secure Packet Uplink Transit | Public/Transit IP Network | DTLS/SRTP via WebRTC Transceiver 30 | Network jitter, cross-region routing delay 4 |
-| **5\. Terminate** | WebRTC termination & Decryption | Server Edge (Transceiver Cluster) 30 | Decrypted PCM Int16 raw buffer 30 | Ephemeral port exhaustion under Kubernetes 30 |
-| **6\. Local VAD** | Client/Server Double VAD pass | Server Edge (Silero Wasm Thread) 36 | 10/20ms Frame classification 18 | High False Positives on street background noise 5 |
-| **7\. Stream STT** | Acoustic-to-Linguistic Decoding | STT Engine (WebSocket Pool) 11 | Bidirectional WebSocket JSON 11 | Model drift, phonetic spelling failure 10 |
-| **8\. Revise** | Partial Transcript update cycle | Dialogue Context Manager | Interim results collection (is\_final=False) 6 | Premature execution on highly volatile phrases 6 |
-| **9\. Endpoint** | Spoken turn completion parsing | Semantic Turn Classifier | Semantic & Prosodic Feature Scoring | Cutting off users with assistive stutters |
-| **10\. Reason** | Think-Before-Speak execution | LLM Agent Execution Cluster 38 | In-memory token representation 38 | Context window token ceiling, high TTFT |
-| **11\. Gate** | Spoken action authorization check | Security & Policy Layer | Action schema-to-transcript mapping | Executing destructive tool on misheard entity 9 |
-| **12\. Synthesize** | Neural speech output compilation | Streaming TTS Cluster (Sonic Engine) 5 | Opus/PCM stream segment output 5 | Audio gaps, mechanical voice sounding 4 |
-| **13\. Playback** | Waveform output conversion | Client App Playback Engine | PCM 16-bit, 24kHz, Mono 33 | Glitching "chipmunk effect" on mismatch 33 |
-| **14\. Log & Trace** | Comprehensive Session auditing | Observability Storage Platform 28 | Structured OpenTelemetry session JSON 28 | Exposing raw audio leaks, PI data breach 28 |
+| **1. Capture** | Microphone Audio Ingestion | Client-side App (Native SDK) | Linear PCM 16-bit, 16kHz, Mono 33 | Audio capture permission block 28 |
+| **2. Preprocess** | WebRTC AEC3 Echo & Noise Filtering | Client AudioWorklet (WebAssembly) 34 | Float32 Internal -> PCM conversion 34 | Adaptive filter divergence on Android 35 |
+| **3. Encode** | Audio Frame Compression | Client Opus Encoder | Opus packets over UDP (WebRTC) 34 | Packet dropped due to local thread lag 34 |
+| **4. Transport** | Secure Packet Uplink Transit | Public/Transit IP Network | DTLS/SRTP via WebRTC Transceiver 30 | Network jitter, cross-region routing delay 4 |
+| **5. Terminate** | WebRTC termination & Decryption | Server Edge (Transceiver Cluster) 30 | Decrypted PCM Int16 raw buffer 30 | Ephemeral port exhaustion under Kubernetes 30 |
+| **6. Local VAD** | Client/Server Double VAD pass | Server Edge (Silero Wasm Thread) 36 | 10/20ms Frame classification 18 | High False Positives on street background noise 5 |
+| **7. Stream STT** | Acoustic-to-Linguistic Decoding | STT Engine (WebSocket Pool) 11 | Bidirectional WebSocket JSON 11 | Model drift, phonetic spelling failure 10 |
+| **8. Revise** | Partial Transcript update cycle | Dialogue Context Manager | Interim results collection (is_final=False) 6 | Premature execution on highly volatile phrases 6 |
+| **9. Endpoint** | Spoken turn completion parsing | Semantic Turn Classifier | Semantic & Prosodic Feature Scoring | Cutting off users with assistive stutters |
+| **10. Reason** | Think-Before-Speak execution | LLM Agent Execution Cluster 38 | In-memory token representation 38 | Context window token ceiling, high TTFT |
+| **11. Gate** | Spoken action authorization check | Security & Policy Layer | Action schema-to-transcript mapping | Executing destructive tool on misheard entity 9 |
+| **12. Synthesize** | Neural speech output compilation | Streaming TTS Cluster (Sonic Engine) 5 | Opus/PCM stream segment output 5 | Audio gaps, mechanical voice sounding 4 |
+| **13. Playback** | Waveform output conversion | Client App Playback Engine | PCM 16-bit, 24kHz, Mono 33 | Glitching "chipmunk effect" on mismatch 33 |
+| **14. Log & Trace** | Comprehensive Session auditing | Observability Storage Platform 28 | Structured OpenTelemetry session JSON 28 | Exposing raw audio leaks, PI data breach 28 |
 
 ## **Speech-to-Text and Streaming Transcription**
 
@@ -118,10 +120,10 @@ The streaming STT decoder operates as a stateful transition engine over rolling 
 | Origin State | Transition Trigger Event | Destination State | Retained State Metadata | Downstream System Action |
 | :---- | :---- | :---- | :---- | :---- |
 | **Acoustic Idle** | Energy level crosses VAD threshold 1 | **Active Frame Ingestion** | Prefix buffer, timestamp onset 5 | Open active STT decoder socket 11 |
-| **Active Frame Ingestion** | First frame sequence completed (\> 100 ms) 40 | **Partial Hypothesis** (is\_final=False) 6 | Speculative text array, confidence score 6 | Render real-time UI captions 34 |
+| **Active Frame Ingestion** | First frame sequence completed (> 100 ms) 40 | **Partial Hypothesis** (is_final=False) 6 | Speculative text array, confidence score 6 | Render real-time UI captions 34 |
 | **Partial Hypothesis** | Subsequent audio frame arrival 6 | **Hypothesis Revision Loop** | Word-level coordinate shifts 32 | Refine speculative intent classification 1 |
-| **Hypothesis Revision Loop** | Acoustic probability entropy decreases below threshold 6 | **Locked Segment** (is\_final=True) 6 | Solidified token sequence, word timestamps 41 | Append immutable text to LLM context 4 |
-| **Locked Segment** | VAD registers silence \> threshold 39 | **Utterance Boundary** (speech\_final=True) 6 | Final turn sequence number, semantic tag 6 | Trigger model turn reasoning thread 4 |
+| **Hypothesis Revision Loop** | Acoustic probability entropy decreases below threshold 6 | **Locked Segment** (is_final=True) 6 | Solidified token sequence, word timestamps 41 | Append immutable text to LLM context 4 |
+| **Locked Segment** | VAD registers silence > threshold 39 | **Utterance Boundary** (speech_final=True) 6 | Final turn sequence number, semantic tag 6 | Trigger model turn reasoning thread 4 |
 | **Utterance Boundary** | Core agent response generated 4 | **Acoustic Idle** | Historical dialogue logs, tool receipts 28 | Transition client state back to listening 5 |
 
 ### **Transcript Stability Policy**
@@ -130,10 +132,10 @@ Because interim results are volatile, acting on them prematurely introduces syst
 
 | Transcript State | Stability Criteria | Permitted Actions | Prohibited Actions | Recovery Protocol |
 | :---- | :---- | :---- | :---- | :---- |
-| **Volatile Partial** (is\_final: false, Stability \< 0.70) 6 | Initial phoneme matching, highly subject to downstream linguistic revision.6 | Local UI caption rendering, speculative intent classification.6 | LLM context serialization, tool execution, external state mutations. | Silently discard the segment if updated frames diverge.6 |
-| **Stable Speculative** (is\_final: false, Stability \>= 0.70) 6 | High acoustic confidence, but waiting for linguistic boundary resolution.11 | Pre-fetching read-only API data, pre-warming vector indexes.4 | Dispatching user replies, committing payments, updating external records. | Flush speculative state cache if final result differs.5 |
-| **Locked Segment** (is\_final: true, speech\_final: false) 6 | Decoder has finalized the phoneme-to-text mapping.6 | Appending text to conversational history, routing to reasoning LLM.4 | Triggering irreversible tools without explicit spoken confirmation. | Wait for final utterance boundary or explicit pause.6 |
-| **Utterance Complete** (is\_final: true, speech\_final: true) 6 | Segment is finalized and the user has executed a valid turn boundary.6 | Executing safe read-only queries, triggering standard dialog response.42 | Mutating critical user accounts or executing high-impact tools. | Validate turn completion against semantic VAD before speaking. |
+| **Volatile Partial** (is_final: false, Stability < 0.70) 6 | Initial phoneme matching, highly subject to downstream linguistic revision.6 | Local UI caption rendering, speculative intent classification.6 | LLM context serialization, tool execution, external state mutations. | Silently discard the segment if updated frames diverge.6 |
+| **Stable Speculative** (is_final: false, Stability >= 0.70) 6 | High acoustic confidence, but waiting for linguistic boundary resolution.11 | Pre-fetching read-only API data, pre-warming vector indexes.4 | Dispatching user replies, committing payments, updating external records. | Flush speculative state cache if final result differs.5 |
+| **Locked Segment** (is_final: true, speech_final: false) 6 | Decoder has finalized the phoneme-to-text mapping.6 | Appending text to conversational history, routing to reasoning LLM.4 | Triggering irreversible tools without explicit spoken confirmation. | Wait for final utterance boundary or explicit pause.6 |
+| **Utterance Complete** (is_final: true, speech_final: true) 6 | Segment is finalized and the user has executed a valid turn boundary.6 | Executing safe read-only queries, triggering standard dialog response.42 | Mutating critical user accounts or executing high-impact tools. | Validate turn completion against semantic VAD before speaking. |
 
 ### **Multilingual Dynamics and Keyterm Prompting**
 
@@ -146,47 +148,49 @@ Voice Activity Detection (VAD) and Endpointing are distinct control systems with
 
 ### **Endpointing and Turn-Detection Model**
 
-Standard energy-based VAD systems rely on simple volume thresholds: if the audio signal amplitude drops below a specified decibel level (typically \-40 dBFS) for a static duration (e.g., 500 ms), the system assumes the user has stopped speaking.44 In production environments, this approach fails.1 Background noise (such as coffee-shop hum or traffic) can keep energy levels above the threshold, preventing the agent from ever responding.1 Conversely, when a user pauses mid-thought to compose a sentence or breathes heavily, energy-based VAD registers silence and prematurely endpoints the turn, cutting the user off mid-sentence.1  
-Modern architectures deploy a **Hybrid Semantic-Acoustic Endpointing Model**. This system combines low-latency neural acoustic VAD (e.g., Silero VAD running at \< 1 ms inference per 32 ms frame) with a lightweight, high-speed language classification model. This model analyzes the rolling partial transcript to evaluate three primary cues:
+Standard energy-based VAD systems rely on simple volume thresholds: if the audio signal amplitude drops below a specified decibel level (typically -40 dBFS) for a static duration (e.g., 500 ms), the system assumes the user has stopped speaking.44 In production environments, this approach fails.1 Background noise (such as coffee-shop hum or traffic) can keep energy levels above the threshold, preventing the agent from ever responding.1 Conversely, when a user pauses mid-thought to compose a sentence or breathes heavily, energy-based VAD registers silence and prematurely endpoints the turn, cutting the user off mid-sentence.1  
+Modern architectures deploy a **Hybrid Semantic-Acoustic Endpointing Model**. This system combines low-latency neural acoustic VAD (e.g., Silero VAD running at < 1 ms inference per 32 ms frame) with a lightweight, high-speed language classification model. This model analyzes the rolling partial transcript to evaluate three primary cues:
 
 * **Linguistic Completeness**: Evaluating if the emitted token sequence represents a syntactically resolved clause.  
 * **Prosodic Markers**: Processing pitch contours and trailing intonation to determine if the speaker’s voice is rising (indicating an unfinished thought or question) or falling (indicating completion).22  
 * **Conversational Fillers**: Detecting floor-holding tokens such as "um", "uh", or trailing conjunctions like "and then...".
 
-                \+---------------------------------------+  
+```
+                +---------------------------------------+  
                 |          Continuous Audio             |  
-                \+---------------------------------------+  
+                +---------------------------------------+  
                                     |  
                                     v  
-                \+---------------------------------------+  
+                +---------------------------------------+  
                 |    Neural Acoustic VAD (Silero)       |  (Outputs frame speech probability p)   
-                \+---------------------------------------+  
+                +---------------------------------------+  
                                     |  
-                                    \+-----------------------+  
-                                    |                       | (p \< 0.5) \[45\]  
-                                    | (p \>= 0.5) \[45\]    v  
-                                    |             \+-----------------------+  
+                                    +-----------------------+  
+                                    |                       | (p < 0.5) 45]  
+                                    | (p >= 0.5) 45]    v  
+                                    |             +-----------------------+  
                                     |             |  Silence Accumulator  |   
-                                    |             \+-----------------------+  
+                                    |             +-----------------------+  
                                     |                       |  
-                                    |                       | (Silence \> min\_turn\_silence)   
+                                    |                       | (Silence > min_turn_silence)   
                                     |                       v  
-                                    |             \+-----------------------+  
+                                    |             +-----------------------+  
                                     |             | Semantic Classifier / |  
                                     |             |  Punctuation Check    |   
-                                    |             \+-----------------------+  
+                                    |             +-----------------------+  
                                     |               |               |  
                                     |               | (Complete)    | (Incomplete / Fillers)  
                                     |               v               v  
-                                    |         \+-----------+   \+---------------+  
-                                    |         |   Emit    |   | Extend Silence| (Wait up to max\_turn\_silence)   
-                                    |         | Endpoint  |   |   Threshold   | \[20\]  
-                                    |         \+-----------+   \+---------------+  
+                                    |         +-----------+   +---------------+  
+                                    |         |   Emit    |   | Extend Silence| (Wait up to max_turn_silence)   
+                                    |         | Endpoint  |   |   Threshold   | 20]  
+                                    |         +-----------+   +---------------+  
                                     v               ^               |  
-                        \+-----------------------+   |               |  
+                        +-----------------------+   |               |  
                         |      Speech Onset     |───+               v  
-                        |    Tracker / Reset    | \<─────────────────+ (New speech detected)   
-                        \+-----------------------+
+                        |    Tracker / Reset    | <─────────────────+ (New speech detected)   
+                        +-----------------------+
+```
 
 When silence is detected acoustically, the system calculates a dynamic hangover window:
 
@@ -198,29 +202,29 @@ To programmatically control this behavior, production platforms leverage configu
 #### **OpenAI Realtime API VAD Properties**
 
 * **threshold** (0.0 to 1.0): Sets the activation confidence for acoustic speech detection.39 Higher values prevent false triggers in noisy rooms.39  
-* **prefix\_padding\_ms**: Controls the amount of audio buffered before the speech onset trigger, preserving early consonant bursts (attacks) for STT decoders.5  
-* **silence\_duration\_ms**: In server\_vad mode, sets the static silence duration required to trigger a turn completion.39  
-* **eagerness** (low, auto, high): In semantic\_vad mode, dynamically tunes the wait threshold based on linguistic context.39 low allows users to take their time and speak slowly, while high forces aggressive, low-latency turn-ending.39
+* **prefix_padding_ms**: Controls the amount of audio buffered before the speech onset trigger, preserving early consonant bursts (attacks) for STT decoders.5  
+* **silence_duration_ms**: In server_vad mode, sets the static silence duration required to trigger a turn completion.39  
+* **eagerness** (low, auto, high): In semantic_vad mode, dynamically tunes the wait threshold based on linguistic context.39 low allows users to take their time and speak slowly, while high forces aggressive, low-latency turn-ending.39
 
 #### **AssemblyAI Universal-3 Pro Punctuation-Based Turn Detection**
 
-* **min\_turn\_silence**: The duration of silence required before the model runs a speculative punctuation-check.21 If terminal punctuation (e.g., ., ?, \!) is detected in the speculative transcript at this point, end\_of\_turn: true is emitted immediately.21  
-* **max\_turn\_silence**: If no terminal punctuation is found, the system holds the floor open until silence reaches this maximum threshold, at which point the turn is forced to close.21  
-* **interruption\_delay**: Controls how quickly the first partial transcript is emitted to downstream systems.21
+* **min_turn_silence**: The duration of silence required before the model runs a speculative punctuation-check.21 If terminal punctuation (e.g., ., ?, !) is detected in the speculative transcript at this point, end_of_turn: true is emitted immediately.21  
+* **max_turn_silence**: If no terminal punctuation is found, the system holds the floor open until silence reaches this maximum threshold, at which point the turn is forced to close.21  
+* **interruption_delay**: Controls how quickly the first partial transcript is emitted to downstream systems.21
 
 ### **Endpointing Policy Profiles**
 
 A single endpointing configuration cannot satisfy all conversational contexts. A fast response is desirable for home automation commands, but causes frustration during complex cognitive tasks or for users with speech impairments.1 Architectures must implement specialized **Endpointing Policy Profiles**.1
 
-| Profile Name | Target Use Case | Silence Threshold (T\_silence) | VAD Sensitivity / Energy Threshold | Semantic Guarding Policy | Target User Segment / Context |
+| Profile Name | Target Use Case | Silence Threshold (T_silence) | VAD Sensitivity / Energy Threshold | Semantic Guarding Policy | Target User Segment / Context |
 | :---- | :---- | :---- | :---- | :---- | :---- |
-| **Command & Control** | Voice-driven utility execution (e.g., "turn on lights"). | 200 ms \- 300 ms 19 | High sensitivity / Low energy threshold (aggressive).39 | Disabled; execute instantly on keyword detection.39 | Hands-busy environments, low cognitive overhead.46 |
-| **Casual Conversation** | Natural, open-ended dialog.4 | 400 ms \- 600 ms 19 | Moderate sensitivity (balance noise vs speech).18 | Enabled; verify clause resolution before yielding floor. | Standard customer service, informational voicebots.4 |
-| **Dictation / Transcription** | Continuous spoken capture, long paragraphs.10 | 1200 ms \- 2000 ms 21 | High sensitivity; long hangover padding.17 | Disabled; wait for explicit "period" keyword or long pause.21 | Legal, medical, or administrative text entry.10 |
-| **High-Impact Action** | Financial mutations, secure database changes.28 | 800 ms \- 1200 ms 19 | Low sensitivity (avoid false starts on noise).39 | Strict; require full grammatical resolution plus readback. | Banking, secure credential updates, account changes.28 |
-| **Inclusive / Accessibility** | Support stutters, slow pacing, dysarthria.46 | 1500 ms \- 3000 ms 19 | High tolerance; ignore rapid repetitive syllable bursts. | Strict; disable endpointing on repetitive sound patterns. | Users with neurological speech differences.46 |
-| **Noisy Environment** | Cafes, open offices, industrial floors.17 | 600 ms \- 1000 ms 19 | Low sensitivity / High energy threshold (WebRTC level 3).19 | Enabled; filter out sudden ambient sound spikes.1 | Mobile users, field operations, public transport.17 |
-| **Group Conversation** | Multi-speaker business meetings, panels.3 | 800 ms \- 1500 ms 3 | High sensitivity \+ Speaker Diarization mapping.3 | Strict; keep turn open if primary speaker pauses but holds floor.1 | Corporate boardrooms, multi-party calls.3 |
+| **Command & Control** | Voice-driven utility execution (e.g., "turn on lights"). | 200 ms - 300 ms 19 | High sensitivity / Low energy threshold (aggressive).39 | Disabled; execute instantly on keyword detection.39 | Hands-busy environments, low cognitive overhead.46 |
+| **Casual Conversation** | Natural, open-ended dialog.4 | 400 ms - 600 ms 19 | Moderate sensitivity (balance noise vs speech).18 | Enabled; verify clause resolution before yielding floor. | Standard customer service, informational voicebots.4 |
+| **Dictation / Transcription** | Continuous spoken capture, long paragraphs.10 | 1200 ms - 2000 ms 21 | High sensitivity; long hangover padding.17 | Disabled; wait for explicit "period" keyword or long pause.21 | Legal, medical, or administrative text entry.10 |
+| **High-Impact Action** | Financial mutations, secure database changes.28 | 800 ms - 1200 ms 19 | Low sensitivity (avoid false starts on noise).39 | Strict; require full grammatical resolution plus readback. | Banking, secure credential updates, account changes.28 |
+| **Inclusive / Accessibility** | Support stutters, slow pacing, dysarthria.46 | 1500 ms - 3000 ms 19 | High tolerance; ignore rapid repetitive syllable bursts. | Strict; disable endpointing on repetitive sound patterns. | Users with neurological speech differences.46 |
+| **Noisy Environment** | Cafes, open offices, industrial floors.17 | 600 ms - 1000 ms 19 | Low sensitivity / High energy threshold (WebRTC level 3).19 | Enabled; filter out sudden ambient sound spikes.1 | Mobile users, field operations, public transport.17 |
+| **Group Conversation** | Multi-speaker business meetings, panels.3 | 800 ms - 1500 ms 3 | High sensitivity + Speaker Diarization mapping.3 | Strict; keep turn open if primary speaker pauses but holds floor.1 | Corporate boardrooms, multi-party calls.3 |
 
 ## **Turn-Taking and Dialogue State**
 
@@ -233,21 +237,21 @@ The following matrix defines the state transitions of the Turn-Taking State Mach
 | Source State | Input Event Trigger | Destination State | Triggering Mechanism | State Machine System Actions |
 | :---- | :---- | :---- | :---- | :---- |
 | **IDLE** | VAD Speech Started | **LISTENING** | Audio energy level crosses VAD threshold 1 | Open streaming ASR connection, start context buffering.4 |
-| **LISTENING** | Partial Transcript Received | **PROVISIONAL\_TRANSCRIPT** | Interim results payload parsed from socket 6 | Render real-time visual captions, pre-warm caches.4 |
-| **PROVISIONAL\_TRANSCRIPT** | VAD Silence \> threshold | **ENDPOINT\_CANDIDATE** | Local silence timer passes 300 ms window 19 | Halt active transcript appending, trigger turn completion model. |
-| **ENDPOINT\_CANDIDATE** | Semantic Resolution Completed | **USER\_TURN\_FINAL** | Turn completeness model returns probability \> 0.85 | Lock finalized ASR transcript segment, compile prompt.6 |
-| **ENDPOINT\_CANDIDATE** | New Speech Detected | **LISTENING** | Audio energy level crosses threshold before timeout 1 | Reset local silence timer, continue transcript stream.1 |
-| **ENDPOINT\_CANDIDATE** | Timeout Exceeded | **USER\_TURN\_FINAL** | Silence duration passes forced floor timeout 21 | Force close the active speaking turn.21 |
-| **USER\_TURN\_FINAL** | Dialogue Reasoning Invoked | **THINKING** | Prompt dispatched to core agent LLM 4 | Execute tool gating checks, initiate reasoning thread.9 |
-| **THINKING** | API/Tool Execution Invoked | **TOOL\_CHECKING** | LLM outputs speculative tool schema 4 | Suspend spoken generation, route parameters to tool runner.28 |
-| **TOOL\_CHECKING** | Tool Return Verified | **THINKING** | API response parsed and validated 4 | Append tool payload to context, resume linguistic path.4 |
+| **LISTENING** | Partial Transcript Received | **PROVISIONAL_TRANSCRIPT** | Interim results payload parsed from socket 6 | Render real-time visual captions, pre-warm caches.4 |
+| **PROVISIONAL_TRANSCRIPT** | VAD Silence > threshold | **ENDPOINT_CANDIDATE** | Local silence timer passes 300 ms window 19 | Halt active transcript appending, trigger turn completion model. |
+| **ENDPOINT_CANDIDATE** | Semantic Resolution Completed | **USER_TURN_FINAL** | Turn completeness model returns probability > 0.85 | Lock finalized ASR transcript segment, compile prompt.6 |
+| **ENDPOINT_CANDIDATE** | New Speech Detected | **LISTENING** | Audio energy level crosses threshold before timeout 1 | Reset local silence timer, continue transcript stream.1 |
+| **ENDPOINT_CANDIDATE** | Timeout Exceeded | **USER_TURN_FINAL** | Silence duration passes forced floor timeout 21 | Force close the active speaking turn.21 |
+| **USER_TURN_FINAL** | Dialogue Reasoning Invoked | **THINKING** | Prompt dispatched to core agent LLM 4 | Execute tool gating checks, initiate reasoning thread.9 |
+| **THINKING** | API/Tool Execution Invoked | **TOOL_CHECKING** | LLM outputs speculative tool schema 4 | Suspend spoken generation, route parameters to tool runner.28 |
+| **TOOL_CHECKING** | Tool Return Verified | **THINKING** | API response parsed and validated 4 | Append tool payload to context, resume linguistic path.4 |
 | **THINKING** | First Linguistic Token Emitted | **SPEAKING** | LLM outputs structural response token | Launch streaming TTS pipeline, initialize client playback. |
 | **SPEAKING** | LLM Stream Paused Mid-Turn | **BACKCHANNELING** | LLM outputs explicit wait or placeholder token | Play light acoustic feedback gesture ("uh-huh"). |
 | **SPEAKING** | VAD Speech Started (Barge-In) | **INTERRUPTED** | User interrupts playing assistant stream 5 | Flush client-side audio buffer, cancel reasoning.5 |
 | **SPEAKING** | Synthesis Complete | **IDLE** | Audio playback playhead reaches termination marker 1 | Reset dialogue state flags, return to passive listening.5 |
 | **INTERRUPTED** | Interruption Processing Complete | **REPAIR** | Truncation playhead timestamp aligned 5 | Log partial response, load repair conversational patterns.5 |
 | **REPAIR** | Misunderstanding Resolved | **THINKING** | User confirmation text committed 8 | Compile corrected prompt, restart generation thread.4 |
-| **IDLE / LISTENING** | Critical Protocol Loss | **TERMINATED** | Media socket connection drops \> 30 s 16 | Tear down WebRTC transceiver paths, log metrics.30 |
+| **IDLE / LISTENING** | Critical Protocol Loss | **TERMINATED** | Media socket connection drops > 30 s 16 | Tear down WebRTC transceiver paths, log metrics.30 |
 
 ### **Conversational Dynamics**
 
@@ -272,23 +276,25 @@ Human conversational turn-taking operates on a 200 ms to 500 ms rhythm.22 If a v
 
 ### **Realtime Latency Budget Model**
 
-The end-to-end latency (T\_streaming) of a real-time voice system is the cumulative sum of capture, transport, processing, and playback steps.4
+The end-to-end latency (T_streaming) of a real-time voice system is the cumulative sum of capture, transport, processing, and playback steps.4
 
-\+---------------------------------------------------------------------------------------------------------+  
+```
++---------------------------------------------------------------------------------------------------------+  
 |                                     REALTIME LATENCY BUDGET TIMELINE                                    |  
-\+---------------------------------------------------------------------------------------------------------+  
++---------------------------------------------------------------------------------------------------------+  
 |                                                                                                         |  
 |   0ms                   150ms                 350ms                 550ms                 700ms         |  
-|   \+---------------------+---------------------+---------------------+---------------------+         |  
+|   +---------------------+---------------------+---------------------+---------------------+         |  
 |   |   Media Capture     |   Streaming STT     |   LLM First-Token   |   Streaming TTS     |         |  
 |   |   & Transport       |   Processing        |   & Reasoning       |   Synthesis         |         |  
 |   |   (80ms) | (200ms)    |   (200ms)     |   (120ms)     |         |  
-|   \+---------------------+---------------------+---------------------+---------------------+         |  
+|   +---------------------+---------------------+---------------------+---------------------+         |  
 |                                                                                           |         |  
 |                                                                                           v         |  
 |                                                                                     Speaker Output  |  
-|                                                                                     (\< 700ms Target) |  
-\+---------------------------------------------------------------------------------------------------------+
+|                                                                                     (< 700ms Target) |  
++---------------------------------------------------------------------------------------------------------+
+```
 
 To maintain this budget under real-world network conditions, latency margins must be allocated across the system components 4:
 
@@ -297,14 +303,14 @@ To maintain this budget under real-world network conditions, latency margins mus
 | **Media Capture** | Microphone hardware capture, client buffering | 10 ms | 20 ms | Bind audio capture to native client thread; restrict client-side buffer frame size to 20 ms.4 |
 | **Acoustic Preprocessing** | WebRTC AEC3, spatial noise suppression | 15 ms | 30 ms | Compile AEC3 filters to native WebAssembly on client browser.34 |
 | **Uplink Transport** | Opus encoding, DTLS/SRTP transit | 40 ms | 110 ms | Route media via Global Relay ingress points, avoiding multi-hop public IP transit.30 |
-| **VAD & Endpointing** | Silero frame classification \+ semantic check | 35 ms | 75 ms | Execute neural VAD on server edge, caching prior tokens.20 |
+| **VAD & Endpointing** | Silero frame classification + semantic check | 35 ms | 75 ms | Execute neural VAD on server edge, caching prior tokens.20 |
 | **Streaming STT** | Word lattice path decoding (Nova-3) | 210 ms | 320 ms | Keep persistent WebSocket connection open 4; avoid batch transcription APIs.40 |
 | **Dialogue State Update** | Context assembly, prompt formatting | 5 ms | 12 ms | Keep dialogue context in-memory on state container.4 |
 | **Model Reasoning** | First token execution on Groq/custom GPU | 120 ms | 220 ms | Prioritize model execution pathways to reduce TTFT. |
 | **Tool Execution** | Parallel lookup database query execution | 180 ms | 380 ms | Run non-essential tools speculatively; pre-warm connections on partials.4 |
 | **Streaming TTS** | Waveform synthesis on GPU clusters | 90 ms | 150 ms | Stream first output chunk (TTFA) before full sentence completes. |
 | **Downlink Transport** | Audio frame routing back to client | 35 ms | 95 ms | Match downstream packet sizes to local audio output frames.34 |
-| **Playback Buffer** | Web Audio API buffering, DAC output | 30 ms | 70 ms | Maintain minimal client jitter buffer size (\< 60 ms).5 |
+| **Playback Buffer** | Web Audio API buffering, DAC output | 30 ms | 70 ms | Maintain minimal client jitter buffer size (< 60 ms).5 |
 | **Interruption Stop** | Client-side playback mute on VAD trigger | 12 ms | 25 ms | Local mute inside AudioWorklet on user voice detection.34 |
 | **Recovery Latency** | Dialogue state rollback, new path launch | 65 ms | 140 ms | Keep alternate linguistic pathways pre-compiled in memory.5 |
 
@@ -312,7 +318,7 @@ To maintain this budget under real-world network conditions, latency margins mus
 
 The critical path of a voice agent is optimized through **Stream-Pipelining**.4 In a sequential pipeline, the user waits for each stage to complete:
 
-T\_turn-based \= T\_STT \+ T\_LLM \+ T\_TTS \~ 400 ms \+ 800 ms \+ 400 ms \= 1600 ms
+T_turn-based = T_STT + T_LLM + T_TTS ~ 400 ms + 800 ms + 400 ms = 1600 ms
 
 In a streaming pipeline, processing stages overlap concurrently :
 
@@ -325,7 +331,7 @@ In a streaming pipeline, processing stages overlap concurrently :
 
 This overlaps generation and synthesis, reducing perceived latency to the first sentence:
 
-T\_streaming \= T\_STT \+ T\_LLM-first-sentence \+ T\_TTS-TTFB \~ 400 ms \+ 300 ms \+ 200 ms \= 900 ms
+T_streaming = T_STT + T_LLM-first-sentence + T_TTS-TTFB ~ 400 ms + 300 ms + 200 ms = 900 ms
 
 The user hears the start of the response while the system is still computing the end of the sentence.
 
@@ -337,35 +343,37 @@ When an agent begins playing back audio, it commits to a public trajectory. If t
 
 The dialogue engine evaluates the risk and dependencies of the requested turn before generating speech:
 
-                  \+-----------------------------------------+  
+```
+                  +-----------------------------------------+  
                   |           Committed Spoken Turn         |  
-                  \+-----------------------------------------+  
+                  +-----------------------------------------+  
                                        |  
                                        v  
-                  \+-----------------------------------------+  
+                  +-----------------------------------------+  
                   |       Analyze Action Dependencies       |  
-                  \+-----------------------------------------+  
+                  +-----------------------------------------+  
                                        |  
                      ├─────────────────┼─────────────────┐  
                      | (Low Risk /     | (Read-Only      | (Mutation Tool /  
                      |  Chitchat)      |  Tool Call)     |  Irreversible Action)   
                      v                 v                 v  
-          \+------------------+ \+------------------+ \+------------------+  
+          +------------------+ +------------------+ +------------------+  
           | Stream Speech    | | Stream Filler/   | | Wait Silently /  |  
           | Immediately      | | speculative turn | | Resolve Tool     |  
           | (No Buffer)      | | "Let me check..."| | (Verify Payload) |  
-          \+------------------+ \+------------------+ \+------------------+  
+          +------------------+ +------------------+ +------------------+  
                      |                 |                 |  
                      |                 v                 |  
-                     |         \+------------------+      |  
+                     |         +------------------+      |  
                      |         |  Execute Tool    |      |  
                      |         |  Asynchronously  |      |  
-                     |         \+------------------+      |  
+                     |         +------------------+      |  
                      |                 |                 |  
                      v                 v                 v  
-          \+------------------------------------------------------------+  
+          +------------------------------------------------------------+  
           |                  Synthesize Verbal Output                  |  
-          \+------------------------------------------------------------+
+          +------------------------------------------------------------+
+```
 
 To programmatically enforce these paths, the dialogue coordinator executes based on defined policy rules:
 
@@ -393,10 +401,10 @@ To control synthetic voice output, the synthesis engine structures its commands 
 | Parameter Target | Control Value / Range | Algorithmic Mechanism | Target Output Behavior |
 | :---- | :---- | :---- | :---- |
 | **Voice Selection** | Corporate Profile Clones 27 | Neural speaker embedding mapping | Anchor brand personality.27 |
-| **Speaking Rate** | 130 \- 180 words/min 17 | Linear time-scaling DSP filters | Slow for numbers, fast for summaries.46 |
-| **Pitch Contour** | \-12 to \+12 semitones 36 | F0 frequency-domain pitch shifting | Dynamic intonation peaks. |
+| **Speaking Rate** | 130 - 180 words/min 17 | Linear time-scaling DSP filters | Slow for numbers, fast for summaries.46 |
+| **Pitch Contour** | -12 to +12 semitones 36 | F0 frequency-domain pitch shifting | Dynamic intonation peaks. |
 | **Intonation Style** | Rising / Falling contours | Prosodic pitch trajectory modulation | Signal question vs firm statement.44 |
-| **Pause Insertion** | 100 ms \- 1200 ms 36 | Frame zero-padding injection 36 | Mimic breathing, separate sentences.36 |
+| **Pause Insertion** | 100 ms - 1200 ms 36 | Frame zero-padding injection 36 | Mimic breathing, separate sentences.36 |
 | **Emphasis Index** | 1.0 to 1.5 scale factor | Dynamic amplitude & pitch scaling | Highlight critical dates or terms.25 |
 | **Pronunciation** | Lexicon/IPA mappings 11 | Grapheme-to-phoneme override dictionaries | Prevent misreading industry jargon.11 |
 | **Spelling Mode** | Character-by-character spelling 6 | Interleaved spelling character strings | Speak codes/names letter-by-letter.6 |
@@ -423,28 +431,30 @@ A natural voice system must allow the user to interrupt the agent at any point d
 Managing interruption is difficult because the system must capture the user's speech while playing its own audio through the device's speakers.5 This creates acoustic echo: the agent's output travels through the air and enters the microphone, which the system can mistake for a user interruption.  
 To solve this, architectures implement a **Hybrid Client-Server Interruption Pipeline** 34:
 
-\+---------------------------------------------------------------------------------------------------------+  
+```
++---------------------------------------------------------------------------------------------------------+  
 |                                    HYBRID INTERRUPTION COORDINATION                                     |  
-\+---------------------------------------------------------------------------------------------------------+  
++---------------------------------------------------------------------------------------------------------+  
 |                                                                                                         |  
 |                                                                      |  
-|  Microphone Capture \---\> WebRTC AEC3 (Eco Suppression) \---\> Client VAD (Wasm)                           |  
+|  Microphone Capture ---> WebRTC AEC3 (Eco Suppression) ---> Client VAD (Wasm)                           |  
 |                                                                    |                                    |  
-|                                                                    | (Sustained Speech \> 100ms)  |  
+|                                                                    | (Sustained Speech > 100ms)  |  
 |                                                                    v                                    |  
 |                                                                                |  
-|                                                       1\. Mute local playback speaker instantly  |  
-|                                                       2\. Send high-priority truncate message    |  
+|                                                       1. Mute local playback speaker instantly  |  
+|                                                       2. Send high-priority truncate message    |  
 |                                                                    |                                    |  
 |                                                                    v                                    |  
 |                                                                                  |  
 |  Receive Truncate Message ─────────────────────────────────────────┘                                    |  
 |         │                                                                                               |  
-|         ├──────\> Halt Streaming TTS (Close WebSocket)                                            |  
-|         ├──────\> Cancel In-Flight LLM Generation                                                 |  
-|         └──────\> Reconstruct Interrupted Context (Preserve playhead timestamp)            |  
+|         ├──────> Halt Streaming TTS (Close WebSocket)                                            |  
+|         ├──────> Cancel In-Flight LLM Generation                                                 |  
+|         └──────> Reconstruct Interrupted Context (Preserve playhead timestamp)            |  
 |                                                                                                         |  
-\+---------------------------------------------------------------------------------------------------------+
++---------------------------------------------------------------------------------------------------------+
+```
 
 1. **Acoustic Echo Cancellation (AEC)**: The client or server runs a partitioned block frequency-domain adaptive filter (e.g., WebRTC AEC3).35 AEC3 cross-correlates the playback speaker reference signal with the microphone capture signal, modeling the room's reverberation tail (100 ms to 300 ms) to isolate and cancel the agent's own voice from the incoming stream.35  
 2. **Client-Side Edge VAD**: To eliminate network round-trip delays (50 ms to 150 ms), the client application runs a lightweight neural VAD (compiled to WebAssembly) inside a browser AudioWorklet or mobile audio background thread.34  
@@ -465,7 +475,7 @@ Not all incoming speech during agent playback represents an intent to seize the 
 | **New Task** | "Actually, book Wednesday." | Semantic intent shift 1 | Purge current session cache | Terminate running model threads, start new execution.5 |
 | **Clarification** | "Wait, what?" 1 | Question pattern detection | Transition to **REPAIR** state | Generate explanatory sidebar text immediately.25 |
 | **Backchannel** | "mm-hmm", "okay" 1 | Short acoustic/duration signature | Ignore interruption; keep floor | Maintain current playback; do not halt audio buffer.1 |
-| **Ambient Noise** | \[Cough\], | Low speech probability from VAD | Reject classification 1 | Maintain current playback.1 |
+| **Ambient Noise** | Cough], | Low speech probability from VAD | Reject classification 1 | Maintain current playback.1 |
 | **Assistant Echo** | Agent's own words leaking | AEC linear filter correlation | Reject classification 35 | Unmute client playback if muted speculatively.34 |
 | **Bystander Speech** | Multi-speaker chatter 3 | Diarization ID mismatch 3 | Ignore segment 3 | Maintain current playback.3 |
 
@@ -489,34 +499,36 @@ Conversational analysis classifies repairs into two categories based on who init
 
 In human dialogue, these are managed using specific, structured patterns 25:
 
-                  \+-----------------------------------------+  
+```
+                  +-----------------------------------------+  
                   |      Comprehension / Confidence Gate    |  
-                  \+-----------------------------------------+  
+                  +-----------------------------------------+  
                                        |  
                    ┌───────────────────┼───────────────────┐  
                    | (High Confidence) | (Low Confidence/  | (Ambiguous  
                    |                   |  Entity Error)    |  Resolution)  
                    v                   v                   v  
-          \+------------------+ \+------------------+ \+------------------+  
+          +------------------+ +------------------+ +------------------+  
           | Proceed to Turn  | | Explicit Request | | Restricted Offer |  
           | Completion       | | "Can you spell?" | | "Do you mean A?"   
-          \+------------------+ \+------------------+ \+------------------+  
+          +------------------+ +------------------+ +------------------+  
                                        |                   |  
                                        v                   v  
-                               \+---------------------------------------+  
+                               +---------------------------------------+  
                                |     Process User Correction / Response|  
-                               \+---------------------------------------+  
+                               +---------------------------------------+  
                                                    |  
                                                    v  
-                               \+---------------------------------------+  
+                               +---------------------------------------+  
                                |      Update Active Dialogue State     |  
-                               \+---------------------------------------+
+                               +---------------------------------------+
+```
 
 To implement these repair dynamics, production architectures run three primary repair patterns based on confidence scoring and entity classification 25:
 
 | Repair Modality | Triggering Condition | Algorithmic Mechanism | Verbal Prompts / Patterns | Escalation Threshold |
 | :---- | :---- | :---- | :---- | :---- |
-| **Confidence Clarification** | Overall STT confidence drops below threshold (0.50 \- 0.70) 41 | Open request prompting for repetition | "I'm sorry, I didn't quite catch that. Could you please repeat what you said?" 25 | Strike 1: Prompt again. Strike 2: Slow down output tempo.46 |
+| **Confidence Clarification** | Overall STT confidence drops below threshold (0.50 - 0.70) 41 | Open request prompting for repetition | "I'm sorry, I didn't quite catch that. Could you please repeat what you said?" 25 | Strike 1: Prompt again. Strike 2: Slow down output tempo.46 |
 | **Explicit Readback** | Critical alphanumeric capture completed 6 | Repeat exact parameter with confirm request | "I heard your account number is four five six seven. Is that correct?" 9 | Target parameter rejection resets input field buffer.9 |
 | **Spelling Mode** | Phonetic spelling mismatch on proper nouns 8 | Character-by-character grapheme collector | "Could you please spell your last name letter-by-letter?" 8 | Trigger automatic lookup matching phonetic dictionaries.11 |
 | **Digit-by-Digit Mode** | Alphanumeric string segmentation fail 10 | Disfluent digit capture filter | "Please repeat the routing code, saying each number slowly and separately." | Limit field capture size, fallback to DTMF/Keypad.46 |
@@ -531,48 +543,50 @@ When voice interfaces are connected to agentic tool execution environments (e.g.
 
 Architectures enforce a **Voice-to-Action Gate** that classifies every requested tool invocation by risk and binds its execution to strict transcript and confidence metrics.
 
-                  \+-----------------------------------------+  
+```
+                  +-----------------------------------------+  
                   |         Proposed Spoken Command         |  
-                  \+-----------------------------------------+  
+                  +-----------------------------------------+  
                                        |  
                                        v  
-                  \+-----------------------------------------+  
+                  +-----------------------------------------+  
                   |   Classify Tool Action Risk Profile     |  
-                  \+-----------------------------------------+  
+                  +-----------------------------------------+  
                                        |  
             ┌──────────────────────────┼──────────────────────────┐  
             | (Read-Only)              | (Low-Risk Mutation)      | (High-Risk/Irreversible)   
             v                          v                          v  
-\+-----------------------+  \+-----------------------+  \+-----------------------+  
++-----------------------+  +-----------------------+  +-----------------------+  
 |  Transcript Final &   |  |   Transcript Final,   |  |   Transcript Final,   |  
-|   Confidence \> 0.80   |  |   Confidence \> 0.90   |  |   Confidence \> 0.98   | \[41, 9\]  
-\+-----------------------+  \+-----------------------+  \+-----------------------+  
+|   Confidence > 0.80   |  |   Confidence > 0.90   |  |   Confidence > 0.98   | 41, 9]  
++-----------------------+  +-----------------------+  +-----------------------+  
             |                          |                          |  
             | (Criteria Met)           | (Criteria Met)           | (Requires explicit spoken readback)  
             v                          v                          v  
-\+-----------------------+  \+-----------------------+  \+-----------------------+  
++-----------------------+  +-----------------------+  +-----------------------+  
 |  Execute Instantly    |  | Lightweight Verbal    |  | "Confirm payload:     |  
 |  (No spoken confirm)  |  | "Done."        |  | Transfer $500?" |  
-\+-----------------------+  \+-----------------------+  \+-----------------------+
++-----------------------+  +-----------------------+  +-----------------------+
+```
 
 To implement this gating architecture, the system maps execution pathways to five primary action risk classes:
 
 | Action Risk Class | Target Operations | Transcript Stability Requirement | Minimum STT Confidence | Spoken Confirmation Policy | Visual/Multimodal Verification |
 | :---- | :---- | :---- | :---- | :---- | :---- |
-| **Read-Only / Informational** | Querying weather, checking flight time, reading account balances. | is\_final: true | \>= 0.80 | **None**: Execute instantly and speak results. | Optional; show data cards on display if available. |
-| **Low-Risk Local Mutation** | Creating a checklist item, adding calendar events. | is\_final: true | \>= 0.90 | **Lightweight**: State completion after execution ("Added."). | Render entry on screen for confirmation. |
-| **Low-Impact External Action** | Sending a standard Slack or team message. | is\_final: true | \>= 0.95 | **Explicit Intent Confirmation**: "Do you want me to send that message?" | Display draft message with recipient name. |
-| **High-Risk / Irreversible** | Financial wire transfers, system deployments, deleting files. | is\_final: true | \>= 0.98 | **Strict Payload Readback**: Read back the exact target, amount, and recipient before executing. | Mandate explicit PIN entry or bio-verification. |
-| **Critical Mutation** | Executing large refunds, modifying security access levels. | is\_final: true | 1.00 (Absolute certainty) | **Dual-Control Gating**: Voice interface registers intent, but requires manual administrator authorization. | Block voice execution; send confirmation link to registered device. |
+| **Read-Only / Informational** | Querying weather, checking flight time, reading account balances. | is_final: true | >= 0.80 | **None**: Execute instantly and speak results. | Optional; show data cards on display if available. |
+| **Low-Risk Local Mutation** | Creating a checklist item, adding calendar events. | is_final: true | >= 0.90 | **Lightweight**: State completion after execution ("Added."). | Render entry on screen for confirmation. |
+| **Low-Impact External Action** | Sending a standard Slack or team message. | is_final: true | >= 0.95 | **Explicit Intent Confirmation**: "Do you want me to send that message?" | Display draft message with recipient name. |
+| **High-Risk / Irreversible** | Financial wire transfers, system deployments, deleting files. | is_final: true | >= 0.98 | **Strict Payload Readback**: Read back the exact target, amount, and recipient before executing. | Mandate explicit PIN entry or bio-verification. |
+| **Critical Mutation** | Executing large refunds, modifying security access levels. | is_final: true | 1.00 (Absolute certainty) | **Dual-Control Gating**: Voice interface registers intent, but requires manual administrator authorization. | Block voice execution; send confirmation link to registered device. |
 
 ### **Think-Before-Speak Reasoning Paradigms**
 
 To avoid executing tools on conversational filler sentences, production architectures employ a **Think-Before-Speak Mechanism** (e.g., VoxMind architecture).38 Before generating any synthesized audio, the agentic model is trained to emit a structured internal reasoning trajectory.38 This internal thought token sequence is evaluated strictly inside a hidden context, allowing the model to interpret tool schemas, plan multi-turn dependent actions, and format parameters before committing to a spoken phrase.  
 This process is augmented using self-reflection control tokens (such as the Speech-Hands framework). During the inference pass, the agent generates control tokens from a learned action set, directing its cognitive flow:
 
-* **\<internal\>**: The system is highly confident in its phonetic understanding and executes direct inference.9  
-* **\<external\>**: The system detects high local acoustic ambiguity and triggers external verification tools.9  
-* **\<rewrite\>**: The system flags a logical mismatch between its transcription and downstream API schemas, triggering an internal dialogue state correction and re-evaluating the user's intent before acting.9
+* **<internal>**: The system is highly confident in its phonetic understanding and executes direct inference.9  
+* **<external>**: The system detects high local acoustic ambiguity and triggers external verification tools.9  
+* **<rewrite>**: The system flags a logical mismatch between its transcription and downstream API schemas, triggering an internal dialogue state correction and re-evaluating the user's intent before acting.9
 
 ## **Voice Identity, Consent, and Security**
 
@@ -582,32 +596,34 @@ Voice interaction surfaces are vulnerable to identity spoofing, biometric replic
 
 As voice synthesis models improve, neural voice clones can easily bypass standard, legacy voice biometrics. To defend against biometric identity theft and replay attacks, security architectures implement three layers of physical and cryptographic controls :
 
-#### **1\. Real-time Liveness Detection & Anti-Spoofing**
+#### **1. Real-time Liveness Detection & Anti-Spoofing**
 
 The system processes the incoming raw audio stream using deep neural networks trained to detect synthetic audio signatures (such as Resemble's DETECT-2B or Mamba-SSM architecture).27 These models analyze acoustic artifacts, phase-reconstruction anomalies, and high-frequency spectral patterns that are imperceptible to humans but present in AI-generated waveforms.27 If synthetic artifacts are detected, the biometric match is rejected, and the system prompts the user for multi-factor authentication (MFA).46
 
-#### **2\. Cryptographic Content Watermarking**
+#### **2. Cryptographic Content Watermarking**
 
 All synthetic audio synthesized by the system must embed a tamper-resistant, imperceptible digital watermark (e.g., Resemble's PerTH watermarking scheme).27 This watermark modifies the spectral domain of the synthesized waveform so that it carries a statistically detectable pattern that survives compressed audio transport (such as cell-phone codecs or WebRTC channels) over the network without degrading audio quality.19 Any audio capture presented to the system as input is checked for this watermark; if the watermark is present, the system immediately recognizes the audio as machine-generated, blocking replay or spoofing attempts.27
 
-#### **3\. Cryptographic Provenance Standards (C2PA)**
+#### **3. Cryptographic Provenance Standards (C2PA)**
 
 To establish an unbroken chain of custody, real-time voice assets are bound to cryptographic metadata manifests in accordance with the **Coalition for Content Provenance and Authenticity (C2PA)** and Adobe Content Authenticity Initiative (CAI) specifications.19
 
-\+---------------------------------------------------------------------------------------------------------+  
+```
++---------------------------------------------------------------------------------------------------------+  
 |                                        C2PA CRYPTOGRAPHIC MANIFEST                                      |  
-\+---------------------------------------------------------------------------------------------------------+  
++---------------------------------------------------------------------------------------------------------+  
 |                                                                                                         |  
 |                                                                       |  
-|  Brand Private Key (KMS/HSM) \---\> Sign Manifest Hash ───\> Tamper-evident C2PA Manifest    |  
+|  Brand Private Key (KMS/HSM) ---> Sign Manifest Hash ───> Tamper-evident C2PA Manifest    |  
 |                                                                                                         |  
 |                                                                                  |  
 |  {                                                                                                      |  
-|    "assertions": \[... \],                                                                               |  
-|    "signature": "COSE\_Sign1\_Signature\_Bytes\_Cryptographically\_Linked\_to\_Audio\_Hash"                     |  
+|    "assertions": ... ],                                                                               |  
+|    "signature": "COSE_Sign1_Signature_Bytes_Cryptographically_Linked_to_Audio_Hash"                     |  
 |  }                                                                                                      |  
 |                                                                                                         |  
-\+---------------------------------------------------------------------------------------------------------+
++---------------------------------------------------------------------------------------------------------+
+```
 
 When the voice agent synthesizes a stream, it hashes the output audio frames, binds them to a tamper-evident C2PA manifest asserting AI involvement and corporate origin, and cryptographically signs the manifest using a private key secured in a Hardware Security Module (HSM) or cloud Key Management Service (KMS).19 Downstream consumer applications can verify this signature against trusted root authorities, instantly validating origin and proving the "receipts" of the AI's statements.19
 
@@ -633,26 +649,28 @@ Voice-first design must never mean voice-only.46 While real-time speech interfac
 
 To ensure universal accessibility, real-time voice architectures must integrate inclusive-speech layers:
 
-                  \+-----------------------------------------+  
+```
+                  +-----------------------------------------+  
                   |         Incoming User Audio             |  
-                  \+-----------------------------------------+  
+                  +-----------------------------------------+  
                                        |  
                                        v  
-                  \+-----------------------------------------+  
+                  +-----------------------------------------+  
                   |        Speech Classifier Mode           |  
-                  \+-----------------------------------------+  
+                  +-----------------------------------------+  
                                        |  
                      ├─────────────────┼─────────────────┐  
                      | (Standard       | (Stutter /      | (Non-Verbal /  
                      |  Speech)        |  Dysarthria)    |  AAC Input)  
                      v                 v                 v  
-          \+------------------+ \+------------------+ \+------------------+  
+          +------------------+ +------------------+ +------------------+  
           | Standard VAD /   | | Extend Silence   | | Redirect to      |  
           | Fast Turn-Taking | | Hangover (1500ms)| | Text Chat /      |  
           | (400ms Silence)  | | Bypass Repeats   | | Visual UI Form   |   
-          \+------------------+ \+------------------+ \+------------------+
+          +------------------+ +------------------+ +------------------+
+```
 
-* **Stutter-Aware Endpointing**: Users who stutter experience involuntary sound repetitions, prolongations, or silent blocks. Standard endpointing cutoffs will segment their sentences prematurely. The dialogue coordinator must detect repetitive syllable patterns or acoustic blocks and automatically extend the max silence threshold to 2500 ms \- 4000 ms, preventing premature interruption and allowing the speaker to finish their thought at their own pace.  
+* **Stutter-Aware Endpointing**: Users who stutter experience involuntary sound repetitions, prolongations, or silent blocks. Standard endpointing cutoffs will segment their sentences prematurely. The dialogue coordinator must detect repetitive syllable patterns or acoustic blocks and automatically extend the max silence threshold to 2500 ms - 4000 ms, preventing premature interruption and allowing the speaker to finish their thought at their own pace.  
 * **Atypical Speech Models**: Classic STT decoders trained on standard pronunciation frequently misidentify slurred, strained, or atypically paced speech caused by dysarthria, cerebral palsy, or Parkinson's disease. Production pipelines route atypical audio through specialized speech recognition models (e.g., Voiceitt's atypical speech API) that adapt dynamically to individual vocal patterns, converting disjointed acoustics into clear, reconstructed text.  
 * **Multimodal Fallbacks**: For hearing-impaired users or non-verbal individuals, the interface must present synchronized visual captions, interactive text-entry alternatives, and support for Augmentative and Alternative Communication (AAC) device speech output. The system must allow users to transition between voice, touch, and text typing at any point during the session without losing conversation state or history.
 
@@ -662,14 +680,14 @@ Implementing accessible interfaces requires programmatic constraints to support 
 
 | Target Disability Category | Specific Acoustic Challenge | Technical Mitigation Strategy | System Fallback Mechanism |
 | :---- | :---- | :---- | :---- |
-| **Motor & Physical** | Inability to press physical keys or hold devices. | Native voice wake-word \+ local VAD processing.39 | Dynamic push-to-talk toggling.54 |
+| **Motor & Physical** | Inability to press physical keys or hold devices. | Native voice wake-word + local VAD processing.39 | Dynamic push-to-talk toggling.54 |
 | **Low Vision / Blind** | Inability to inspect screens or visual cards.46 | Strict verbal descriptive summaries of visual state.46 | Screen-reader compliant LaTeX / HTML output. |
 | **Dyslexia / Cognitive** | Working memory load limits on long spoken sentences.46 | Clamp speaking rate below 140 words/min.46 | Push persistent summary transcripts to the client visual display.46 |
 | **Hearing Impairments** | Inability to hear synthesized audio output.46 | Stream real-time visual closed-caption arrays.46 | Full download of session text transcript.46 |
 | **Stutter / Stammer** | Involuntary blocks, prolongations, repetitions.51 | Extended semantic VAD thresholds, ignore syllable loops. | Toggle conversational pace setting to "Slow".39 |
 | **Dysarthria / Slurred** | Muscular weakness altering consonant articulation.46 | Specialized acoustic training adapters (Voiceitt databases).55 | Refine input via local LLM grammar reconstruction.47 |
-| **Aphasia** | Long pauses, word-retrieval struggle, fragments.46 | Extend silence hangover to \> 3.0 s dynamically.46 | Use predictive word bank suggestions on visual displays.46 |
-| **Temporary / Environmental** | Noisy cafés, laryngitis, dental recovery.46 | Noise-aware filtering \+ WebRTC AGC adjustments.35 | Switch dynamically to non-verbal text-chat messaging.46 |
+| **Aphasia** | Long pauses, word-retrieval struggle, fragments.46 | Extend silence hangover to > 3.0 s dynamically.46 | Use predictive word bank suggestions on visual displays.46 |
+| **Temporary / Environmental** | Noisy cafés, laryngitis, dental recovery.46 | Noise-aware filtering + WebRTC AGC adjustments.35 | Switch dynamically to non-verbal text-chat messaging.46 |
 
 ## **Voice Privacy and Environment Model**
 
@@ -678,8 +696,8 @@ Because speech is an active acoustic waveform projected into physical space, voi
 | Operational Environment | Privacy Hazard | Technical Defense Protocol | Fallback / Safe State |
 | :---- | :---- | :---- | :---- |
 | **Public Place / Transport** | Shoulder-surfing acoustics, bystander overhearing.19 | Private Content Filter: Restrict financial/personal parameter readbacks.46 | Dynamic redirect to private smartphone display cards.46 |
-| **Noisy Home / Office** | Accidental capture of background conversations or television.2 | Neural speaker-separation \+ diarization classification.3 | Ignore audio frames mapping to non-primary diarization IDs.3 |
-| **Shared Workplace** | Capturing private background speech from coworkers.36 | Local wake-word validation \+ near-field microphone limits.39 | Shut down media plane if signal-to-noise ratio drops below 10 dB. |
+| **Noisy Home / Office** | Accidental capture of background conversations or television.2 | Neural speaker-separation + diarization classification.3 | Ignore audio frames mapping to non-primary diarization IDs.3 |
+| **Shared Workplace** | Capturing private background speech from coworkers.36 | Local wake-word validation + near-field microphone limits.39 | Shut down media plane if signal-to-noise ratio drops below 10 dB. |
 | **Static Secure Room** | Eavesdropping via always-listening cloud connections.36 | Hardware Push-to-Talk (PTT) / physical mute triggers.36 | Terminate media stream socket; run local-only VAD.34 |
 | **Compliance Monitored** | Accidental capture of PCI/PHI metadata.36 | Real-time regex and entity redaction on STT pipeline. | Quarantine target transcript blocks; raise security flag. |
 
@@ -690,23 +708,23 @@ Real-time voice systems are vulnerable to failure modes that do not exist in tex
 | Failure Mode | User-Visible Symptom | Technical Root Cause | Detection Signal / Trigger Metric | Mitigation & Architectural Prevention |
 | :---- | :---- | :---- | :---- | :---- |
 | **False Endpoint** | Agent cuts off the user mid-sentence or mid-thought, speaking over them.1 | Silence thresholds are too short or VAD registers silence during thoughtful pauses.1 | Post-interruption user correction rate / Overlap duration.1 | Deploy Hybrid Semantic-Acoustic VAD; extend pause thresholds on trailing conjunctions.20 |
-| **Late Endpoint** | The agent takes 1.5 s \- 2 s to respond, creating dead air.1 | Silence thresholds are set too high or wait for forced timeout.38 | Turn Latency / User repeat prompt rate.4 | Use punctuation-based turn detection or eager semantic classification.39 |
-| **Clipped Speech** | The STT engine misses the last word of the user's sentence.1 | VAD closes the capture buffer immediately upon silence, chopping trailing phonemes.1 | Under-transcribed word error rate / Speech-stopped timestamp overlap. | Apply a minimum trailing padding (150 ms \- 200 ms) after VAD silence detection.5 |
-| **Overtalk / Overlap** | Both user and agent speak simultaneously, creating chaotic crosstalk.22 | State machine fails to yield floor or slow network delay.2 | Double-talk duration \> 300 ms.2 | Calibrate WebRTC AEC3; enforce strict floor yield rules.5 |
-| **Dead Air** | Conversation halts, neither party speaks, session feels broken.22 | Silence timeout fails to trigger or LLM reasoning hangs.4 | Continuous silence duration \> 3.5 s.4 | Play comforting background hum or dispatch verbal status updates. |
-| **False Barge-In** | Agent stops speaking prematurely on brief background noises (cough, click, door slam).5 | High-sensitivity VAD threshold with no duration guardrails.5 | Interruption rate / False interruption count.5 | Implement a minimum sustained-speech duration guard (150 ms \- 250 ms) before triggering truncation.5 |
+| **Late Endpoint** | The agent takes 1.5 s - 2 s to respond, creating dead air.1 | Silence thresholds are set too high or wait for forced timeout.38 | Turn Latency / User repeat prompt rate.4 | Use punctuation-based turn detection or eager semantic classification.39 |
+| **Clipped Speech** | The STT engine misses the last word of the user's sentence.1 | VAD closes the capture buffer immediately upon silence, chopping trailing phonemes.1 | Under-transcribed word error rate / Speech-stopped timestamp overlap. | Apply a minimum trailing padding (150 ms - 200 ms) after VAD silence detection.5 |
+| **Overtalk / Overlap** | Both user and agent speak simultaneously, creating chaotic crosstalk.22 | State machine fails to yield floor or slow network delay.2 | Double-talk duration > 300 ms.2 | Calibrate WebRTC AEC3; enforce strict floor yield rules.5 |
+| **Dead Air** | Conversation halts, neither party speaks, session feels broken.22 | Silence timeout fails to trigger or LLM reasoning hangs.4 | Continuous silence duration > 3.5 s.4 | Play comforting background hum or dispatch verbal status updates. |
+| **False Barge-In** | Agent stops speaking prematurely on brief background noises (cough, click, door slam).5 | High-sensitivity VAD threshold with no duration guardrails.5 | Interruption rate / False interruption count.5 | Implement a minimum sustained-speech duration guard (150 ms - 250 ms) before triggering truncation.5 |
 | **Missed Barge-In** | User says "stop" or "no", but the agent continues speaking over them.5 | Poor acoustic echo cancellation or high local client jitter buffer.5 | High overlap duration / User speech amplitude spike during output. | Calibrate WebRTC AEC3; implement immediate local speaker muting on client-side VAD speech onset.34 |
 | **Echo Interruption** | The agent interrupts itself as soon as it begins speaking. | The agent's output leaks into the microphone and triggers the VAD.5 | Autocorrelation match between output and input streams.35 | Route speaker reference audio back to WebRTC AEC3; calibrate delay estimation parameters.35 |
-| **Partial Action Mutation** | An API database change is executed on a sentence before it is finished.6 | Dialogue coordinator acts on an unstable partial transcript.6 | Database rollback count / API execution timestamp preceding speech\_final.6 | Restrict mutation tool access to finalized, stable transcripts with explicit confirm gates. |
-| **Transcript Revision** | The system processes a parameter (e.g., "$15" vs "$50") but the STT later revises the text after execution. | Over-optimistic parsing of interim results.6 | Post-execution revision count / Transcript mismatch rate.6 | Buffer state execution until is\_final: true is returned by the decoder.6 |
+| **Partial Action Mutation** | An API database change is executed on a sentence before it is finished.6 | Dialogue coordinator acts on an unstable partial transcript.6 | Database rollback count / API execution timestamp preceding speech_final.6 | Restrict mutation tool access to finalized, stable transcripts with explicit confirm gates. |
+| **Transcript Revision** | The system processes a parameter (e.g., "$15" vs "$50") but the STT later revises the text after execution. | Over-optimistic parsing of interim results.6 | Post-execution revision count / Transcript mismatch rate.6 | Buffer state execution until is_final: true is returned by the decoder.6 |
 | **Entity Miscapture** | The agent mishears proper nouns, names, or addresses, causing task failure.1 | Out-of-vocabulary phoneme mapping on specialized terms.11 | Downstream validation failures / Specific Entity WER.1 | Initialize STT connections with keyterm prompts and domain-specific pronunciation dictionaries.11 |
-| **Wrong Speaker** | Commands from a background bystander are processed as user intent.3 | Lack of speaker diarization or biometric verification.3 | Speaker embedding distance \> threshold on active turn.3 | Bind the active session context strictly to the authenticated user's voice footprint.3 |
+| **Wrong Speaker** | Commands from a background bystander are processed as user intent.3 | Lack of speaker diarization or biometric verification.3 | Speaker embedding distance > threshold on active turn.3 | Bind the active session context strictly to the authenticated user's voice footprint.3 |
 | **Speaker Spoofing** | Unauthorized user gains access using a recorded or synthesized voice.27 | Vulnerable biometric voice verification system lacking anti-spoofing controls.27 | Verification security alert rate.27 | Run active liveness detection; verify synthetic watermarks on inputs; enforce multi-factor authentication.27 |
-| **Accent Failure** | Accuracy drops dramatically for non-standard English accents.53 | Training data under-represents regional pronunciations.53 | Segment-level WER \> 15% on accented accounts.53 | Implement multi-scale acoustic feature recalibration networks.43 |
+| **Accent Failure** | Accuracy drops dramatically for non-standard English accents.53 | Training data under-represents regional pronunciations.53 | Segment-level WER > 15% on accented accounts.53 | Implement multi-scale acoustic feature recalibration networks.43 |
 | **Stutter Cutoff** | User with a stutter is cut off after repeating initial syllables.47 | Rapid syllable breaks are registered by VAD as silent turn-yielding pauses. | High session abandonment rate for accessibility segments.47 | Dynamically switch to the Inclusive/Accessibility profile; extend max turn silence.38 |
-| **Noisy Room Fail** | System loops constantly, unable to process clean speech.36 | Environmental noise overrides energy thresholds.38 | Frame classification entropy \> 0.8.38 | Calibrate adaptive noise filters; switch client settings to WebRTC level 3\.35 |
-| **Latency Cliff** | Conversations drop below human conversational pace (\> 1.2 s).4 | Lack of stream-pipelining; slow model inference; geographic server-client distance.4 | End-to-End Latency distribution (P95 \> 1000 ms).4 | Enforce concurrent sentence-buffered TTS streaming; peer transceivers close to major network hubs.30 |
-| **TTS delay** | Long gap between LLM first token and audio playback onset. | Sentence buffer is set too large or TTS synthesis is too slow.4 | TTS Synthesis time-to-first-audio (TTFA) \> 300 ms.4 | Utilize low-latency synthetic voices; stream first chunk before completing sentence.4 |
+| **Noisy Room Fail** | System loops constantly, unable to process clean speech.36 | Environmental noise overrides energy thresholds.38 | Frame classification entropy > 0.8.38 | Calibrate adaptive noise filters; switch client settings to WebRTC level 3.35 |
+| **Latency Cliff** | Conversations drop below human conversational pace (> 1.2 s).4 | Lack of stream-pipelining; slow model inference; geographic server-client distance.4 | End-to-End Latency distribution (P95 > 1000 ms).4 | Enforce concurrent sentence-buffered TTS streaming; peer transceivers close to major network hubs.30 |
+| **TTS delay** | Long gap between LLM first token and audio playback onset. | Sentence buffer is set too large or TTS synthesis is too slow.4 | TTS Synthesis time-to-first-audio (TTFA) > 300 ms.4 | Utilize low-latency synthetic voices; stream first chunk before completing sentence.4 |
 | **Streaming Contradiction** | Agent begins speaking a claim, then halts and corrects itself mid-sentence. | The streaming LLM changed its reasoning direction after partial tokens were already sent to synthesis. | Self-correction count in active speaker streams.8 | Implement a minimum lookahead token buffer before dispatching to TTS; enforce semantic sentence buffering.11 |
 | **Tool Result Outrun** | Agent says "Your money has been sent" but the payment API fails 2 s later. | Claim generated before tool execution state was verified. | Claim-to-Reality validation failures. | Restrict vocalized completions until the execution engine returns a verified success payload.9 |
 | **Under-Repair** | System repeatedly misinterprets input without launching clarification loops.8 | Lacks confidence threshold filters.1 | Repetitive intent correction loops.8 | Execute Targeted Restricted Requests on any entity confidence drops.25 |
@@ -726,31 +744,31 @@ Establishing continuous observability over live voice sessions requires tracking
 
 | Metric Category | Technical Metric Identifier | Diagnostic Target | Production Target Threshold |
 | :---- | :---- | :---- | :---- |
-| **Speech Accuracy** | Word Error Rate (WER) 1 | General phonetic transcription accuracy | \< 5.0% under standard conditions.11 |
-| **Speech Accuracy** | Entity-specific WER 1 | Alphanumeric and proper noun accuracy | \< 1.5% on prioritized codes.10 |
-| **Transcription** | Transcript Stability Score 6 | Partial token volatility index | Stability confidence \> 0.85.6 |
-| **Transcription** | Partial-to-Final Revision Rate | Frequency of finalized text corrections | \< 4.0% post-emission revision rate.6 |
-| **Endpointing** | Turn-End Detection Latency 4 | Duration from speech stop to committed turn | 250 ms \- 450 ms average turn gap.1 |
-| **Endpointing** | Cutoff Error Rate 1 | Percentage of turns prematurely truncated | \< 1.5% on conversational sessions.1 |
-| **Endpointing** | False Endpoint Rate 1 | VAD silence false-positive triggers | \< 2.0 instances per hour.1 |
-| **Endpointing** | VAD False-Negative Rate 1 | Missed user speech frames | \< 1.0% under noisy cafes.1 |
-| **Barge-In** | Barge-In Detection Latency 5 | Duration to register user interruption | \< 120 ms post-speech onset.5 |
-| **Barge-In** | False Barge-In Rate | Agent stops on noise/coughs/clicks | \< 1.0% on environmental noise. |
-| **Barge-In** | Missed Barge-In Rate 5 | Failure of agent to yield floor | \< 1.5% on explicit interruptions.5 |
-| **Barge-In** | Interruption Recovery Time | Time to synthesize new path post-stop | \< 150 ms total recovery window.5 |
-| **Model Serving** | Model First-Token Latency | LLM Time-to-First-Token (TTFT) | \< 150 ms from committed turn. |
-| **Voice Synthesis** | TTS First-Audio Latency 4 | Synthesis Time-to-First-Audio (TTFA) | \< 120 ms from sentence buffer.4 |
-| **Media Playback** | Playback Jitter Buffer Delay 5 | Downlink client buffering lag | Keep dynamic size \< 60 ms.5 |
-| **E2E Dynamic** | Turn Latency (T\_streaming) 16 | End-of-speech to start-of-audio | \< 700 ms average conversational.4 |
+| **Speech Accuracy** | Word Error Rate (WER) 1 | General phonetic transcription accuracy | < 5.0% under standard conditions.11 |
+| **Speech Accuracy** | Entity-specific WER 1 | Alphanumeric and proper noun accuracy | < 1.5% on prioritized codes.10 |
+| **Transcription** | Transcript Stability Score 6 | Partial token volatility index | Stability confidence > 0.85.6 |
+| **Transcription** | Partial-to-Final Revision Rate | Frequency of finalized text corrections | < 4.0% post-emission revision rate.6 |
+| **Endpointing** | Turn-End Detection Latency 4 | Duration from speech stop to committed turn | 250 ms - 450 ms average turn gap.1 |
+| **Endpointing** | Cutoff Error Rate 1 | Percentage of turns prematurely truncated | < 1.5% on conversational sessions.1 |
+| **Endpointing** | False Endpoint Rate 1 | VAD silence false-positive triggers | < 2.0 instances per hour.1 |
+| **Endpointing** | VAD False-Negative Rate 1 | Missed user speech frames | < 1.0% under noisy cafes.1 |
+| **Barge-In** | Barge-In Detection Latency 5 | Duration to register user interruption | < 120 ms post-speech onset.5 |
+| **Barge-In** | False Barge-In Rate | Agent stops on noise/coughs/clicks | < 1.0% on environmental noise. |
+| **Barge-In** | Missed Barge-In Rate 5 | Failure of agent to yield floor | < 1.5% on explicit interruptions.5 |
+| **Barge-In** | Interruption Recovery Time | Time to synthesize new path post-stop | < 150 ms total recovery window.5 |
+| **Model Serving** | Model First-Token Latency | LLM Time-to-First-Token (TTFT) | < 150 ms from committed turn. |
+| **Voice Synthesis** | TTS First-Audio Latency 4 | Synthesis Time-to-First-Audio (TTFA) | < 120 ms from sentence buffer.4 |
+| **Media Playback** | Playback Jitter Buffer Delay 5 | Downlink client buffering lag | Keep dynamic size < 60 ms.5 |
+| **E2E Dynamic** | Turn Latency (T_streaming) 16 | End-of-speech to start-of-audio | < 700 ms average conversational.4 |
 | **Action Gating** | Tool-Gating Precision | Safe blocking of unauthorized tools | 100% precision on irreversible API mutations.9 |
-| **Dialogue Repair** | Confirmation Success Rate 9 | Explicit readback validation match | \> 98% confirm loop success.9 |
-| **Dialogue Repair** | Repair Success Rate 8 | Resolution of phonetic misunderstandings | \> 92% of clarification prompts resolved.8 |
-| **Dialogue Repair** | User Correction Rate 8 | Frequency of user repeating commands | \< 5.0% of active conversational turns.8 |
-| **Dialogue Repair** | Repeat Request Rate | User says "what did you say?" | \< 2.0% of active sessions. |
-| **Accessibility** | Accessibility Success Rate 46 | Task completion for impaired speech | \> 90% completion across atypical profiles.47 |
+| **Dialogue Repair** | Confirmation Success Rate 9 | Explicit readback validation match | > 98% confirm loop success.9 |
+| **Dialogue Repair** | Repair Success Rate 8 | Resolution of phonetic misunderstandings | > 92% of clarification prompts resolved.8 |
+| **Dialogue Repair** | User Correction Rate 8 | Frequency of user repeating commands | < 5.0% of active conversational turns.8 |
+| **Dialogue Repair** | Repeat Request Rate | User says "what did you say?" | < 2.0% of active sessions. |
+| **Accessibility** | Accessibility Success Rate 46 | Task completion for impaired speech | > 90% completion across atypical profiles.47 |
 | **System Security** | Privacy Incident Rate 1 | Public data leaks / bystander capture | 0 verified leaks under public context.1 |
-| **Conversational** | Abandonment Rate 26 | Call drop during breakdown sequences | \< 3.0% of active calling sessions.26 |
-| **Conversational** | User Satisfaction (MOS) 44 | Perceived naturalness / helpfulness | Mean Opinion Score \> 4.2 out of 5\. |
+| **Conversational** | Abandonment Rate 26 | Call drop during breakdown sequences | < 3.0% of active calling sessions.26 |
+| **Conversational** | User Satisfaction (MOS) 44 | Perceived naturalness / helpfulness | Mean Opinion Score > 4.2 out of 5. |
 
 ## **Cross-Canon Handoff Map**
 
@@ -780,83 +798,83 @@ The systems architecture of AI-ENG-Q interfaces directly with upstream and downs
 
 ## **Durable Principles of Real-Time Interaction Systems**
 
-### **1\. Timing is Semantic Content**
+### **1. Timing is Semantic Content**
 
 In real-time voice, pauses, turn transitions, intonation, and response latency carry equal semantic weight to the textual tokens themselves.1 A real-time voice system must treat conversational pace as a first-class optimization metric.4
 
-### **2\. Stream-Pipelining is Non-Negotiable**
+### **2. Stream-Pipelining is Non-Negotiable**
 
-To operate within human turn-taking expectations (200 ms \- 500 ms), a voice agent cannot run sequentially.22 Every stage of the pipeline—from client-side audio capture, streaming transcription, token generation, clause-boundary sentence buffering, to TTS synthesis—must execute concurrently and stream outputs continuously to the next stage.4
+To operate within human turn-taking expectations (200 ms - 500 ms), a voice agent cannot run sequentially.22 Every stage of the pipeline—from client-side audio capture, streaming transcription, token generation, clause-boundary sentence buffering, to TTS synthesis—must execute concurrently and stream outputs continuously to the next stage.4
 
-### **3\. Silence is Not the Same as an Endpoint**
+### **3. Silence is Not the Same as an Endpoint**
 
 Energy-based silence detection fails in real-world environments.1 Highly accurate turn-taking requires a hybrid semantic-acoustic model that combines frame-level acoustic VAD with real-time evaluation of linguistic completeness, prosodic contours, and conversational filler tokens, ensuring users are never prematurely cut off mid-thought.1
 
-### **4\. Spoken Claims Must Never Outrun Verified Reality**
+### **4. Spoken Claims Must Never Outrun Verified Reality**
 
 When a voice interface is connected to external systems, unconfirmed spoken statements can create false user expectations. All non-idempotent or high-impact actions must be validated, and their execution state verified, before the agent vocalizes completion, enforcing a strict confirm-gate on unstable transcripts.
 
-### **5\. Voice-First Must Never Mean Voice-Only**
+### **5. Voice-First Must Never Mean Voice-Only**
 
 Speech is biologically and socially variable.46 Real-time voice systems must incorporate inclusive-design adaptations to support speech differences (stutters, dysarthria, aphasia) and mandate alternative visual captions, manual touch fallbacks, and text alternative paths to ensure accessibility under all environmental and physical conditions.46
 
 #### **Works cited**
 
-1. Tackling Turn Detection in Voice AI: Overcoming Noise and Interruption Challenges \- Notch, accessed June 10, 2026, [https://www.notch.cx/post/turn-detection-in-voice-ai](https://www.notch.cx/post/turn-detection-in-voice-ai)  
-2. Human Latency Conversational Turns for Spoken Avatar Systems \- arXiv, accessed June 10, 2026, [https://arxiv.org/html/2404.16053v1](https://arxiv.org/html/2404.16053v1)  
-3. Streaming Speaker Diarization in Real Time: Guide \- AssemblyAI, accessed June 10, 2026, [https://www.assemblyai.com/blog/streaming-speaker-diarization](https://www.assemblyai.com/blog/streaming-speaker-diarization)  
-4. Building Enterprise Realtime Voice Agents from Scratch: A Technical Tutorial \- arXiv, accessed June 10, 2026, [https://arxiv.org/html/2603.05413v1](https://arxiv.org/html/2603.05413v1)  
-5. Voice AI Barge-In and Turn-Taking: A 2026 Implementation Guide \- Future AGI, accessed June 10, 2026, [https://futureagi.com/blog/voice-ai-barge-in-turn-taking-2026/](https://futureagi.com/blog/voice-ai-barge-in-turn-taking-2026/)  
-6. Configure Endpointing and Interim Results \- Deepgram's Docs, accessed June 10, 2026, [https://developers.deepgram.com/docs/understand-endpointing-interim-results](https://developers.deepgram.com/docs/understand-endpointing-interim-results)  
-7. Repair: The Interface Between Interaction and Cognition \- PMC, accessed June 10, 2026, [https://pmc.ncbi.nlm.nih.gov/articles/PMC6849777/](https://pmc.ncbi.nlm.nih.gov/articles/PMC6849777/)  
-8. System and User Strategies to Repair Conversational Breakdowns of Spoken Dialogue Systems: A Scoping Review | Request PDF \- ResearchGate, accessed June 10, 2026, [https://www.researchgate.net/publication/382076125\_System\_and\_User\_Strategies\_to\_Repair\_Conversational\_Breakdowns\_of\_Spoken\_Dialogue\_Systems\_A\_Scoping\_Review](https://www.researchgate.net/publication/382076125_System_and_User_Strategies_to_Repair_Conversational_Breakdowns_of_Spoken_Dialogue_Systems_A_Scoping_Review)  
-9. A Self-Reflection Voice Agentic Approach to Speech Recognition and Audio Reasoning with Omni Perception \- arXiv, accessed June 10, 2026, [https://arxiv.org/html/2601.09413v2](https://arxiv.org/html/2601.09413v2)  
-10. Edge-Optimized Speech Workflows: Combining Deepgram Nova-3 STT with Fish Speech V1.5 TTS \- GetStream.io, accessed June 10, 2026, [https://getstream.io/blog/edge-speech-deepgram-fish/](https://getstream.io/blog/edge-speech-deepgram-fish/)  
-11. Live Audio \- Deepgram's Docs, accessed June 10, 2026, [https://developers.deepgram.com/reference/speech-to-text/listen-streaming](https://developers.deepgram.com/reference/speech-to-text/listen-streaming)  
+1. Tackling Turn Detection in Voice AI: Overcoming Noise and Interruption Challenges - Notch, accessed June 10, 2026, [https://www.notch.cx/post/turn-detection-in-voice-ai](https://www.notch.cx/post/turn-detection-in-voice-ai)  
+2. Human Latency Conversational Turns for Spoken Avatar Systems - arXiv, accessed June 10, 2026, [https://arxiv.org/html/2404.16053v1](https://arxiv.org/html/2404.16053v1)  
+3. Streaming Speaker Diarization in Real Time: Guide - AssemblyAI, accessed June 10, 2026, [https://www.assemblyai.com/blog/streaming-speaker-diarization](https://www.assemblyai.com/blog/streaming-speaker-diarization)  
+4. Building Enterprise Realtime Voice Agents from Scratch: A Technical Tutorial - arXiv, accessed June 10, 2026, [https://arxiv.org/html/2603.05413v1](https://arxiv.org/html/2603.05413v1)  
+5. Voice AI Barge-In and Turn-Taking: A 2026 Implementation Guide - Future AGI, accessed June 10, 2026, [https://futureagi.com/blog/voice-ai-barge-in-turn-taking-2026/](https://futureagi.com/blog/voice-ai-barge-in-turn-taking-2026/)  
+6. Configure Endpointing and Interim Results - Deepgram's Docs, accessed June 10, 2026, [https://developers.deepgram.com/docs/understand-endpointing-interim-results](https://developers.deepgram.com/docs/understand-endpointing-interim-results)  
+7. Repair: The Interface Between Interaction and Cognition - PMC, accessed June 10, 2026, [https://pmc.ncbi.nlm.nih.gov/articles/PMC6849777/](https://pmc.ncbi.nlm.nih.gov/articles/PMC6849777/)  
+8. System and User Strategies to Repair Conversational Breakdowns of Spoken Dialogue Systems: A Scoping Review | Request PDF - ResearchGate, accessed June 10, 2026, [https://www.researchgate.net/publication/382076125_System_and_User_Strategies_to_Repair_Conversational_Breakdowns_of_Spoken_Dialogue_Systems_A_Scoping_Review](https://www.researchgate.net/publication/382076125_System_and_User_Strategies_to_Repair_Conversational_Breakdowns_of_Spoken_Dialogue_Systems_A_Scoping_Review)  
+9. A Self-Reflection Voice Agentic Approach to Speech Recognition and Audio Reasoning with Omni Perception - arXiv, accessed June 10, 2026, [https://arxiv.org/html/2601.09413v2](https://arxiv.org/html/2601.09413v2)  
+10. Edge-Optimized Speech Workflows: Combining Deepgram Nova-3 STT with Fish Speech V1.5 TTS - GetStream.io, accessed June 10, 2026, [https://getstream.io/blog/edge-speech-deepgram-fish/](https://getstream.io/blog/edge-speech-deepgram-fish/)  
+11. Live Audio - Deepgram's Docs, accessed June 10, 2026, [https://developers.deepgram.com/reference/speech-to-text/listen-streaming](https://developers.deepgram.com/reference/speech-to-text/listen-streaming)  
 12. Best Speech-to-Text APIs for Developers Building Real-Time Voice AI in 2026, accessed June 10, 2026, [https://inworld.ai/resources/best-speech-to-text-apis](https://inworld.ai/resources/best-speech-to-text-apis)  
-13. 10 Best speech-to text api You Should Know \- Vatis Tech, accessed June 10, 2026, [https://vatis.tech/blog/best-speech-to-text-api-a00ab](https://vatis.tech/blog/best-speech-to-text-api-a00ab)  
-14. Voice Agent API \- AssemblyAI, accessed June 10, 2026, [https://www.assemblyai.com/products/voice-agent-api](https://www.assemblyai.com/products/voice-agent-api)  
+13. 10 Best speech-to text api You Should Know - Vatis Tech, accessed June 10, 2026, [https://vatis.tech/blog/best-speech-to-text-api-a00ab](https://vatis.tech/blog/best-speech-to-text-api-a00ab)  
+14. Voice Agent API - AssemblyAI, accessed June 10, 2026, [https://www.assemblyai.com/products/voice-agent-api](https://www.assemblyai.com/products/voice-agent-api)  
 15. How to Build a Voice Agent with Real-Time Translation Using OpenAI GPT Realtime 2, accessed June 10, 2026, [https://www.mindstudio.ai/blog/build-voice-agent-real-time-translation-gpt-realtime-2](https://www.mindstudio.ai/blog/build-voice-agent-real-time-translation-gpt-realtime-2)  
-16. Real-time transcription in Python with Universal-Streaming \- AssemblyAI, accessed June 10, 2026, [https://www.assemblyai.com/blog/real-time-transcription-in-python](https://www.assemblyai.com/blog/real-time-transcription-in-python)  
-17. Voice Activity Detection: How VAD Powers AI Agents in 2026 \- Parloa, accessed June 10, 2026, [https://www.parloa.com/blog/voice-activity-detection-vad/](https://www.parloa.com/blog/voice-activity-detection-vad/)  
-18. VAD voice activity detection for clearer agent calls \- Teammates.ai, accessed June 10, 2026, [https://teammates.ai/blog/vad-voice-activity-detection-for-clearer-agent-calls](https://teammates.ai/blog/vad-voice-activity-detection-for-clearer-agent-calls)  
+16. Real-time transcription in Python with Universal-Streaming - AssemblyAI, accessed June 10, 2026, [https://www.assemblyai.com/blog/real-time-transcription-in-python](https://www.assemblyai.com/blog/real-time-transcription-in-python)  
+17. Voice Activity Detection: How VAD Powers AI Agents in 2026 - Parloa, accessed June 10, 2026, [https://www.parloa.com/blog/voice-activity-detection-vad/](https://www.parloa.com/blog/voice-activity-detection-vad/)  
+18. VAD voice activity detection for clearer agent calls - Teammates.ai, accessed June 10, 2026, [https://teammates.ai/blog/vad-voice-activity-detection-for-clearer-agent-calls](https://teammates.ai/blog/vad-voice-activity-detection-for-clearer-agent-calls)  
 19. Why VAD End-of-Speech Detection Is the Hardest Problem in Production Voice Agents, accessed June 10, 2026, [https://altersquare.medium.com/why-vad-end-of-speech-detection-is-the-hardest-problem-in-production-voice-agents-fee308e38cfc](https://altersquare.medium.com/why-vad-end-of-speech-detection-is-the-hardest-problem-in-production-voice-agents-fee308e38cfc)  
-20. What Is Semantic VAD? (And Why It Matters for Voice Agents) \- Inworld AI, accessed June 10, 2026, [https://inworld.ai/resources/what-is-semantic-vad](https://inworld.ai/resources/what-is-semantic-vad)  
+20. What Is Semantic VAD? (And Why It Matters for Voice Agents) - Inworld AI, accessed June 10, 2026, [https://inworld.ai/resources/what-is-semantic-vad](https://inworld.ai/resources/what-is-semantic-vad)  
 21. Universal-3 Pro Streaming | AssemblyAI | Documentation, accessed June 10, 2026, [https://www.assemblyai.com/docs/streaming/universal-3-pro](https://www.assemblyai.com/docs/streaming/universal-3-pro)  
-22. Turn-Taking Modelling in Conversational Systems: A Review of Recent Advances \- MDPI, accessed June 10, 2026, [https://www.mdpi.com/2227-7080/13/12/591](https://www.mdpi.com/2227-7080/13/12/591)  
-23. Barge-In – End-to-End Interruption Metrics Across ASR & TTS \- Cekura, accessed June 10, 2026, [https://www.cekura.ai/discover/voice-ai-barge-in-testing-asr-latency-tts-overrun](https://www.cekura.ai/discover/voice-ai-barge-in-testing-asr-latency-tts-overrun)  
+22. Turn-Taking Modelling in Conversational Systems: A Review of Recent Advances - MDPI, accessed June 10, 2026, [https://www.mdpi.com/2227-7080/13/12/591](https://www.mdpi.com/2227-7080/13/12/591)  
+23. Barge-In – End-to-End Interruption Metrics Across ASR & TTS - Cekura, accessed June 10, 2026, [https://www.cekura.ai/discover/voice-ai-barge-in-testing-asr-latency-tts-overrun](https://www.cekura.ai/discover/voice-ai-barge-in-testing-asr-latency-tts-overrun)  
 24. Turn Detection for Voice Agents: VAD, Endpointing, and Model-Based Detection | LiveKit, accessed June 10, 2026, [https://livekit.com/blog/turn-detection-voice-agents-vad-endpointing-model-based-detection](https://livekit.com/blog/turn-detection-voice-agents-vad-endpointing-model-based-detection)  
-25. Conversational Repair and the Acquisition of Language \- Stanford University, accessed June 10, 2026, [https://web.stanford.edu/class/cs379c/class\_messages\_listing/curriculum/Annotated\_Readings/ClarkDISCOURSE-PROCESSES-20\_Unannotated.pdf](https://web.stanford.edu/class/cs379c/class_messages_listing/curriculum/Annotated_Readings/ClarkDISCOURSE-PROCESSES-20_Unannotated.pdf)  
-26. Analyzing Patterns of Conversational Breakdown in Human-Chatbot Customer Service Conversations \- UU Research Portal, accessed June 10, 2026, [https://research-portal.uu.nl/ws/files/263067946/978-3-031-88045-2\_1.pdf](https://research-portal.uu.nl/ws/files/263067946/978-3-031-88045-2_1.pdf)  
+25. Conversational Repair and the Acquisition of Language - Stanford University, accessed June 10, 2026, [https://web.stanford.edu/class/cs379c/class_messages_listing/curriculum/Annotated_Readings/ClarkDISCOURSE-PROCESSES-20_Unannotated.pdf](https://web.stanford.edu/class/cs379c/class_messages_listing/curriculum/Annotated_Readings/ClarkDISCOURSE-PROCESSES-20_Unannotated.pdf)  
+26. Analyzing Patterns of Conversational Breakdown in Human-Chatbot Customer Service Conversations - UU Research Portal, accessed June 10, 2026, [https://research-portal.uu.nl/ws/files/263067946/978-3-031-88045-2_1.pdf](https://research-portal.uu.nl/ws/files/263067946/978-3-031-88045-2_1.pdf)  
 27. Top 10 Deepfake Audio Detection Tools for 2025 | Resemble AI, accessed June 10, 2026, [https://www.resemble.ai/resources/audio-deepfake-detection-tools](https://www.resemble.ai/resources/audio-deepfake-detection-tools)  
-28. How to Build a Production-Ready Voice Agent Architecture with WebRTC \- freeCodeCamp, accessed June 10, 2026, [https://www.freecodecamp.org/news/how-to-build-production-ready-voice-agents/](https://www.freecodecamp.org/news/how-to-build-production-ready-voice-agents/)  
+28. How to Build a Production-Ready Voice Agent Architecture with WebRTC - freeCodeCamp, accessed June 10, 2026, [https://www.freecodecamp.org/news/how-to-build-production-ready-voice-agents/](https://www.freecodecamp.org/news/how-to-build-production-ready-voice-agents/)  
 29. How Real-Time Voice AI Actually Works (STT → LLM → TTS, Explained) | Retell AI, accessed June 10, 2026, [https://www.retellai.com/blog/how-real-time-voice-ai-works-stt-llm-tts](https://www.retellai.com/blog/how-real-time-voice-ai-works-stt-llm-tts)  
 30. How OpenAI delivers low-latency voice AI at scale | OpenAI, accessed June 10, 2026, [https://openai.com/index/delivering-low-latency-voice-ai-at-scale/](https://openai.com/index/delivering-low-latency-voice-ai-at-scale/)  
 31. How Real-Time Voice Agents Work: Architecture and Latency, accessed June 10, 2026, [https://gokuljs.com/blogs/real-time-voice-agent-infrastructure](https://gokuljs.com/blogs/real-time-voice-agent-infrastructure)  
-32. Getting Started \- Deepgram's Docs, accessed June 10, 2026, [https://developers.deepgram.com/docs/live-streaming-audio](https://developers.deepgram.com/docs/live-streaming-audio)  
-33. Gemini Live API Proactive, in Next.js and React Native Expo | by Felipe Lujan \- Medium, accessed June 10, 2026, [https://felipelujan.medium.com/gemini-live-api-proactive-in-next-js-and-react-native-expo-26d070dafff9?postPublishedType=initial](https://felipelujan.medium.com/gemini-live-api-proactive-in-next-js-and-react-native-expo-26d070dafff9?postPublishedType=initial)  
-34. The Art of Interruption: VAD Strategies for Fluid AI Conversations \- DEV Community, accessed June 10, 2026, [https://dev.to/deepak\_mishra\_35863517037/the-art-of-interruption-vad-strategies-for-fluid-ai-conversations-15bh](https://dev.to/deepak_mishra_35863517037/the-art-of-interruption-vad-strategies-for-fluid-ai-conversations-15bh)  
+32. Getting Started - Deepgram's Docs, accessed June 10, 2026, [https://developers.deepgram.com/docs/live-streaming-audio](https://developers.deepgram.com/docs/live-streaming-audio)  
+33. Gemini Live API Proactive, in Next.js and React Native Expo | by Felipe Lujan - Medium, accessed June 10, 2026, [https://felipelujan.medium.com/gemini-live-api-proactive-in-next-js-and-react-native-expo-26d070dafff9?postPublishedType=initial](https://felipelujan.medium.com/gemini-live-api-proactive-in-next-js-and-react-native-expo-26d070dafff9?postPublishedType=initial)  
+34. The Art of Interruption: VAD Strategies for Fluid AI Conversations - DEV Community, accessed June 10, 2026, [https://dev.to/deepak_mishra_35863517037/the-art-of-interruption-vad-strategies-for-fluid-ai-conversations-15bh](https://dev.to/deepak_mishra_35863517037/the-art-of-interruption-vad-strategies-for-fluid-ai-conversations-15bh)  
 35. Acoustic Echo Cancellation: How WebRTC AEC3 Works | Switchboard Audio SDK, accessed June 10, 2026, [https://switchboard.audio/hub/how-webrtc-aec3-works/](https://switchboard.audio/hub/how-webrtc-aec3-works/)  
-36. How to Implement Silence Trimming in Your iOS App (Swift \+ AVAudioEngine, 2026 Guide), accessed June 10, 2026, [https://www.forasoft.com/blog/article/how-to-implement-silence-trimming-feature-to-your-ios-app-1720](https://www.forasoft.com/blog/article/how-to-implement-silence-trimming-feature-to-your-ios-app-1720)  
-37. Real-Time Voicemail Detection in Telephony Audio Using Temporal Speech Activity Features \- arXiv, accessed June 10, 2026, [https://arxiv.org/pdf/2604.09675](https://arxiv.org/pdf/2604.09675)  
-38. VoxMind: An End-to-End Agentic Spoken Dialogue System \- arXiv, accessed June 10, 2026, [https://arxiv.org/html/2604.15710v1](https://arxiv.org/html/2604.15710v1)  
+36. How to Implement Silence Trimming in Your iOS App (Swift + AVAudioEngine, 2026 Guide), accessed June 10, 2026, [https://www.forasoft.com/blog/article/how-to-implement-silence-trimming-feature-to-your-ios-app-1720](https://www.forasoft.com/blog/article/how-to-implement-silence-trimming-feature-to-your-ios-app-1720)  
+37. Real-Time Voicemail Detection in Telephony Audio Using Temporal Speech Activity Features - arXiv, accessed June 10, 2026, [https://arxiv.org/pdf/2604.09675](https://arxiv.org/pdf/2604.09675)  
+38. VoxMind: An End-to-End Agentic Spoken Dialogue System - arXiv, accessed June 10, 2026, [https://arxiv.org/html/2604.15710v1](https://arxiv.org/html/2604.15710v1)  
 39. Voice activity detection (VAD) | OpenAI API, accessed June 10, 2026, [https://developers.openai.com/api/docs/guides/realtime-vad](https://developers.openai.com/api/docs/guides/realtime-vad)  
-40. Streaming Speech Recognition API for Real-Time Transcription \- Deepgram, accessed June 10, 2026, [https://deepgram.com/learn/streaming-speech-recognition-api](https://deepgram.com/learn/streaming-speech-recognition-api)  
-41. Speech-to-Text WebSocket messages \- Telnyx, accessed June 10, 2026, [https://developers.telnyx.com/docs/voice/stt/websocket-streaming/responses](https://developers.telnyx.com/docs/voice/stt/websocket-streaming/responses)  
-42. Build a voice agent with function calling \- AssemblyAI, accessed June 10, 2026, [https://www.assemblyai.com/blog/build-voice-agent-function-calling](https://www.assemblyai.com/blog/build-voice-agent-function-calling)  
-43. Artificial Intelligence for Speech Classification and Enhancement of Speech and Language Disorders: Techniques, Applications, an \- IEEE Xplore, accessed June 10, 2026, [https://ieeexplore.ieee.org/iel8/6287639/10820123/11199322.pdf](https://ieeexplore.ieee.org/iel8/6287639/10820123/11199322.pdf)  
+40. Streaming Speech Recognition API for Real-Time Transcription - Deepgram, accessed June 10, 2026, [https://deepgram.com/learn/streaming-speech-recognition-api](https://deepgram.com/learn/streaming-speech-recognition-api)  
+41. Speech-to-Text WebSocket messages - Telnyx, accessed June 10, 2026, [https://developers.telnyx.com/docs/voice/stt/websocket-streaming/responses](https://developers.telnyx.com/docs/voice/stt/websocket-streaming/responses)  
+42. Build a voice agent with function calling - AssemblyAI, accessed June 10, 2026, [https://www.assemblyai.com/blog/build-voice-agent-function-calling](https://www.assemblyai.com/blog/build-voice-agent-function-calling)  
+43. Artificial Intelligence for Speech Classification and Enhancement of Speech and Language Disorders: Techniques, Applications, an - IEEE Xplore, accessed June 10, 2026, [https://ieeexplore.ieee.org/iel8/6287639/10820123/11199322.pdf](https://ieeexplore.ieee.org/iel8/6287639/10820123/11199322.pdf)  
 44. VAD vs. Turn-Taking Endpoints in Conversational AI | Retell AI, accessed June 10, 2026, [https://www.retellai.com/blog/vad-vs-turn-taking-end-point-in-conversational-ai](https://www.retellai.com/blog/vad-vs-turn-taking-end-point-in-conversational-ai)  
-45. Real-Time Voicemail Detection in Telephony Audio Using Temporal Speech Activity Features \- arXiv, accessed June 10, 2026, [https://arxiv.org/html/2604.09675v1](https://arxiv.org/html/2604.09675v1)  
-46. Speech Disabilities & Digital Accessibility \- ExceedAbility, accessed June 10, 2026, [https://exceedability.com/speech-disabilities.html](https://exceedability.com/speech-disabilities.html)  
-47. SpeechAgent: An End-to-End Mobile Infrastructure for Speech Impairment Assistance \- arXiv, accessed June 10, 2026, [https://arxiv.org/html/2510.20113v1](https://arxiv.org/html/2510.20113v1)  
+45. Real-Time Voicemail Detection in Telephony Audio Using Temporal Speech Activity Features - arXiv, accessed June 10, 2026, [https://arxiv.org/html/2604.09675v1](https://arxiv.org/html/2604.09675v1)  
+46. Speech Disabilities & Digital Accessibility - ExceedAbility, accessed June 10, 2026, [https://exceedability.com/speech-disabilities.html](https://exceedability.com/speech-disabilities.html)  
+47. SpeechAgent: An End-to-End Mobile Infrastructure for Speech Impairment Assistance - arXiv, accessed June 10, 2026, [https://arxiv.org/html/2510.20113v1](https://arxiv.org/html/2510.20113v1)  
 48. C2PA Implementation Guidance, accessed June 10, 2026, [https://spec.c2pa.org/specifications/specifications/1.0/guidance/Guidance.html](https://spec.c2pa.org/specifications/specifications/1.0/guidance/Guidance.html)  
-49. An Analysis of Dialogue Repair in Voice Assistants \- arXiv, accessed June 10, 2026, [https://arxiv.org/pdf/2311.03952](https://arxiv.org/pdf/2311.03952)  
-50. VoiceAgentBench: Are Voice Assistants ready for agentic tasks? \- arXiv, accessed June 10, 2026, [https://arxiv.org/html/2510.07978v1](https://arxiv.org/html/2510.07978v1)  
-51. How Speech and Language Disabilities Affect Online Experiences & Accessibility Best Practices \- AudioEye, accessed June 10, 2026, [https://www.audioeye.com/post/speech-and-language-disabilities/](https://www.audioeye.com/post/speech-and-language-disabilities/)  
-52. Listener Ratings of Stuttering: Evaluating Two Auditory–Perceptual Scales \- PMC, accessed June 10, 2026, [https://pmc.ncbi.nlm.nih.gov/articles/PMC12806039/](https://pmc.ncbi.nlm.nih.gov/articles/PMC12806039/)  
+49. An Analysis of Dialogue Repair in Voice Assistants - arXiv, accessed June 10, 2026, [https://arxiv.org/pdf/2311.03952](https://arxiv.org/pdf/2311.03952)  
+50. VoiceAgentBench: Are Voice Assistants ready for agentic tasks? - arXiv, accessed June 10, 2026, [https://arxiv.org/html/2510.07978v1](https://arxiv.org/html/2510.07978v1)  
+51. How Speech and Language Disabilities Affect Online Experiences & Accessibility Best Practices - AudioEye, accessed June 10, 2026, [https://www.audioeye.com/post/speech-and-language-disabilities/](https://www.audioeye.com/post/speech-and-language-disabilities/)  
+52. Listener Ratings of Stuttering: Evaluating Two Auditory–Perceptual Scales - PMC, accessed June 10, 2026, [https://pmc.ncbi.nlm.nih.gov/articles/PMC12806039/](https://pmc.ncbi.nlm.nih.gov/articles/PMC12806039/)  
 53. Inclusive AI Starts with Ethical Voice Data for Speech-Impaired and Atypical Speakers, accessed June 10, 2026, [https://blog.andovar.com/inclusive-ai-starts-with-ethical-voice-data-for-speech-impaired-and-atypical-speakers](https://blog.andovar.com/inclusive-ai-starts-with-ethical-voice-data-for-speech-impaired-and-atypical-speakers)  
-54. Voice capability (TTS / STT / real-time audio) · Issue \#116 \- GitHub, accessed June 10, 2026, [https://github.com/pydantic/pydantic-ai-harness/issues/116](https://github.com/pydantic/pydantic-ai-harness/issues/116)  
-55. Voiceitt \- Inclusive Voice AI, accessed June 10, 2026, [https://www.voiceitt.com/](https://www.voiceitt.com/)
+54. Voice capability (TTS / STT / real-time audio) · Issue #116 - GitHub, accessed June 10, 2026, [https://github.com/pydantic/pydantic-ai-harness/issues/116](https://github.com/pydantic/pydantic-ai-harness/issues/116)  
+55. Voiceitt - Inclusive Voice AI, accessed June 10, 2026, [https://www.voiceitt.com/](https://www.voiceitt.com/)
 
 ---
 
