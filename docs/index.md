@@ -235,7 +235,7 @@ Commercial use, resale, paid redistribution, inclusion in commercial training pr
 
 ## Status
 
-**~1/4 complete as of 6-9-26**
+**2026-06-12 - Complete through ENG-AC. Most ASCII art still needs adjustment.**
 
 The Canon is structured as a 12-volume intellectual artifact. Corrections, clarifications, and future expansions may be added over time.
 
