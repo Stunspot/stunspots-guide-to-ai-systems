@@ -58,100 +58,100 @@ A robust serving platform must orchestrate multiple software and hardware layers
 +----------------------------------------------------------------------------------------------------+
 |                              SERVING STACK REFERENCE ARCHITECTURE                                  |
 +----------------------------------------------------------------------------------------------------+
-|                                                                                                    |
-|                                        [ Client / SDK ]                                            |
-|                                               |                                                    |
-|                                               v                                                    |
-|  +------------------------------------------------------------------------------------------+      |
-|  |                              API Gateway / Ingress                                       |      |
-|  |                                                                                          |      |
-|  |  TLS termination | global auth | corporate SSO | coarse rate limits | request logging    |      |
-|  +---------------------------------------------+--------------------------------------------+      |
-|                                                |                                                   |
-|                                                v                                                   |
-|  +------------------------------------------------------------------------------------------+      |
-|  |                         Tenant Policy Engine & Rate Limiter                              |      |
-|  |                                                                                          |      |
-|  |  API key validation | tenant tier | quotas | RPM / TPM / concurrency | budget ceilings   |      |
-|  +---------------------------------------------+--------------------------------------------+      |
-|                                                |                                                   |
-|                                                v                                                   |
-|  +------------------------------------------------------------------------------------------+      |
-|  |                          Request Classification / Context Analysis                       |      |
-|  |                                                                                          |      |
-|  |  modality | language | context length | schema need | risk level | latency / cost target |      |
-|  +---------------------------------------------+--------------------------------------------+      |
-|                                                |                                                   |
-|                                                v                                                   |
-|  +---------------------------------------------------------------------------------------------+   |
-|  |                              Model Router / Gateway                                         |   |
-|  |                                                                                             |   |
-|  |  static rules | semantic routing | portfolio selection | fallback policy | canary split     |   |
-|  +----------------------+----------------------+----------------------+------------------------+   |
-|                         |                      |                      |                            |
-|                         |                      |                      |                            |
-|                         v                      v                      v                            |
-|          +-------------------------+  +-----------------------+  +-----------------------------+   |
-|          | Cache Layers            |  | Retrieval / Tool      |  | Control Plane Snapshot      |   |
-|          |                         |  | Sidecars              |  |                             |   |
-|          | semantic cache          |  | vector retrieval      |  | routing policy              |   |
-|          | prompt / prefix cache   |  | tool gateways         |  | model metadata              |   |
-|          | radix cache telemetry   |  | MCP / API connectors  |  | tenant configs              |   |
-|          +-----------+-------------+  +-----------+-----------+  | release manifests           |   |
-|                      |                            |              | rollback state              |   |
-|                      +------------+---------------+              +-------------+---------------+   |
-|                                   |                                            |                   |
-|                                   v                                            |                   |
-|  +------------------------------------------------------------------------------------------+      |
-|  |                         Load Balancer & Dispatch Layer                                   |      |
-|  |                                                                                          |      |
-|  |  queue depth | prefix affinity | adapter residency | cache warmth | late-binding flow ctrl  |   |
-|  +----------------------+----------------------+----------------------+------------------------+   |
-|                         |                      |                      |                            |
-|                         v                      v                      v                            |
-|          +-------------------------+  +-----------------------+  +-----------------------------+   |
-|          | Queue / Admission Lane  |  | Queue / Admission Lane|  | Queue / Admission Lane      |   |
-|          | premium / low-latency   |  | standard interactive  |  | batch / background          |   |
-|          | priority + headroom     |  | fair-share scheduling |  | async deferral              |   |
-|          +-----------+-------------+  +-----------+-----------+  +-------------+---------------+   |
-|                      |                            |                            |                   |
-|                      +----------------------------+----------------------------+                   |
-|                                                   |                                                |
-|                                                   v                                                |
-|  +------------------------------------------------------------------------------------------+      |
-|  |                                  Inference Servers                                       |      |
-|  |                                                                                          |      |
-|  |  vLLM | SGLang | TensorRT-LLM | Triton | Ray Serve | KServe runtime containers           |      |
-|  |                                                                                          |      |
-|  |  model loading | continuous batching | paged KV cache | adapters | telemetry hooks       |      |
-|  +----------------------+----------------------+----------------------+----------------------------+
-|                         |                      |                      |                            |
-|                         v                      v                      v                            |
-|          +-------------------------+  +-----------------------+  +-----------------------------+   |
-|          | GPU Pool A              |  | GPU Pool B            |  | GPU Pool C                  |   |
-|          | warm frontier models    |  | quantized specialists |  | batch / overflow / fallback |   |
-|          | HBM + KV cache          |  | LoRA adapter resident |  | degraded-mode capacity      |   |
-|          +-------------------------+  +-----------------------+  +-----------------------------+   |
-|                                                   |                                                |
-|                                                   v                                                |
-|  +--------------------------------------------------------------------------------------------+    |
-|  |                              Output Validation Layer                                       |    |
-|  |                                                                                            |    |
-|  |  schema validation | safety filters | tool-result checks | grounding checks | retry gates  |    |
-|  +----------------------+--------------------------------------+------------------------------+    |
-|                         |                                      |                                   |
-|                         v                                      v                                   |
-|              [ Valid Response Stream ]              [ Fallback / Retry / Human Review ]            |
-|                         |                                      |                                   |
-|                         +----------------------+---------------+                                   |
-|                                                |                                                   |
-|                                                v                                                   |
-|  +------------------------------------------------------------------------------------------+      |
-|  |                                   Telemetry & Audit                                      |      |
-|  |                                                                                          |      |
-|  |  traces | TTFT | ITL | queue depth | cache hit rate | model SHA | tenant cost | failures |      |
-|  +------------------------------------------------------------------------------------------+      |
-|                                                                                                    |
+|                                                                                                    
+|                                        [ Client / SDK ]                                            
+|                                               |                                                    
+|                                               v                                                    
+|  +------------------------------------------------------------------------------------------+      
+|  |                              API Gateway / Ingress                                       |      
+|  |                                                                                          |      
+|  |  TLS termination | global auth | corporate SSO | coarse rate limits | request logging    |      
+|  +---------------------------------------------+--------------------------------------------+      
+|                                                |                                                   
+|                                                v                                                   
+|  +------------------------------------------------------------------------------------------+      
+|  |                         Tenant Policy Engine & Rate Limiter                              |      
+|  |                                                                                          |      
+|  |  API key validation | tenant tier | quotas | RPM / TPM / concurrency | budget ceilings   |      
+|  +---------------------------------------------+--------------------------------------------+      
+|                                                |                                                   
+|                                                v                                                   
+|  +------------------------------------------------------------------------------------------+      
+|  |                          Request Classification / Context Analysis                       |      
+|  |                                                                                          |      
+|  |  modality | language | context length | schema need | risk level | latency / cost target |      
+|  +---------------------------------------------+--------------------------------------------+      
+|                                                |                                                   
+|                                                v                                                   
+|  +---------------------------------------------------------------------------------------------+   
+|  |                              Model Router / Gateway                                         |   
+|  |                                                                                             |   
+|  |  static rules | semantic routing | portfolio selection | fallback policy | canary split     |   
+|  +----------------------+----------------------+----------------------+------------------------+   
+|                         |                      |                      |                            
+|                         |                      |                      |                            
+|                         v                      v                      v                            
+|          +-------------------------+  +-----------------------+  +-----------------------------+   
+|          | Cache Layers            |  | Retrieval / Tool      |  | Control Plane Snapshot      |   
+|          |                         |  | Sidecars              |  |                             |   
+|          | semantic cache          |  | vector retrieval      |  | routing policy              |   
+|          | prompt / prefix cache   |  | tool gateways         |  | model metadata              |   
+|          | radix cache telemetry   |  | MCP / API connectors  |  | tenant configs              |   
+|          +-----------+-------------+  +-----------+-----------+  | release manifests           |   
+|                      |                            |              | rollback state              |   
+|                      +------------+---------------+              +-------------+---------------+   
+|                                   |                                            |                   
+|                                   v                                            |                   
+|  +---------------------------------------------------------------------------------------------+      
+|  |                         Load Balancer & Dispatch Layer                                      |      
+|  |                                                                                             |      
+|  |  queue depth | prefix affinity | adapter residency | cache warmth | late-binding flow ctrl  |   
+|  +----------------------+----------------------+----------------------+------------------------+   
+|                         |                      |                      |                            
+|                         v                      v                      v                            
+|          +-------------------------+  +-----------------------+  +-----------------------------+   
+|          | Queue / Admission Lane  |  | Queue / Admission Lane|  | Queue / Admission Lane      |   
+|          | premium / low-latency   |  | standard interactive  |  | batch / background          |   
+|          | priority + headroom     |  | fair-share scheduling |  | async deferral              |   
+|          +-----------+-------------+  +-----------+-----------+  +-------------+---------------+   
+|                      |                            |                            |                   
+|                      +----------------------------+----------------------------+                   
+|                                                   |                                                
+|                                                   v                                                
+|  +------------------------------------------------------------------------------------------+      
+|  |                                  Inference Servers                                       |      
+|  |                                                                                          |      
+|  |  vLLM | SGLang | TensorRT-LLM | Triton | Ray Serve | KServe runtime containers           |      
+|  |                                                                                          |      
+|  |  model loading | continuous batching | paged KV cache | adapters | telemetry hooks       |      
+|  +----------------------+----------------------+----------------------+---------------------+
+|                         |                      |                      |                            
+|                         v                      v                      v                            
+|          +-------------------------+  +-----------------------+  +-----------------------------+   
+|          | GPU Pool A              |  | GPU Pool B            |  | GPU Pool C                  |   
+|          | warm frontier models    |  | quantized specialists |  | batch / overflow / fallback |   
+|          | HBM + KV cache          |  | LoRA adapter resident |  | degraded-mode capacity      |   
+|          +-------------------------+  +-----------------------+  +-----------------------------+   
+|                                                   |                                                
+|                                                   v                                                
+|  +--------------------------------------------------------------------------------------------+    
+|  |                              Output Validation Layer                                       |    
+|  |                                                                                            |    
+|  |  schema validation | safety filters | tool-result checks | grounding checks | retry gates  |    
+|  +----------------------+--------------------------------------+------------------------------+    
+|                         |                                      |                                   
+|                         v                                      v                                   
+|              [ Valid Response Stream ]              [ Fallback / Retry / Human Review ]            
+|                         |                                      |                                   
+|                         +----------------------+---------------+                                   
+|                                                |                                                   
+|                                                v                                                   
+|  +------------------------------------------------------------------------------------------+      
+|  |                                   Telemetry & Audit                                      |      
+|  |                                                                                          |      
+|  |  traces | TTFT | ITL | queue depth | cache hit rate | model SHA | tenant cost | failures |      
+|  +------------------------------------------------------------------------------------------+      
+|                                                                                                    
 +----------------------------------------------------------------------------------------------------+
 | Supporting control-plane services: Model Registry, Artifact Store, Autoscaler, Rollback            |
 | Controller, Health Checks, Policy Config Store, and Release/Canary Manager.                        |

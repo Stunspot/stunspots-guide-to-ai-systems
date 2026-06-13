@@ -46,35 +46,35 @@ The core doctrine of weight dynamics states: **Compression must be behavior-pres
 ### **Representation and Decoding Optimization Map**
 
 ```
-+-------------------------------------------------------------------------------------------------------------+
-|                              REPRESENTATION AND DECODING OPTIMIZATION MAP                                   |
-+-------------------------------------------------------------------------------------------------------------+
-|                                                                                                             |
-|                                      [ Core Inference Engine ]                                              |
-|                                                 |                                                           |
-|              +----------------------------------+----------------------------------+                        |
-|              |                                  |                                  |                        |
-|              v                                  v                                  v                        |
-|   +------------------------+          +------------------------+          +--------------------+            |
-|   | Representation & State |          | Decoding & Output Path |          | Acceleration Layer |            |
-|   +-----------+------------+          +-----------+------------+          +----------+---------+            |
-|               |                                   |                                  |                      |
-|      +--------+--------+                 +--------+--------+                 +-------+-------+              |
-|      |        |        |                 |        |        |                 |       |       |              |
-|      v        v        v                 v        v        v                 v       v       v              |
-| +---------+ +----------+ +----------+ +--------+ +----------+ +-----------+ +------+ +------+ +----------+  |
-| | Static  | | Active   | | KV Cache | | Logits | | Token    | | Output    | |Draft | |Runtime| | Serving |  |
-| | Weights | | Activat. | | State    | | Path   | |Selection | |Constraints| |Verify| |Kernels| |Scheduler|  |
-| +----+----+ +----+-----+ +----+-----+ +---+----+ +----+-----+ +-----+-----+ +--+---+ +--+---+ +----+-----+  |
-|      |           |            |          |           |             |          |        |          |         |
-|      v           v            v          v           v             v          v        v          v         |
-| INT4 / FP4   INT8 / FP8   INT8 / INT4  FP16 /    Min-P /      CFG / FSM   EAGLE-3  Marlin /  RadixAttn      |
-| EXL2 / FP8   E4M3 Act.    FP8 /        BF16      Top-P /      TagDispatch P-EAGLE  cuBLASLt  Paged          |
-|              Tensor Core  TurboQuant   FP32 acc. Top-K /      llguidance  HiSpec   Sparse    Block Mgr.     |
-| HBM -> L2    SM/Register  VRAM blocks  ALU       Logit Bias   Logit Mask  Medusa   Kernels   Scheduler      |
-| bandwidth    execution    DRAM fallback softmax   filtering    enforcement verify   dequant   policy        |
-|                                                                                                             |
-+-------------------------------------------------------------------------------------------------------------+
++------------------------------------------------------------------------------------------------+
+|                              REPRESENTATION AND DECODING OPTIMIZATION MAP                      |
++------------------------------------------------------------------------------------------------+
+|                                                                                                             
+|                                      [ Core Inference Engine ]                                              
+|                                                 |                                                           
+|              +----------------------------------+----------------------------------+                        
+|              |                                  |                                  |                        
+|              v                                  v                                  v                        
+|   +------------------------+          +------------------------+          +--------------------+            
+|   | Representation & State |          | Decoding & Output Path |          | Acceleration Layer |            
+|   +-----------+------------+          +-----------+------------+          +----------+---------+            
+|               |                                   |                                  |                      
+|      +--------+--------+                 +--------+--------+                 +-------+-------+              
+|      |        |        |                 |        |        |                 |       |       |              
+|      v        v        v                 v        v        v                 v       v       v              
+| +---------+ +----------+ +----------+ +--------+ +----------+ +-----------+ +------+ +------+ +----------+  
+| | Static  | | Active   | | KV Cache | | Logits | | Token    | | Output    | |Draft | |Runtime| | Serving |  
+| | Weights | | Activat. | | State    | | Path   | |Selection | |Constraints| |Verify| |Kernels| |Scheduler|  
+| +----+----+ +----+-----+ +----+-----+ +---+----+ +----+-----+ +-----+-----+ +--+---+ +--+---+ +----+-----+  
+|      |           |            |          |           |             |          |        |          |         
+|      v           v            v          v           v             v          v        v          v         
+| INT4 / FP4   INT8 / FP8   INT8 / INT4  FP16 /    Min-P /      CFG / FSM   EAGLE-3  Marlin /  RadixAttn      
+| EXL2 / FP8   E4M3 Act.    FP8 /        BF16      Top-P /      TagDispatch P-EAGLE  cuBLASLt  Paged          
+|              Tensor Core  TurboQuant   FP32 acc. Top-K /      llguidance  HiSpec   Sparse    Block Mgr.     
+| HBM -> L2    SM/Register  VRAM blocks  ALU       Logit Bias   Logit Mask  Medusa   Kernels   Scheduler      
+| bandwidth    execution    DRAM fallback softmax   filtering    enforcement verify   dequant   policy        
+|                                                                                                             
++------------------------------------------------------------------------------------------------+
 | Optimization doctrine: reduce movement, preserve behavior, and validate every compression path.|
 +------------------------------------------------------------------------------------------------+
 ```
@@ -86,7 +86,7 @@ The core doctrine of weight dynamics states: **Compression must be behavior-pres
 | **KV Cache** | Tiered INT8/INT4, FP8, TurboQuant 10 | VRAM Block Allocation; Host System RAM 10 | Bypasses linear capacity footprint growth; expands maximum concurrency.10 | "Needle-in-a-haystack" retrieval failure; long-context attention decay.10 |
 | **Logits** | FP16, BF16 (accumulated in FP32) 37 | Vector ALUs & Thread Registers 1 | Prevents dynamic range underflow before softmax normalizations.29 | NaN failures; dynamic probability distribution collapse.19 |
 | **Token Selection** | Min-P, Top-P, Top-K, Logit Bias 28 | Thread Warp execution blocks 1 | Eliminates low-probability garbage tokens without restricting creative vocabulary.28 | Repetitive output loops; structural tag truncation; failure of safety refusals.28 |
-| **Output Constraints** | CFG, FSM, TagDispatch, llguidance 2 | CPU Host Scheduler; GPU Logit Filter 27 | Zero-overhead, 100% compliant schema adherence.26 | Parser deadlock; semantic failures where correct data is masked.26 |
+| **Output Constraints** | CFG, FSM, TagDispatch, llguidance | CPU host scheduler, grammar compiler, GPU/CPU logit processor | Strong structural adherence with overhead determined by grammar complexity, compilation caching, per-token mask cost, and runtime integration. | Parser deadlock, forced invalid semantics, masked correct tokens, schema-valid but meaning-invalid outputs, retry loops under malformed grammars. |
 | **Draft Verification** | EAGLE-3, P-EAGLE, HiSpec, Medusa 23 | Parallel Target Verification Thread Blocks 23 | 2x to 3x throughput speedups by exploiting idle compute capacity.11 | Rejection-loop latency tax; higher VRAM and HBM footprint during generation.25 |
 | **Runtime Kernels** | Marlin, Sparse-Marlin, cuBLASLt 1 | GPU Shared Memory (SMEM) registers 1 | Dynamic dequantization outside the execution critical path.1 | Memory misalignment; bank conflicts; register spilling.1 |
 | **Serving Scheduler** | SGLang RadixAttention 46 | Paged Memory Block Managers 46 | 5x throughput improvement on high-overlap multi-turn workflows.47 | Queue starvation; context evictions under memory pressure.48 |
@@ -114,7 +114,7 @@ FP8 E5M2 Element:   -> High Range (Gradients & Training Backward)
 * **FP8 (E4M3 vs. E5M2):** Standardized under the OCP Microscaling (MX) Specification, FP8 formats preserve dynamic range by dedicating explicit bits to an exponent.19 The **E4M3** layout (1 sign bit, 4 exponent bits, 3 mantissa bits) provides higher precision within a narrow dynamic range (maximum value of 448.0, no infinity support), making it ideal for weights and activations in the forward pass where distribution profiles are tightly clustered.19 Conversely, the **E5M2** layout (1 sign bit, 5 exponent bits, 2 mantissa bits) matches the dynamic range of BF16 (maximum value of 57,344), which is required to prevent overflow in the backward pass during training or fine-tuning.19  
 * **FP4 and NVFP4:** Serving as a key architectural feature of the NVIDIA Blackwell generation, **MXFP4** leverages the E2M1 configuration (1 sign bit, 2 exponent bits, 1 mantissa bit), grouping elements into 32-element blocks that share an E8M0 scale factor.30 NVIDIA's proprietary **NVFP4** format optimizes this further on Blackwell Tensor Cores, grouping elements into 16-element blocks that share an E4M3 FP8 scaling factor to maximize arithmetic intensity and energy efficiency.31  
 * **INT8:** This uniform, symmetric linear format maps values onto 256 discrete integer steps, serving as a robust standard for both weights and activations across older GPU architectures (such as Ampere and Turing) that lack native FP8 Tensor Cores.6  
-* **INT4:** A 4-bit integer format that compresses model storage by 75%.1 Since modern Tensor Cores do not execute INT4 operations natively without significant quantization noise, model servers deploy weight-only INT4 quantization, streaming compressed 4-bit parameters to registers and dequantizing them back to FP16 or BF16 dynamically during inference.1
+* **INT4:** A 4-bit integer format that compresses model storage by 75% relative to FP16/BF16 weights. In production inference, INT4 is most commonly used as **weight-only quantization**, where compressed weights are streamed from memory and dequantized into FP16/BF16 or mixed-precision fragments inside optimized matrix-multiplication kernels. The practical speedup depends less on the abstract existence of 4-bit values and more on whether the serving runtime provides an efficient W4A16/W4A8 kernel path, such as Marlin, Sparse-Marlin, EXL2, or another layout-aware dequantization kernel. If the runtime upcasts weights too early or dequantizes in the critical path, the model may save disk space without achieving meaningful serving acceleration.
 
 ### **Quantization Methodologies**
 
@@ -151,40 +151,14 @@ A quantized format only improves serving economics when the runtime engine can e
 Marlin-GPTQ on Qwen2.5-32B achieves 712 tokens per second (tok/s) compared to standard GPTQ's 276 tok/s (a 2.6x speedup), while Marlin-AWQ achieves 741 tok/s compared to standard AWQ's 68 tok/s (a 10.9x speedup).1  
 These optimizations deliver up to a 3.9x throughput speedup at low batch sizes (batch size 16-32) where memory bandwidth is the primary constraint.44 As batch sizes scale up to 128, the workload becomes compute-bound, and Marlin's relative speedup decreases to 1.5x.44
 
-```
-+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-|                                                   QUANTIZATION METHOD MATRIX                                                                                                                    |
-+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Quantization Method      | Memory Savings Profile      | Hardware / Runtime Fit             | Calibration Requirements              | Behavioral Risks              | Ideal Workload            |
-|--------------------------+-----------------------------+------------------------------------+---------------------------------------+-------------------------------+---------------------------|
-| FP8 W8A8                 | ~50% reduction vs BF16 /    | Native FP8 Tensor Cores on         | Low to moderate. Requires scale       | Precision loss on high-       | High-throughput serving   |
-| E4M3 Forward Inference   | FP16 for weights and        | Hopper, Ada Lovelace, and          | selection for weights / activations;  | entropy reasoning, rare       | on modern accelerators    |
-|                          | activations                 | Blackwell-class accelerators;      | production-like activation samples    | token instability, activation | where native FP8 kernels  |
-|                          |                             | best in vLLM / TRT-LLM paths       | still required for safe deployment    | outlier saturation            | are available             |
-|--------------------------+-----------------------------+------------------------------------+---------------------------------------+-------------------------------+---------------------------|
-| INT8 W8A8                | ~50% reduction vs BF16 /    | Strong fit for Ampere, Hopper,     | High-quality activation profiling     | Outlier clipping, degraded    | Legacy or mixed GPU       |
-| SmoothQuant              | FP16 for weights and        | Blackwell, and older INT8-capable  | corpus required. Must capture         | reasoning depth, syntax       | fleets lacking native FP8 |
-|                          | activations                 | Tensor Core generations            | channel outliers, schemas, code,      | drift, safety / refusal       | or needing robust W8A8    |
-|                          |                             |                                    | math, and target context lengths      | boundary shifts               | execution                 |
-|--------------------------+-----------------------------+------------------------------------+---------------------------------------+-------------------------------+---------------------------|
-| AWQ INT4                 | ~75% reduction in static    | Broad CUDA compatibility, but      | Moderate. Needs task-balanced         | Salient-channel miss, long-   | High-concurrency serving  |
-| W4A16 Weight-Only        | weight storage; activations | real speedups require optimized    | calibration prompts that expose       | context degradation, tool /   | where weight bandwidth is |
-|                          | remain FP16 / BF16          | kernels such as Marlin-AWQ         | activation-salient channels           | schema brittleness under      | the bottleneck            |
-|                          |                             |                                    |                                       | narrow calibration            |                           |
-|--------------------------+-----------------------------+------------------------------------+---------------------------------------+-------------------------------+---------------------------|
-| GPTQ INT4                | ~75% reduction in static    | Broad CUDA compatibility, but      | High offline cost. Requires           | Quantization noise on rare    | Single-model deployments, |
-| W4A16 Weight-Only        | weight storage; activations | practical throughput depends on    | layer-wise reconstruction using       | tokens, code/math precision   | local inference, or       |
-|                          | remain FP16 / BF16          | Marlin-GPTQ or equivalent kernels  | representative calibration data       | loss, fragile formatting      | stable workload profiles  |
-|--------------------------+-----------------------------+------------------------------------+---------------------------------------+-------------------------------+---------------------------|
-| MXFP4 / NVFP4            | ~75% reduction vs BF16 /    | Blackwell-native path. Depends on  | Moderate to high. Requires block-     | Extreme degradation on        | Ultra-high-throughput     |
-| Block-Scaled FP4         | FP16 for supported tensors  | FP4 Tensor Core support, block     | scaling strategy, representative      | complex reasoning, code,      | Blackwell deployments     |
-|                          |                             | scaling, and compatible runtimes   | activation ranges, and strict         | math, long-context recall     | after heavy validation    |
-|                          |                             |                                    | regression validation                 | if pushed too aggressively    |                           |
-+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Operational note: memory reduction is not the same as serving acceleration. A format only improves production economics when the runtime |
-| can keep dequantization out of the critical path and execute the compressed representation through compatible kernels.                   |
-+------------------------------------------------------------------------------------------------------------------------------------------+
-```
+| Quantization Method                   | Memory Savings Profile                                                     | Hardware / Runtime Fit                                                                                                           | Calibration Requirements                                                                                 | Behavioral Risks                                                                          | Ideal Workload                                                     |
+| :------------------------------------ | :------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------- | :----------------------------------------------------------------- |
+| **FP8 W8A8 / E4M3 Forward Inference** | About 50% reduction versus BF16/FP16 for supported weights and activations | Best on Hopper, Ada Lovelace, and Blackwell-class accelerators with native FP8 paths; strong fit for vLLM/TRT-LLM style runtimes | Low to moderate; requires representative activation samples and scale selection                          | Rare-token instability, high-entropy reasoning degradation, activation outlier saturation | High-throughput serving on modern accelerators                     |
+| **INT8 W8A8 / SmoothQuant**           | About 50% reduction versus BF16/FP16 for weights and activations           | Strong fit for Ampere, Hopper, Blackwell, and mixed fleets lacking uniform native FP8 support                                    | High-quality activation profiling; must capture channel outliers, schemas, code, math, and long contexts | Outlier clipping, syntax drift, safety/refusal boundary shifts                            | Legacy or mixed GPU fleets needing robust W8A8 execution           |
+| **AWQ INT4 / W4A16 Weight-Only**      | About 75% reduction in static weight storage; activations remain FP16/BF16 | Broad CUDA compatibility, but speedups require optimized kernels such as Marlin-AWQ                                              | Moderate; needs task-balanced calibration exposing salient activation channels                           | Salient-channel miss, long-context degradation, brittle schema/tool behavior              | High-concurrency serving where weight bandwidth is the bottleneck  |
+| **GPTQ INT4 / W4A16 Weight-Only**     | About 75% reduction in static weight storage; activations remain FP16/BF16 | Practical throughput depends on Marlin-GPTQ or equivalent kernels                                                                | High offline cost; layer-wise reconstruction over representative calibration data                        | Quantization noise on rare tokens, code/math precision loss, fragile formatting           | Stable single-model deployments and local inference                |
+| **MXFP4 / NVFP4 Block-Scaled FP4**    | About 75% reduction versus BF16/FP16 for supported tensors                 | Blackwell-native path; depends on FP4 Tensor Core support and block scaling                                                      | Moderate to high; requires block-scaling strategy and strict regression validation                       | Complex reasoning, code, math, and long-context recall can degrade sharply                | Ultra-high-throughput Blackwell deployments after heavy validation |
+
 
 ### **Calibration Data Design Model**
 
@@ -194,57 +168,57 @@ The behavioral preservation of post-training quantized models is heavily depende
 +--------------------------------------------------------------------------------------+
 |                            CALIBRATION DATA DESIGN MODEL                             |
 +--------------------------------------------------------------------------------------+
-|                                                                                      |
-|  Goal: build a profiling corpus that preserves behavior after quantization.          |
-|                                                                                      |
-|                         [ Production Workload Traces ]                               |
-|                                      |                                               |
-|                                      v                                               |
-|  +--------------------------------------------------------------------------------+  |
-|  |                         REPRESENTATIVE CALIBRATION CORPUS                      |  |
-|  |                                                                                |  |
-|  |  +-----------------------------+   +-----------------------------------------+ |  |
-|  |  | Workload Representativeness |   | Domain & Language Coverage              | |  |
-|  |  |                             |   |                                         | |  |
-|  |  | - Real user prompt shapes   |   | - Code, math, reasoning                 | |  |
-|  |  | - Real task mix             |   | - Multilingual inputs                   | |  |
-|  |  | - Real template patterns    |   | - Rare-token / outlier channels         | |  |
-|  |  +-----------------------------+   +-----------------------------------------+ |  |
-|  |                                                                                |  |
-|  |  +-----------------------------+   +-----------------------------------------+ |  |
-|  |  | Structural Adherence        |   | Context-Length Coverage                 | |  |
-|  |  |                             |   |                                         | |  |
-|  |  | - JSON schemas              |   | - Short, medium, long sequences         | |  |
-|  |  | - XML wrappers              |   | - Target production context windows     | |  |
-|  |  | - Tool definitions          |   | - 2K -> 32K+ activation profiles        | |  |
-|  |  +-----------------------------+   +-----------------------------------------+ |  |
-|  |                                                                                |  |
-|  |  +--------------------------------------------------------------------------+  |  |
-|  |  | Governance & Privacy                                                     |  |  |
-|  |  |                                                                          |  |  |
-|  |  | - PII anonymization                                                      |  |  |
-|  |  | - Provenance and version tracking                                        |  |  |
-|  |  | - Separation from validation / evaluation test sets                      |  |  |
-|  |  | - Release-linked calibration manifests                                   |  |  |
-|  |  +--------------------------------------------------------------------------+  |  |
-|  +--------------------------------------------------------------------------------+  |
-|                                      |                                               |
-|                                      v                                               |
-|  +--------------------------------------------------------------------------------+  |
-|  |                         QUANTIZATION CALIBRATION PASS                          |  |
-|  |                                                                                |  |
-|  |  - Profile activation ranges and outlier channels                              |  |
-|  |  - Compute weight / activation scale factors                                   |  |
-|  |  - Preserve fragile behaviors: reasoning, schemas, tools, safety, recall       |  |
-|  +--------------------------------------------------------------------------------+  |
-|                                      |                                               |
-|                                      v                                               |
-|  +--------------------------------------------------------------------------------+  |
-|  |                            OPTIMIZED MODEL CANDIDATE                           |  |
-|  |                                                                                |  |
-|  |  Candidate proceeds only after regression testing against held-out eval sets.  |  |
-|  +--------------------------------------------------------------------------------+  |
-|                                                                                      |
+|                                                                                      
+|  Goal: build a profiling corpus that preserves behavior after quantization.          
+|                                                                                      
+|                         [ Production Workload Traces ]                               
+|                                      |                                               
+|                                      v                                               
+|  +--------------------------------------------------------------------------------+  
+|  |                         REPRESENTATIVE CALIBRATION CORPUS                      |  
+|  |                                                                                |  
+|  |  +-----------------------------+   +-----------------------------------------+ |  
+|  |  | Workload Representativeness |   | Domain & Language Coverage              | |  
+|  |  |                             |   |                                         | |  
+|  |  | - Real user prompt shapes   |   | - Code, math, reasoning                 | |  
+|  |  | - Real task mix             |   | - Multilingual inputs                   | |  
+|  |  | - Real template patterns    |   | - Rare-token / outlier channels         | |  
+|  |  +-----------------------------+   +-----------------------------------------+ |  
+|  |                                                                                |  
+|  |  +-----------------------------+   +-----------------------------------------+ |  
+|  |  | Structural Adherence        |   | Context-Length Coverage                 | |  
+|  |  |                             |   |                                         | |  
+|  |  | - JSON schemas              |   | - Short, medium, long sequences         | |  
+|  |  | - XML wrappers              |   | - Target production context windows     | |  
+|  |  | - Tool definitions          |   | - 2K -> 32K+ activation profiles        | |  
+|  |  +-----------------------------+   +-----------------------------------------+ |  
+|  |                                                                                |  
+|  |  +--------------------------------------------------------------------------+  |  
+|  |  | Governance & Privacy                                                     |  |  
+|  |  |                                                                          |  |  
+|  |  | - PII anonymization                                                      |  |  
+|  |  | - Provenance and version tracking                                        |  |  
+|  |  | - Separation from validation / evaluation test sets                      |  |  
+|  |  | - Release-linked calibration manifests                                   |  |  
+|  |  +--------------------------------------------------------------------------+  |  
+|  +--------------------------------------------------------------------------------+  
+|                                      |                                               
+|                                      v                                               
+|  +--------------------------------------------------------------------------------+  
+|  |                         QUANTIZATION CALIBRATION PASS                          |  
+|  |                                                                                |  
+|  |  - Profile activation ranges and outlier channels                              |  
+|  |  - Compute weight / activation scale factors                                   |  
+|  |  - Preserve fragile behaviors: reasoning, schemas, tools, safety, recall       |  
+|  +--------------------------------------------------------------------------------+  
+|                                      |                                               
+|                                      v                                               
+|  +--------------------------------------------------------------------------------+  
+|  |                            OPTIMIZED MODEL CANDIDATE                           |  
+|  |                                                                                |  
+|  |  Candidate proceeds only after regression testing against held-out eval sets.  |  
+|  +--------------------------------------------------------------------------------+  
+|                                                                                      
 +--------------------------------------------------------------------------------------+
 ```
 
@@ -306,38 +280,14 @@ W_target_2:   Metadata: [ 00 | 10 ]
 To bridge this deployment gap, **SlideSparse** introduces an overlapping sliding window transformation that maps arbitrary Z:L sparsity patterns to the 2:4 format.56 SlideSparse defines a generalized sparsity format Z:L, where L is the source window size and Z is the minimum number of zeros within that window.56  
 Through a greedy residual allocation strategy, SlideSparse duplicates and shifts non-zero elements—a process called K-expansion—to construct an expanded matrix that structurally conforms to the hardware's 2:4 format requirements.56 This allows models with lower, accuracy-preserving sparsity profiles (e.g., 25% sparsity) to execute directly on Sparse Tensor Cores, unlocking proportional speedups (e.g., 1.33x speedup for 2:8 patterns) without suffering the severe cognitive collapse triggered by aggressive 50% pruning.56
 
-```
-+-----------------------------------------------------------------------------------------------------------------------------------------------------+
-|                                                PRUNING AND SPARSITY FIT MODEL                                                                       |
-+-----------------------------------------------------------------------------------------------------------------------------------------------------+
-|                                                                                                                                                     |
-| Compression Approach       | Underpinning Mechanics       | Hardware Dependency        | Acceleration Mechanism      | Behavioral Risk              |
-|----------------------------+------------------------------+----------------------------+-----------------------------+------------------------------|
-| Unstructured Pruning       | Individual low-importance    | General GPU-compatible,    | None in standard dense      | Low to moderate. Can         |
-|                            | weights are zeroed without   | but not directly           | execution. Zero-valued      | preserve behavior at modest  |
-|                            | enforcing a physical layout. | accelerated by standard    | weights are still loaded    | sparsity, but offers little  |
-|                            |                              | Tensor Core kernels.       | and processed.              | deployment benefit alone.    |
-|----------------------------+------------------------------+----------------------------+-----------------------------+------------------------------|
-| 2:4 Structured Sparsity    | Exactly two weights are      | Native support on NVIDIA   | Sparse Tensor Cores skip    | High. A forced 50% pruning   |
-|                            | zeroed in every contiguous   | Ampere, Hopper, and        | zero operands and store     | ratio can collapse reasoning |
-|                            | group of four.               | Blackwell Sparse Tensor    | compact metadata for        | ability, code accuracy, and  |
-|                            |                              | Core paths.                | non-zero positions.         | rare-token competence.       |
-|----------------------------+------------------------------+----------------------------+-----------------------------+------------------------------|
-| SlideSparse Adaptation     | Lower-risk arbitrary         | Requires hardware capable  | Maps accuracy-preserving    | Low to moderate. Preserves   |
-|                            | sparsity patterns, such as   | of accelerating 2:4 sparse | lower sparsity patterns     | more behavior than strict    |
-|                            | 2:8, are transformed into    | layouts after expansion.   | into hardware-conforming    | 2:4, but adds expansion and  |
-|                            | 2:4-compatible layouts via   |                            | 2:4 execution structure.    | layout complexity.           |
-|                            | sliding-window expansion.    |                            |                             |                              |
-|----------------------------+------------------------------+----------------------------+-----------------------------+------------------------------|
-| Low-Rank Compression       | Dense matrices are replaced  | General linear algebra     | Reduces effective matrix    | Moderate. May damage         |
-|                            | with lower-rank projections  | kernels; benefit depends   | dimensions, projection      | retrieval, attention detail, |
-|                            | such as truncated SVD.       | on kernel and rank target. | cost, and memory traffic.   | and fine-grained reasoning.  |
-|                                                                                                                                                     |
-+-----------------------------------------------------------------------------------------------------------------------------------------------------+
-| Practical fit: structured sparsity only matters when the sparse representation survives all the way into hardware execution.                        |
-| If the runtime expands sparse weights back into dense form, the model has merely been compressed on paper.                                          |
-+-----------------------------------------------------------------------------------------------------------------------------------------------------+
-```
+| Compression Approach        | Underpinning Mechanics                                                                                 | Hardware Dependency                                                                | Acceleration Mechanism                                                                   | Behavioral Risk                                                                                   |
+| :-------------------------- | :----------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------ |
+| **Unstructured Pruning**    | Individual low-importance weights are zeroed without enforcing a physical layout                       | General GPU compatible, but not directly accelerated by standard Tensor Core paths | Usually none in dense execution; zero-valued weights may still be loaded and processed   | Low to moderate; can preserve behavior at modest sparsity but offers little serving benefit alone |
+| **2:4 Structured Sparsity** | Exactly two weights are zeroed in every contiguous group of four                                       | Native support on NVIDIA Ampere, Hopper, and Blackwell Sparse Tensor Core paths    | Sparse Tensor Cores skip zero operands and store compact metadata for non-zero positions | High; forced 50% pruning can collapse reasoning, code accuracy, and rare-token competence         |
+| **SlideSparse Adaptation**  | Lower-risk sparsity patterns such as 2:8 are transformed into 2:4-compatible layouts through expansion | Requires hardware capable of accelerating 2:4 sparse layouts after transformation  | Maps accuracy-preserving lower sparsity into hardware-conforming sparse execution        | Low to moderate; preserves more behavior than strict 2:4 but adds expansion/layout complexity     |
+| **Low-Rank Compression**    | Dense matrices are replaced with lower-rank projections, such as truncated SVD                         | General linear algebra kernels; benefit depends on rank target and kernel support  | Reduces effective matrix dimensions, projection cost, and memory traffic                 | Moderate; may damage retrieval, attention detail, and fine-grained reasoning                      |
+
+Practical fit: structured sparsity only matters when the sparse representation survives all the way into hardware execution. If the runtime expands sparse weights back into dense form, the model has merely been compressed on paper.
 
 ## **KV Cache Quantization and State Compression**
 
@@ -363,46 +313,21 @@ TurboQuant compresses the KV cache up to 6x and accelerates attention computatio
 
 ShadowKV uses a low-rank approximation approach, applying a truncated Singular Value Decomposition (SVD) to compress high-dimensional key vectors down to low-rank subspaces (typically rank 160 or 256).36 Because the value projections are less sensitive to low-rank transformations, ShadowKV quantizes values to low-bit formats (e.g., FP8 or NVFP4) while maintaining full-precision key projections, preserving context-intensive retrieval capabilities with minimal latency overhead.36
 
-```
-+---------------------------------------------------------------------------------------------------------------------------------------------+
-|                                      KV CACHE QUANTIZATION AND STATE COMPRESSION MODEL                                                      |
-+---------------------------------------------------------------------------------------------------------------------------------------------+
-|                                                                                                                                             |
-| Compression Scheme       | Active Representation        | VRAM Allocation vs. BF16 | Context Scaling Envelope | Attention Degradation Risk  |
-|--------------------------+------------------------------+--------------------------+--------------------------+-----------------------------|
-| FP8 KV Cache             | Keys and values stored in    | ~50% reduction           | ~2x effective context    | Low to moderate. Usually    |
-|                          | FP8 rather than BF16 / FP16. |                          | capacity or concurrency  | stable, but can degrade     |
-|                          |                              |                          | before memory pressure.  | complex positional encoding |
-|                          |                              |                          |                          | and long-range recall.      |
-|--------------------------+------------------------------+--------------------------+--------------------------+-----------------------------|
-| Tiered INT8 / INT4       | Keys stored as per-channel   | ~4x cache reduction      | ~3x to 4x effective      | Bounded if runtime error    |
-| Bounded Fallback         | INT8; values stored as       | when compressed blocks   | context / concurrency    | checks page in FP16 blocks  |
-|                          | per-group INT4 in VRAM;      | remain resident in VRAM. | depending on H2D budget. | when perturbation exceeds   |
-|                          | FP16 originals retained in   |                          |                          | threshold. Risk shifts from |
-|                          | host DRAM for fallback.      |                          |                          | silent error to latency.    |
-|--------------------------+------------------------------+--------------------------+--------------------------+-----------------------------|
-| TurboQuant               | Rotated low-bit key/value    | Up to ~6x reduction      | ~5x to 6x context        | Moderate. Rotation and      |
-|                          | states using PolarQuant      | depending on workload,   | expansion if CUDA path   | projection correction reduce|
-|                          | smoothing plus QJL error     | sequence length, and     | is optimized.            | outlier damage, but custom  |
-|                          | correction.                  | implementation.          |                          | kernels become load-bearing.|
-|--------------------------+------------------------------+--------------------------+--------------------------+-----------------------------|
-| ShadowKV / Low-Rank KV   | Keys compressed through      | ~4x reduction depending  | ~4x context expansion    | Low to moderate for         |
-| Compression              | low-rank approximation;      | on target rank and value | when retrieval workload  | context-heavy tasks if keys |
-|                          | values quantized to FP8,     | quantization format.     | tolerates approximation. | preserve enough structure;  |
-|                          | NVFP4, or similar formats.   |                          |                          | risk rises in dense multi-  |
-|                          |                              |                          |                          | turn attention patterns.    |
-|                                                                                                                                             |
-+---------------------------------------------------------------------------------------------------------------------------------------------+
-| System Interoperability                                                                                                                     |
-|                                                                                                                                             |
-| FP8 KV Cache             -> Best fit for runtimes with native FP8 KV support, such as modern vLLM / SGLang-style deployments.               |
-| Tiered INT8 / INT4      -> Requires custom attention kernels, pinned host memory, and fast H2D fallback paths.                              |
-| TurboQuant              -> Requires custom CUDA kernels and validation against target context workloads.                                    |
-| ShadowKV / Low-Rank KV  -> Fits paged-attention-style engines if block tables and compression metadata stay scheduler-compatible.           |
-+---------------------------------------------------------------------------------------------------------------------------------------------+
-| Operational doctrine: compress KV cache only with long-context regression tests. NIAH / RULER-style recall failures are the canary.         |
-+---------------------------------------------------------------------------------------------------------------------------------------------+
-```
+| Compression Scheme                      | Active Representation                                                                                          | VRAM Allocation vs. BF16                                          | Context Scaling Envelope                                                    | Attention Degradation Risk                                                                                           |
+| :-------------------------------------- | :------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------- | :-------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------- |
+| **FP8 KV Cache**                        | Keys and values stored in FP8 instead of BF16/FP16                                                             | About 50% reduction                                               | Roughly 2× effective context capacity or concurrency before memory pressure | Low to moderate; can degrade positional precision and long-range recall                                              |
+| **Tiered INT8 / INT4 Bounded Fallback** | Keys stored as per-channel INT8; values stored as per-group INT4 in VRAM; FP16 originals retained in host DRAM | Up to about 4× reduction while blocks remain compressed           | About 3× to 4× context or concurrency expansion depending on H2D budget     | Bounded by runtime error checks; risk shifts from silent error to fallback latency                                   |
+| **TurboQuant**                          | Rotated low-bit key/value states using PolarQuant smoothing plus QJL error correction                          | Up to about 6× reduction depending on workload and implementation | About 5× to 6× context expansion if CUDA path is optimized                  | Moderate; custom kernels become load-bearing, but rotation/projection reduce outlier damage                          |
+| **ShadowKV / Low-Rank KV Compression**  | Keys compressed through low-rank approximation; values quantized to FP8, NVFP4, or similar formats             | About 4× reduction depending on target rank and value format      | About 4× context expansion when workload tolerates approximation            | Low to moderate for context-heavy tasks if keys preserve enough structure; higher risk in dense multi-turn attention |
+
+| Scheme                     | System Interoperability                                                                               |
+| :------------------------- | :---------------------------------------------------------------------------------------------------- |
+| **FP8 KV Cache**           | Best fit for runtimes with native FP8 KV support, such as modern vLLM/SGLang-style deployments        |
+| **Tiered INT8 / INT4**     | Requires custom attention kernels, pinned host memory, and fast H2D fallback paths                    |
+| **TurboQuant**             | Requires custom CUDA kernels and validation against target context workloads                          |
+| **ShadowKV / Low-Rank KV** | Fits paged-attention-style engines if block tables and compression metadata stay scheduler-compatible |
+
+**Operational doctrine**: compress KV cache only with long-context regression tests. NIAH/RULER-style recall failures are the canary.
 
 ## **Speculative Decoding and Draft-Model Engineering**
 
@@ -429,8 +354,11 @@ Speculative decoding addresses the memory-bandwidth bottleneck of autoregressive
 2. **Verification Phase:** The larger, highly accurate target model takes those K candidate tokens and processes them in a single parallel forward pass.23 Modern GPUs can verify K tokens in nearly the same time they take to generate a single token because the target model's weights only need to be transferred from HBM to registers once for the entire sequence.11  
 3. **Acceptance and Correction:** The target model compares its token probability distribution against the draft model's proposals.11 It accepts tokens that align with its distribution, rejects the first divergent token, and generates a fresh correction token.11 If the draft model matches the target well, the system accepts multiple tokens per step, dramatically accelerating generation without changing output quality.11
 
-For an acceptance rate alpha (the probability that a drafted token is accepted by the target model), the expected number of accepted tokens per verification pass is modeled as 57:  
-E = (1 - alpha^(K+1)) / (1 - alpha)
+For an acceptance probability `alpha` and a proposed draft length `K`, the expected number of tokens advanced per target verification pass is:
+
+`E_tokens_advanced = (1 - alpha^(K + 1)) / (1 - alpha)`
+
+This expression counts the progress made by a verification step, including the correction token produced after the first rejected draft token. It should not be described as the expected number of accepted draft tokens. When `alpha = 0`, no draft tokens are accepted, but the target still advances by one corrected token. When `alpha` approaches `1`, most or all drafted tokens are accepted, and the verification pass advances close to `K + 1` tokens.
 
 ### **Speculative Architectures**
 
@@ -454,41 +382,15 @@ EAGLE-3 further incorporates a **Training-Time Test (TTT)** procedure that simul
 While draft generation is fast, verifying a long sequence of proposed tokens against a massive target model (like a 70B or 405B parameter model) still incurs substantial verification latency, taking up to 6.9x longer than draft generation.25 HiSpec addresses this verification bottleneck by using low-overhead **Early-Exit (EE) models** as intermediate verifiers.25  
 Rather than executing a full forward pass through all layers of the target model for every verification step, HiSpec routes candidate tokens through an intermediate verifier that exits at an early layer (typically one-fourth of the target model's total depth).25 This intermediate verifier rejects inaccurate candidate tokens early in the execution path, reducing the volume of tokens that must pass through the remaining expensive layers of the target model.25
 
-```
-+------------------------------------------------------------------------------------------------------------------------------------------------------------+
-|                                                SPECULATIVE DECODING FIT MODEL                                                                              |
-+------------------------------------------------------------------------------------------------------------------------------------------------------------+
-|                                                                                                                                                            |
-| Speculative Pipeline | Draft Engine Architecture      | Target Verification Path      | Acceptance Profile | Throughput Gain   | Resource Demands          |
-|----------------------+--------------------------------+-------------------------------+--------------------+-------------------+------------------------   |
-| Vanilla Speculation  | Independent small model,       | Full target model verifies    | Moderate. Strong   | ~1.8x-2.3x when   | Adds draft-model VRAM;    |
-|                      | typically 1B-3B parameters,    | drafted token sequence in     | only when tokenizer| draft and target  | requires tokenizer and    |
-|                      | paired with same-family target.| parallel forward pass.        | and distribution   | distributions     | vocab alignment.          |
-|                      |                                |                               | alignment are high.| align well.       |                           |
-|----------------------+--------------------------------+-------------------------------+--------------------+-------------------+------------------------   |
-| Medusa               | Multiple lightweight prediction| Target model hidden states    | Moderate to good.  | ~1.5x-2.1x.       | Minimal added VRAM,       |
-|                      | heads attached to target model | are extended through trained  | Works best on      | Lower ceiling     | but requires custom       |
-|                      | hidden states.                 | multi-token heads.            | predictable token  | than EAGLE-style  | head training and         |
-|                      |                                |                               | continuations.     | drafting.         | integration.              |
-|----------------------+--------------------------------+-------------------------------+--------------------+-------------------+------------------------   |
-| EAGLE-3              | Lightweight feature-level      | Target model verifies tokens  | High. Often around | ~2.5x-3.5x in     | Requires draft training   |
-|                      | autoregressive extrapolator    | generated from predicted      | 80% on aligned     | production-like   | and runtime support in    |
-|                      | predicts future hidden states. | hidden-state trajectories.    | workloads.         | batch workloads.  | vLLM / SGLang / TRT.      |
-|----------------------+--------------------------------+-------------------------------+--------------------+-------------------+------------------------   |
-| P-EAGLE              | Parallel draft model proposes  | Verification tree is processed| High if mask and   | ~2.8x-3.6x when   | Rebuilds batch metadata   |
-|                      | multiple candidate tokens in   | by the target model with      | placeholder layout | parallel drafting | slots; needs specialized  |
-|                      | one forward pass.              | minimal sequential drafting.  | remain stable.     | avoids draft tax. | runtime support.          |
-|----------------------+--------------------------------+-------------------------------+--------------------+-------------------+------------------------   |
-| HiSpec               | Early-exit verifier filters    | Hierarchical verification:    | Good. Most useful  | Up to ~4.0x when  | Requires reusable         |
-|                      | candidates before full target  | weak candidates exit early;   | when verification  | early rejection   | hidden states, KV cache   |
-|                      | depth is executed.             | strong candidates continue.   | cost dominates.    | saves target work.| coordination, and EE      |
-|                      |                                |                               |                    |                   | verifier integration.     |
-|                                                                                                                                                            |
-+------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Fit rule: speculation is useful only when accepted draft tokens outnumber the cost of drafting, verification, and rejected-token                           |
-| recovery. If acceptance falls below the operational threshold, fall back to standard autoregressive decoding.                                              |
-+------------------------------------------------------------------------------------------------------------------------------------------------------------+
-```
+| Speculative Pipeline    | Draft Engine Architecture                                                           | Target Verification Path                                                          | Acceptance Profile                                           | Throughput Gain                                          | Resource Demands                                                                            |
+| :---------------------- | :---------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------- | :----------------------------------------------------------- | :------------------------------------------------------- | :------------------------------------------------------------------------------------------ |
+| **Vanilla Speculation** | Independent small model, usually 1B–3B parameters, paired with same-family target   | Full target model verifies drafted token sequence in parallel                     | Moderate; strong only when tokenizer and distributions align | About 1.8×–2.3× when draft and target align well         | Adds draft-model VRAM; requires tokenizer/vocab alignment                                   |
+| **Medusa**              | Multiple lightweight prediction heads attached to target hidden states              | Target hidden states are extended through trained multi-token heads               | Moderate to good; best on predictable continuations          | About 1.5×–2.1×; lower ceiling than EAGLE-style drafting | Minimal added VRAM, but requires custom head training and integration                       |
+| **EAGLE-3**             | Lightweight feature-level autoregressive extrapolator predicts future hidden states | Target model verifies tokens generated from predicted hidden-state trajectories   | High; often around 80% on aligned workloads                  | About 2.5×–3.5× in production-like batch workloads       | Requires draft training and runtime support in vLLM/SGLang/TRT-LLM                          |
+| **P-EAGLE**             | Parallel draft model proposes multiple candidate tokens in one forward pass         | Verification tree is processed by the target with minimal sequential drafting     | High if mask and placeholder layout remain stable            | About 2.8×–3.6× when parallel drafting avoids draft tax  | Rebuilds batch metadata slots; needs specialized runtime support                            |
+| **HiSpec**              | Early-exit verifier filters candidates before full target depth                     | Hierarchical verification: weak candidates exit early; strong candidates continue | Good when verification cost dominates                        | Up to about 4× when early rejection saves target work    | Requires reusable hidden states, KV-cache coordination, and early-exit verifier integration |
+
+**Fit rule**: speculation is useful only when accepted draft tokens outnumber the cost of drafting, verification, and rejected-token recovery. If acceptance falls below the operational threshold, fall back to standard autoregressive decoding.
 
 ### **Draft Model Selection Framework**
 
@@ -539,7 +441,7 @@ To enforce these rules efficiently, logit processors compile constraints into fo
 While logit masking guarantees structural compliance, naive constraint engines introduce severe processing bottlenecks, adding up to several seconds of compilation overhead and slowing down generation speeds.39 Advanced structured generation engines like **XGrammar-2** and **llguidance** address these limitations using three primary runtime optimizations 2:
 
 1. **TagDispatch (TriggeredTags):** Agentic workflows often mix free-form reasoning text with structured tool calls.26 Forcing the entire output into a single, massive JSON schema is highly inefficient.39 TagDispatch addresses this by keeping the model in a lightweight "free-text" scanning mode by default, utilizing a fast Aho-Corasick automaton to monitor outputs.54 Once the model generates a specific trigger tag (such as <｜DSML｜tool_calls>), the engine dynamically dispatches and enforces the corresponding structured grammar.39 This defers compilation overhead and minimizes cache usage.54  
-2. **Cross-Grammar Cache via FSM Hashing:** Preprocessing and compiling unique grammars for dozens of active tools during a session introduces significant latency spikes.39 Because different tool schemas frequently share identical sub-structures (for example, multiple different tool schemas will reuse the exact same representation for a standard string field, e.g., {"type": "string"}).  
+2. **Cross-Grammar Cache via FSM Hashing:** Preprocessing and compiling unique grammars for dozens of active tools during a session can introduce significant latency spikes. Different tool schemas often reuse identical substructures, such as standard string fields, enum wrappers, nullable arrays, object-property separators, or repeated JSON fragments. Cross-grammar caching hashes these reusable grammar fragments or FSM subgraphs so that common schema components compile once and can be reused across many tools. Instead of treating every tool schema as a completely new grammar, the runtime decomposes schemas into shared automata components, caches their compiled states, and links them into the active grammar graph at dispatch time. This reduces first-use compilation overhead, improves cache locality, and prevents large tool catalogs from turning schema enforcement into a hidden prefill-latency tax.
 3. **Repetition State Compression:** Many JSON schemas enforce repetition constraints, such as validating arrays with a high item limit.39 Naive engines compile these patterns by duplicating the state representation proportionally, resulting in an O(repetition_count) complexity that degrades performance.39 XGrammar-2 compresses this by introducing a dedicated "repetition" grammar primitive that maintains a constant O(1) state size regardless of the allowed repetition limit, speeding up array compilation times by up to 100x.39
 
 #### **Differentiating Structure from Semantics**
@@ -547,53 +449,15 @@ While logit masking guarantees structural compliance, naive constraint engines i
 An important engineering doctrine in constrained decoding is that **valid structure is not correct meaning**.2 Constrained decoding guarantees syntactic compliance—ensuring that braces balance, required fields appear, and data types match the schema.2  
 However, a syntactically perfect JSON object can still contain incorrect values, such as selecting the wrong enum field, hallucinating tool arguments, or failing downstream verification checks.2 Therefore, constrained decoding must be paired with robust semantic validation, tool-result verification, and automated retry loops to protect downstream systems.40
 
-```
-+----------------------------------------------------------------------------------------------------------------------------------------------+
-|                                             CONSTRAINED DECODING STRATEGY MODEL                                                              |
-+----------------------------------------------------------------------------------------------------------------------------------------------+
-|                                                                                                                                              |
-| Framework / Mode        | Enforcement Mechanism        | Compilation Overhead       | Per-Token Overhead      | Structural Guarantee         |
-|-------------------------+------------------------------+----------------------------+-------------------------+------------------------------|
-| JSON Mode               | Provider-guided formatting   | Near-zero                  | Near-zero               | Weak to moderate. Improves   |
-|                         | bias and generic JSON-shape  |                            |                         | JSON likelihood but may      |
-|                         | steering.                    |                            |                         | fail complex schemas.        |
-|-------------------------+------------------------------+----------------------------+-------------------------+------------------------------|
-| Provider-Native Strict  | API-managed constrained      | Provider-managed; may      | Low to minimal; hidden  | Strong. Enforces declared    |
-| Structured Outputs      | decoding against declared    | include first-schema       | inside serving runtime. | schema paths before token    |
-|                         | schema / grammar.            | setup or cache cost.       |                         | selection.                   |
-|-------------------------+------------------------------+----------------------------+-------------------------+------------------------------|
-| XGrammar-2              | Hybrid FSM / PDA grammar     | Low after optimization.    | Near-zero with grammar  | Strong. Handles complex      |
-|                         | masking, TagDispatch,        | Uses cross-grammar cache,  | caching and compressed  | nested structures, dynamic   |
-|                         | repetition compression,      | FSM hashing, and O(1)      | repetition state.       | tools, and agentic mixed     |
-|                         | and dynamic grammar dispatch.| repetition primitives.     |                         | free-text / structured flow. |
-|-------------------------+------------------------------+----------------------------+-------------------------+------------------------------|
-| llguidance              | CFG / regex / token-indexed  | Moderate. Requires grammar | Low when precomputed;   | Strong. Good fit for         |
-|                         | constrained generation with  | preprocessing and parser   | optimized token parsing | recursive schemas, XML,      |
-|                         | optimized parser state.      | state construction.        | during generation.      | regex-heavy formats.         |
-|                         |                              |                            |                         |                              |
-|-------------------------+------------------------------+----------------------------+-------------------------+------------------------------|
-| Framework / Mode        | Semantic Correctness Risk    | Best Fit                   | Failure Mode            | Operational Note             |
-|-------------------------+------------------------------+----------------------------+-------------------------+------------------------------|
-| JSON Mode               | High. Can produce plausible  | Simple JSON envelopes,     | Schema drift, missing    | Use only when downstream    |
-|                         | but wrong fields and may not | loose data extraction,     | fields, malformed nested | validators can reject and   |
-|                         | satisfy strict schemas.      | low-stakes formatting.     | structures.              | retry safely.               |
-|-------------------------+------------------------------+----------------------------+-------------------------+------------------------------|
-| Provider-Native Strict  | Medium to high. Structure is | High-volume cloud API      | Correctly shaped but     | Pair with semantic          |
-| Structured Outputs      | enforced, but values can     | deployments where schema   | wrong values, bad enum   | validation and tool-result  |
-|                         | still be wrong.              | compliance is mandatory.   | selection, forced fills. | verification.               |
-|-------------------------+------------------------------+----------------------------+-------------------------+------------------------------|
-| XGrammar-2              | Medium. Excellent structure; | Agentic workflows, complex | Parser deadlock, grammar | Use TagDispatch when only   |
-|                         | still needs semantic checks. | nested tool calls, mixed   | miscompile, masked       | part of the output needs    |
-|                         |                              | prose + structured spans.  | correct answer tokens.   | strict structure.           |
-|-------------------------+------------------------------+----------------------------+-------------------------+------------------------------|
-| llguidance              | Medium. Strong grammar path; | Recursive schemas, XML-    | Grammar/state mismatch,  | Best when grammar design is |
-|                         | meaning remains externally   | heavy formats, local or    | dependency coupling,     | stable and parser behavior  |
-|                         | validated.                   | custom runtime control.    | integration complexity.  | is regression-tested.       |
-+----------------------------------------------------------------------------------------------------------------------------------------------+
-| Doctrine: constrained decoding guarantees valid structure, not truthful content. Use it for syntax; use validators, tools, and               |
-| grounded checks for semantics.                                                                                                               |
-+----------------------------------------------------------------------------------------------------------------------------------------------+
-```
+| Framework / Mode                              | Enforcement Mechanism                                                                         | Compilation Overhead                                                                        | Per-Token Overhead                                             | Structural Guarantee                                                                      |
+| :-------------------------------------------- | :-------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------ | :------------------------------------------------------------- | :---------------------------------------------------------------------------------------- |
+| **JSON Mode**                                 | Provider-guided formatting bias and generic JSON-shape steering                               | Near-zero                                                                                   | Near-zero                                                      | Weak to moderate; improves JSON likelihood but may fail complex schemas                   |
+| **Provider-Native Strict Structured Outputs** | API-managed constrained decoding against declared schema/grammar                              | Provider-managed; may include first-schema setup or cache cost                              | Low to minimal; hidden inside serving runtime                  | Strong; enforces declared schema paths before token selection                             |
+| **XGrammar-2**                                | Hybrid FSM/PDA grammar masking, TagDispatch, repetition compression, dynamic grammar dispatch | Low after optimization via cross-grammar cache, FSM hashing, and O(1) repetition primitives | Near-zero with grammar caching and compressed repetition state | Strong; handles complex nested structures, dynamic tools, and mixed prose/structured flow |
+| **llguidance**                                | CFG/regex/token-indexed constrained generation with optimized parser state                    | Moderate; requires grammar preprocessing and parser state construction                      | Low when precomputed                                           | Strong; good fit for recursive schemas, XML, and regex-heavy formats                      |
+
+**Doctrine**: constrained decoding guarantees valid structure, not truthful content. Use it for syntax; use validators, tools, and grounded checks for semantics.
+
 
 ## **Sampling Dynamics and Serving Policies**
 
@@ -605,58 +469,58 @@ Sampling parameters shape how a language model selects final tokens from its out
 +--------------------------------------------------------------------------------------+
 |                                  SAMPLING PIPELINE                                   |
 +--------------------------------------------------------------------------------------+
-|                                                                                      |
-|  [ Model Forward Pass ]                                                              |
-|          |                                                                           |
-|          v                                                                           |
-|  [ Raw Logits ]                                                                      |
-|          |                                                                           |
-|          |  Vector of unnormalized token scores across the vocabulary                |
-|          v                                                                           |
-|  +--------------------------------------------------------------------------------+  |
-|  |                           LOGIT PROCESSORS                                     |  |
-|  |                                                                                |  |
-|  |  - Logit bias: raise or lower specific token scores                            |  |
-|  |  - Repetition penalty: adjust scores for previously used tokens                |  |
-|  |  - Constraint mask: set structurally invalid tokens to -infinity               |  |
-|  +-----------------------------------+--------------------------------------------+  |
-|                                      |                                               |
-|                                      v                                               |
-|  [ Temperature Scaling ]                                                             |
-|          |                                                                           |
-|          |  L_i_scaled = L_i / T                                                     |
-|          |                                                                           |
-|          |  Lower T -> sharper, more deterministic distribution                      |
-|          |  Higher T -> flatter, more diverse distribution                           |
-|          v                                                                           |
-|  [ Softmax Normalization ]                                                           |
-|          |                                                                           |
-|          |  Converts scaled logits into token probabilities                          |
-|          v                                                                           |
-|  +--------------------------------------------------------------------------------+  |
-|  |                         CANDIDATE SET FILTERING                                |  |
-|  |                                                                                |  |
-|  |  - Top-K: keep only the K highest-probability tokens                           |  |
-|  |  - Top-P: keep smallest set whose cumulative probability exceeds p             |  |
-|  |  - Min-P: keep tokens above threshold scaled by the top token probability      |  |
-|  +-----------------------------------+--------------------------------------------+  |
-|                                      |                                               |
-|                                      v                                               |
-|  [ Probability Renormalization ]                                                     |
-|          |                                                                           |
-|          |  Redistribute probability mass across surviving candidates                |
-|          v                                                                           |
-|  [ Token Selection ]                                                                 |
-|          |                                                                           |
-|          |  - Greedy / argmax when deterministic                                     |
-|          |  - Random sampling when stochastic                                        |
-|          |  - Seeded sampling when reproducibility is required                       |
-|          v                                                                           |
-|  [ Selected Next Token ]                                                             |
-|          |                                                                           |
-|          v                                                                           |
-|  [ Append Token to Context and Continue Decode Loop ]                                |
-|                                                                                      |
+|                                                                                      
+|  [ Model Forward Pass ]                                                              
+|          |                                                                           
+|          v                                                                           
+|  [ Raw Logits ]                                                                      
+|          |                                                                           
+|          |  Vector of unnormalized token scores across the vocabulary                
+|          v                                                                           
+|  +--------------------------------------------------------------------------------+  
+|  |                           LOGIT PROCESSORS                                     |  
+|  |                                                                                |  
+|  |  - Logit bias: raise or lower specific token scores                            |  
+|  |  - Repetition penalty: adjust scores for previously used tokens                |  
+|  |  - Constraint mask: set structurally invalid tokens to -infinity               |  
+|  +-----------------------------------+--------------------------------------------+  
+|                                      |                                               
+|                                      v                                               
+|  [ Temperature Scaling ]                                                             
+|          |                                                                           
+|          |  L_i_scaled = L_i / T                                                     
+|          |                                                                           
+|          |  Lower T -> sharper, more deterministic distribution                      
+|          |  Higher T -> flatter, more diverse distribution                           
+|          v                                                                           
+|  [ Softmax Normalization ]                                                           
+|          |                                                                           
+|          |  Converts scaled logits into token probabilities                          
+|          v                                                                           
+|  +--------------------------------------------------------------------------------+  
+|  |                         CANDIDATE SET FILTERING                                |  
+|  |                                                                                |  
+|  |  - Top-K: keep only the K highest-probability tokens                           |  
+|  |  - Top-P: keep smallest set whose cumulative probability exceeds p             |  
+|  |  - Min-P: keep tokens above threshold scaled by the top token probability      |  
+|  +-----------------------------------+--------------------------------------------+  
+|                                      |                                               
+|                                      v                                               
+|  [ Probability Renormalization ]                                                     
+|          |                                                                           
+|          |  Redistribute probability mass across surviving candidates                
+|          v                                                                           
+|  [ Token Selection ]                                                                 
+|          |                                                                           
+|          |  - Greedy / argmax when deterministic                                     
+|          |  - Random sampling when stochastic                                        
+|          |  - Seeded sampling when reproducibility is required                       
+|          v                                                                           
+|  [ Selected Next Token ]                                                             
+|          |                                                                           
+|          v                                                                           
+|  [ Append Token to Context and Continue Decode Loop ]                                
+|                                                                                      
 +--------------------------------------------------------------------------------------+
 | Doctrine: sampling changes token choice, not model knowledge. It tunes expression,   |
 | diversity, determinism, and structural stability at the final decoding boundary.     |
@@ -693,73 +557,26 @@ Case B: Uncertain Model (p_max = 0.2)
 
 By adapting dynamically, Min-P preserves coherence on structured tasks while allowing creative variations at high temperatures without generating incoherent output.38
 
-```
-+-----------------------------------------------------------------------------------------------------------------------------------------------------+
-|                                                     SAMPLING POLICY MATRIX                                                                          |
-+-----------------------------------------------------------------------------------------------------------------------------------------------------+
-| Decoding Parameter    | Core Mathematical Impact        | Typical Range / Envelope      | Output Stability Risk       | Serving Impact              |
-|-----------------------+---------------------------------+-------------------------------+-----------------------------+-----------------------------|
-| Temperature           | Divides logits before softmax:  | 0.0 - 2.0                     | High values flatten the     | Negligible compute impact.  |
-|                       | L_i_scaled = L_i / T            |                               | distribution and increase   | Mostly changes token        |
-|                       |                                 | Common production range:      | incoherence, syntax drift,  | selection behavior, not     |
-|                       | Lower T sharpens probabilities; | 0.0 - 1.0                     | and schema fragility.       | forward-pass cost.          |
-|                       | higher T flattens them.         |                               |                             |                             |
-|-----------------------+---------------------------------+-------------------------------+-----------------------------+-----------------------------|
-| Top-K                 | Restricts the candidate pool    | K = 1 -> greedy / argmax      | Too small: repetitive or    | Low to moderate overhead    |
-|                       | to the K highest-probability    | K = 20-100 common             | brittle output.             | depending on vocabulary     |
-|                       | tokens after softmax ranking.   |                               | Too large: little filtering.| ranking implementation.     |
-|-----------------------+---------------------------------+-------------------------------+-----------------------------+-----------------------------|
-| Top-P                 | Keeps the smallest ranked set   | 0.0 - 1.0                     | High p admits long-tail     | Moderate sorting /          |
-| Nucleus Sampling      | whose cumulative probability    |                               | tokens at high temperature. | cumulative probability      |
-|                       | mass exceeds threshold p.       | Common range: 0.8 - 0.95      | Low p can truncate valid    | overhead at large batches.  |
-|                       |                                 |                               | alternatives too harshly.   |                             |
-|-----------------------+---------------------------------+-------------------------------+-----------------------------+-----------------------------|
-| Min-P                 | Keeps tokens whose probability  | 0.0 - 1.0                     | Usually more stable than    | Lightweight filtering step  |
-| Dynamic Truncation    | exceeds a threshold scaled by   |                               | Top-P under high confidence.| after probability scores    |
-|                       | the top token probability:      | Common range: 0.05 - 0.10     | Excessive values can still  | are available.              |
-|                       | p_i >= base_p * p_max           |                               | over-prune useful tokens.   |                             |
-|-----------------------+---------------------------------+-------------------------------+-----------------------------+-----------------------------|
-| Repetition Penalty    | Adjusts logits for tokens that  | Usually 1.0 - 2.0             | High values can corrupt     | Negligible overhead.        |
-|                       | already appear in the context.  |                               | fixed phrases, code, XML,   | Implemented as a logit      |
-|                       | Values > 1 discourage reuse.    | 1.0 means disabled            | JSON keys, and required     | processor before softmax.   |
-|                       |                                 |                               | structural tags.            |                             |
-|-----------------------+---------------------------------+-------------------------------+-----------------------------+-----------------------------|
-| Logit Bias            | Adds or subtracts fixed offsets | Engine-specific positive /    | Strong bias can force       | Negligible overhead.        |
-|                       | to selected token logits before | negative bias values applied  | unnatural phrasing, block   | Useful for nudging tokens,  |
-|                       | softmax.                        | to token IDs or token strings | required terms, or distort  | but dangerous as a policy   |
-|                       |                                 |                               | refusal / safety behavior.  | substitute.                 |
-|                       |                                 |                               |                             |                             |
-|-----------------------+---------------------------------+-------------------------------+-----------------------------+-----------------------------|
-| Decoding Parameter    | Reproducibility Profile         | Best Fit                      | Bad Fit                     | Operational Note            |
-|-----------------------+---------------------------------+-------------------------------+-----------------------------+-----------------------------|
-| Temperature           | Deterministic only at T = 0     | Deterministic extraction,     | Creative writing at T = 0;  | Pair low temperature with   |
-|                       | or with seeded stochastic       | factual QA, structured tasks  | strict schemas at very high | structural constraints when |
-|                       | sampling under stable runtime   | when low; ideation when high. | temperature.                | format matters.             |
-|                       | conditions.                     |                               |                             |                             |
-|-----------------------+---------------------------------+-------------------------------+-----------------------------+-----------------------------|
-| Top-K                 | Deterministic only when K = 1   | Autocomplete, bounded         | Open-ended generation       | Useful when the candidate   |
-|                       | or when sampling is seeded and  | generation, low-entropy       | requiring broad lexical     | pool must be hard-capped.   |
-|                       | runtime behavior is stable.     | completion tasks.             | variety.                    |                             |
-|-----------------------+---------------------------------+-------------------------------+-----------------------------+-----------------------------|
-| Top-P                 | Non-deterministic unless seeded | General chat, creative        | Strict schema generation    | Tune jointly with           |
-|                       | and engine behavior remains     | drafting, open-ended natural  | unless paired with grammar  | temperature; high T + high  |
-|                       | stable.                         | language output.              | or schema enforcement.      | p invites goblin tokens.    |
-|-----------------------+---------------------------------+-------------------------------+-----------------------------+-----------------------------|
-| Min-P                 | Non-deterministic unless seeded | Creative but coherent output, | Tasks needing maximal       | Often a better high-temp    |
-|                       | and runtime behavior remains    | high-temperature sampling     | determinism or exhaustive   | guardrail than Top-P alone. |
-|                       | stable.                         | with reduced garbage tokens.  | low-probability exploration.|                             |
-|-----------------------+---------------------------------+-------------------------------+-----------------------------+-----------------------------|
-| Repetition Penalty    | Deterministic if paired with    | Reducing loops, boilerplate   | Code, schemas, poetry,      | Keep mild when exact token  |
-|                       | deterministic decoding.         | repetition, and degenerate    | legal text, XML/JSON, or    | reuse is required.          |
-|                       |                                 | repeated phrases.             | required repeated labels.   |                             |
-|-----------------------+---------------------------------+-------------------------------+-----------------------------+-----------------------------|
-| Logit Bias            | Deterministic if paired with    | Encouraging / discouraging    | Replacing validation,       | Treat as a steering nudge,  |
-|                       | deterministic decoding.         | specific vocabulary, formats, | policy enforcement, or      | not a correctness guarantee.|
-|                       |                                 | or controlled terminology.    | semantic verification.      |                             |
-+-----------------------------------------------------------------------------------------------------------------------------------------------------+
-| Doctrine: sampling policies shape expression and candidate selection; they do not fix knowledge, reasoning, grounding, or semantics.                |
-+-------------------------------------------------------------------------------------------------------------------------------------------------------+
-```
+| Decoding Parameter           | Core Mathematical Impact                                                                                              | Typical Range / Envelope                                                      | Output Stability Risk                                                                              | Serving Impact                                                           |
+| :--------------------------- | :-------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------- |
+| **Temperature**              | Divides logits before softmax: `L_i_scaled = L_i / T`; lower values sharpen probabilities, higher values flatten them | `0.0–2.0`; common production range `0.0–1.0`                                  | High values increase incoherence, syntax drift, and schema fragility                               | Negligible compute impact; mostly changes token selection behavior       |
+| **Top-K**                    | Restricts candidate pool to the `K` highest-probability tokens                                                        | `K=1` gives greedy/argmax; `K=20–100` common                                  | Too small: repetitive or brittle output; too large: little filtering                               | Low to moderate overhead depending on ranking implementation             |
+| **Top-P / Nucleus Sampling** | Keeps the smallest ranked set whose cumulative probability exceeds threshold `p`                                      | `0.0–1.0`; common range `0.8–0.95`                                            | High `p` admits long-tail tokens at high temperature; low `p` may over-truncate valid alternatives | Moderate sorting/cumulative-probability overhead at large batches        |
+| **Min-P**                    | Keeps tokens whose probability exceeds `base_p * p_max`                                                               | `0.0–1.0`; common range `0.05–0.10`                                           | Usually more stable than Top-P under high confidence; excessive values over-prune useful tokens    | Lightweight filtering after probability scores are available             |
+| **Repetition Penalty**       | Adjusts logits for tokens that already appear in context; values above `1` discourage reuse                           | Usually `1.0–2.0`; `1.0` means disabled                                       | High values can corrupt fixed phrases, code, XML, JSON keys, and required structural tags          | Negligible overhead; implemented as a logit processor                    |
+| **Logit Bias**               | Adds or subtracts offsets to selected token logits before softmax                                                     | Engine-specific positive/negative bias values applied to token IDs or strings | Strong bias can force unnatural phrasing, block required terms, or distort refusal behavior        | Negligible overhead; useful as a nudge, dangerous as a policy substitute |
+
+| Decoding Parameter     | Reproducibility Profile                                                                        | Best Fit                                                                            | Bad Fit                                                                     | Operational Note                                                                                  |
+| :--------------------- | :--------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------- | :-------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------ |
+| **Temperature**        | Deterministic only at `T=0` or with seeded stochastic sampling under stable runtime conditions | Low-temperature factual QA, extraction, structured tasks; high-temperature ideation | Creative writing at `T=0`; strict schemas at very high temperature          | Pair low temperature with structural constraints when format matters                              |
+| **Top-K**              | Deterministic only when `K=1` or when sampling is seeded and runtime behavior is stable        | Autocomplete, bounded generation, low-entropy completion                            | Open-ended generation needing broad lexical variety                         | Useful when candidate pool must be hard-capped                                                    |
+| **Top-P**              | Non-deterministic unless seeded and engine behavior remains stable                             | General chat, creative drafting, open-ended natural language                        | Strict schema generation unless paired with grammar or schema enforcement   | Tune jointly with temperature; high `T` plus high `p` can admit low-probability incoherent tokens |
+| **Min-P**              | Non-deterministic unless seeded and runtime behavior remains stable                            | Creative but coherent output, high-temperature sampling with reduced garbage tokens | Tasks needing maximal determinism or exhaustive low-probability exploration | Often a better high-temperature guardrail than Top-P alone                                        |
+| **Repetition Penalty** | Deterministic if paired with deterministic decoding                                            | Reducing loops, boilerplate repetition, degenerate repeated phrases                 | Code, schemas, poetry, legal text, XML/JSON, or required repeated labels    | Keep mild when exact token reuse is required                                                      |
+| **Logit Bias**         | Deterministic if paired with deterministic decoding                                            | Encouraging/discouraging specific vocabulary, formats, controlled terminology       | Replacing validation, policy enforcement, or semantic verification          | Treat as steering, not correctness                                                                |
+
+**Doctrine**: sampling policies shape expression and candidate selection; they do not fix knowledge, reasoning, grounding, or semantics.
+
 
 ## **Quality Verification, Regression, and Lifecycle Management**
 
@@ -771,82 +588,82 @@ Optimizing model representations through quantization or pruning introduces math
 +--------------------------------------------------------------------------------------+
 |                            QUALITY DEGRADATION FRAMEWORK                             |
 +--------------------------------------------------------------------------------------+
-|                                                                                      |
-|  Goal: prove that an optimized model is behavior-preserving, not merely faster.      |
-|                                                                                      |
-|  [ Full-Precision Baseline ]                                                         |
-|          |                                                                           |
-|          |  Establish control metrics for behavior, latency, cost, and safety        |
-|          v                                                                           |
-|  +--------------------------------------------------------------------------------+  |
-|  |                         BASELINE CONTROL PROFILE                               |  |
-|  |                                                                                |  |
-|  |  - Task success rate                                                           |  |
-|  |  - Reasoning / code / arithmetic accuracy                                      |  |
-|  |  - Schema and tool-call compliance                                             |  |
-|  |  - Long-context retrieval accuracy                                             |  |
-|  |  - Safety, refusal, and alignment behavior                                     |  |
-|  |  - TTFT, ITL, throughput, and cost-per-success                                 |  |
-|  +-----------------------------------+--------------------------------------------+  |
-|                                      |                                               |
-|                                      v                                               |
-|  [ Candidate Optimization ]                                                          |
-|          |                                                                           |
-|          |  Examples: FP8, AWQ INT4, GPTQ INT4, KV-cache quantization, pruning,      |
-|          |  speculative decoding, constrained generation, runtime-kernel swap        |
-|          v                                                                           |
-|  +--------------------------------------------------------------------------------+  |
-|  |                        TARGETED REGRESSION EVALUATION                          |  |
-|  |                                                                                |  |
-|  |  +-----------------------------+   +----------------------------------------+  |  |
-|  |  | Logical Depth               |   | Schema / Tool Compliance               |  |  |
-|  |  |                             |   |                                        |  |  |
-|  |  | - Multi-step reasoning      |   | - JSON / XML validity                  |  |  |
-|  |  | - Math and code execution   |   | - Required fields and enum choices     |  |  |
-|  |  | - Symbolic synthesis        |   | - Tool argument names, types, values   |  |  |
-|  |  +-----------------------------+   +----------------------------------------+  |  |
-|  |                                                                                |  |
-|  |  +-----------------------------+   +----------------------------------------+  |  |
-|  |  | Grounding / Retrieval       |   | Safety / Alignment Coherence           |  |  |
-|  |  |                             |   |                                        |  |  |
-|  |  | - NIAH / RULER recall       |   | - Refusal consistency                  |  |  |
-|  |  | - Long-context fidelity     |   | - Jailbreak resistance                 |  |  |
-|  |  | - Citation / evidence use   |   | - False-positive refusal drift         |  |  |
-|  |  +-----------------------------+   +----------------------------------------+  |  |
-|  |                                                                                |  |
-|  |  +--------------------------------------------------------------------------+  |  |
-|  |  | Runtime / Economics                                                      |  |  |
-|  |  |                                                                          |  |  |
-|  |  | - TTFT and ITL under realistic batch loads                               |  |  |
-|  |  | - Tokens per second and requests per second                              |  |  |
-|  |  | - VRAM / HBM footprint                                                   |  |  |
-|  |  | - Cost per successful task, not just cost per generated token            |  |  |
-|  |  +--------------------------------------------------------------------------+  |  |
-|  +-----------------------------------+--------------------------------------------+  |
-|                                      |                                               |
-|                                      v                                               |
-|  [ Item-Level Baseline Comparison ]                                                  |
-|          |                                                                           |
-|          | Compare candidate outputs against the full-precision control item-by-item |
-|          | to catch fluent but damaged behavior.                                     |
-|          |                                                                           |
-|          v                                                                           |
-|     +----+---------------------------------------------+                             |
-|     |                                                  |                             |
-|     v                                                  v                             |
-|  [ All Gates Pass ]                              [ Any Critical Gate Fails ]         |
-|     |                                                  |                             |
-|     |                                                  +--> Roll back candidate      |
-|     |                                                  +--> Raise precision          |
-|     |                                                  +--> Recalibrate / retune     |
-|     |                                                  +--> Change compression path  |
-|     |                                                  |                             |
-|     v                                                  |                             |
-|  [ Promote Optimized Artifact ]                 [ Re-test Against Baseline ]         |
-|     |                                                  ^                             |
-|     |                                                  |                             |
-|     +---------------------> [ Production Monitoring ] -------------------------------+
-|                                                                                      |
+|                                                                                      
+|  Goal: prove that an optimized model is behavior-preserving, not merely faster.      
+|                                                                                      
+|  [ Full-Precision Baseline ]                                                         
+|          |                                                                           
+|          |  Establish control metrics for behavior, latency, cost, and safety        
+|          v                                                                           
+|  +--------------------------------------------------------------------------------+  
+|  |                         BASELINE CONTROL PROFILE                               |  
+|  |                                                                                |  
+|  |  - Task success rate                                                           |  
+|  |  - Reasoning / code / arithmetic accuracy                                      |  
+|  |  - Schema and tool-call compliance                                             |  
+|  |  - Long-context retrieval accuracy                                             |  
+|  |  - Safety, refusal, and alignment behavior                                     |  
+|  |  - TTFT, ITL, throughput, and cost-per-success                                 |  
+|  +-----------------------------------+--------------------------------------------+  
+|                                      |                                               
+|                                      v                                               
+|  [ Candidate Optimization ]                                                          
+|          |                                                                           
+|          |  Examples: FP8, AWQ INT4, GPTQ INT4, KV-cache quantization, pruning,      
+|          |  speculative decoding, constrained generation, runtime-kernel swap        
+|          v                                                                           
+|  +--------------------------------------------------------------------------------+  
+|  |                        TARGETED REGRESSION EVALUATION                          |  
+|  |                                                                                |  
+|  |  +-----------------------------+   +----------------------------------------+  |  
+|  |  | Logical Depth               |   | Schema / Tool Compliance               |  |  
+|  |  |                             |   |                                        |  |  
+|  |  | - Multi-step reasoning      |   | - JSON / XML validity                  |  |  
+|  |  | - Math and code execution   |   | - Required fields and enum choices     |  |  
+|  |  | - Symbolic synthesis        |   | - Tool argument names, types, values   |  |  
+|  |  +-----------------------------+   +----------------------------------------+  |  
+|  |                                                                                |  
+|  |  +-----------------------------+   +----------------------------------------+  |  
+|  |  | Grounding / Retrieval       |   | Safety / Alignment Coherence           |  |  
+|  |  |                             |   |                                        |  |  
+|  |  | - NIAH / RULER recall       |   | - Refusal consistency                  |  |  
+|  |  | - Long-context fidelity     |   | - Jailbreak resistance                 |  |  
+|  |  | - Citation / evidence use   |   | - False-positive refusal drift         |  |  
+|  |  +-----------------------------+   +----------------------------------------+  |  
+|  |                                                                                |  
+|  |  +--------------------------------------------------------------------------+  |  
+|  |  | Runtime / Economics                                                      |  |  
+|  |  |                                                                          |  |  
+|  |  | - TTFT and ITL under realistic batch loads                               |  |  
+|  |  | - Tokens per second and requests per second                              |  |  
+|  |  | - VRAM / HBM footprint                                                   |  |  
+|  |  | - Cost per successful task, not just cost per generated token            |  |  
+|  |  +--------------------------------------------------------------------------+  |  
+|  +-----------------------------------+--------------------------------------------+  
+|                                      |                                               
+|                                      v                                               
+|  [ Item-Level Baseline Comparison ]                                                  
+|          |                                                                           
+|          | Compare candidate outputs against the full-precision control item-by-item 
+|          | to catch fluent but damaged behavior.                                     
+|          |                                                                           
+|          v                                                                           
+|     +----+---------------------------------------------+                             
+|     |                                                  |                             
+|     v                                                  v                             
+|  [ All Gates Pass ]                              [ Any Critical Gate Fails ]         
+|     |                                                  |                             
+|     |                                                  +--> Roll back candidate      
+|     |                                                  +--> Raise precision          
+|     |                                                  +--> Recalibrate / retune     
+|     |                                                  +--> Change compression path  
+|     |                                                  |                             
+|     v                                                  |                             
+|  [ Promote Optimized Artifact ]                 [ Re-test Against Baseline ]         
+|     |                                                  ^                             
+|     |                                                  |                             
+|     +---------------------> [ Production Monitoring ] ----------------------+
+|                                                                                      
 +--------------------------------------------------------------------------------------+
 | Doctrine: fluency is not proof of preservation. Compression passes only when fragile |
 | behaviors survive item-level regression against the dense baseline.                  |
@@ -876,104 +693,110 @@ Optimizing model representations through quantization or pruning introduces math
 
 Before deploying an optimized artifact (such as a quantized weight matrix, compressed KV cache configuration, or new speculative draft model) to production, platform teams must evaluate it against an Optimization Regression Suite:
 
-```
-+-----------------------------------------------------------------------------------------------------------------------------------------------+
-|                                             OPTIMIZATION REGRESSION SUITE                                                                     |
-+-----------------------------------------------------------------------------------------------------------------------------------------------+
-|                                                                                                                                               |
-| Purpose: verify that an optimized artifact preserves production-critical behavior against the full-precision baseline.                        |
-|                                                                                                                                               |
-| Optimized artifacts include: quantized weights, compressed KV cache, speculative draft models, pruning layouts,                               |
-| constrained-decoding engines, and specialized runtime kernels.                                                                                |
-|                                                                                                                                               |
-|---------------------+----------------------+------------------------+-----------------------------+-------------------------------------------|
-| Testing Domain      | Baseline Control     | Benchmark Instrument   | Item-Level Verification     | Failure Gate Condition                    |
-|---------------------+----------------------+------------------------+-----------------------------+-------------------------------------------|
-| Logical Depth       | Full BF16 / FP16     | GSM8K, GPQA, code      | Compare reasoning traces,   | Accuracy drop exceeds allowed margin;     |
-|                     | dense model          | execution, symbolic    | arithmetic steps, code      | critical reasoning item fails; code no    |
-|                     |                      | reasoning tasks        | outputs, and final answers. | longer compiles or executes correctly.    |
-|---------------------+----------------------+------------------------+-----------------------------+-------------------------------------------|
-| Schema & Tool Use   | Full schema prompt   | Multi-tool schema      | Verify JSON/XML validity,   | Any parser failure, malformed structure,  |
-|                     | with dense model     | validation, function   | required fields, enum       | missing required field, wrong argument    |
-|                     |                      | call test sets         | choices, names, types, and  | type, or unsafe tool-call construction.   |
-|                     |                      |                        | tool argument values.       |                                           |
-|---------------------+----------------------+------------------------+-----------------------------+-------------------------------------------|
-| Retrieval & Recall  | Uncompressed KV      | Needle-in-a-Haystack,  | Check exact recovery of     | Retrieval accuracy falls below threshold; |
-|                     | cache and full       | RULER, long-context    | buried facts, citations,    | cited evidence is lost, displaced, or     |
-|                     | context precision    | recall probes          | and long-range references.  | hallucinated under target context length. |
-|---------------------+----------------------+------------------------+-----------------------------+-------------------------------------------|
-| Safety Alignment    | Baseline refusal     | Adversarial prompts,   | Audit refusal consistency,  | Any increase in jailbreak success,        |
-|                     | and compliance       | policy probes, threat  | false refusals, unsafe      | unsafe compliance, false-positive refusal |
-|                     | profile              | logs, red-team sets    | compliance, and boundary    | drift, or alignment regression.           |
-|                     |                      |                        | behavior.                   |                                           |
-|---------------------+----------------------+------------------------+-----------------------------+-------------------------------------------|
-| Latency & Cost      | Baseline serving     | Concurrency load       | Measure TTFT, ITL, TPS,     | Candidate is slower, exceeds VRAM limits, |
-|                     | profile under        | tests, trace replay,   | RPS, VRAM footprint,        | raises preemption rate, or improves cost  |
-|                     | realistic traffic    | hardware telemetry     | preemption, and cost per    | per token while worsening cost per        |
-|                     |                      |                        | successful task.            | successful task.                          |
-|---------------------+----------------------+------------------------+-----------------------------+-------------------------------------------|
-| Kernel & Runtime    | Known-good runtime   | Engine compatibility   | Confirm quantization format,| Kernel mismatch, unsupported GPU path,    |
-| Compatibility       | engine and hardware  | tests, canary deploys, | scheduler behavior, grammar | dequantization in the critical path, or   |
-|                     | configuration        | production replicas    | parser, and draft verifier  | runtime crash under batch load.           |
-|                     |                      |                        | compatibility.              |                                           |
-+-----------------------------------------------------------------------------------------------------------------------------------------------+
-| Promotion Rule                                                                                                                                |
-|                                                                                                                                               |
-| An optimization passes only if it improves the intended latency, memory, or cost target without crossing any behavioral regression            |
-| gate. A faster model that fails reasoning, schemas, retrieval, safety, or runtime compatibility is not optimized; it is damaged               |
-| efficiently. Obviously the worst kind of efficiency, because it wears a little productivity lanyard.                                          |
-+-----------------------------------------------------------------------------------------------------------------------------------------------+
-```
+| Testing Domain                     | Baseline Control                                     | Benchmark Instrument                                            | Item-Level Verification                                                                           | Failure Gate Condition                                                                                                           |
+| :--------------------------------- | :--------------------------------------------------- | :-------------------------------------------------------------- | :------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------- |
+| **Logical Depth**                  | Full BF16/FP16 dense model                           | GSM8K, GPQA, code execution, symbolic reasoning tasks           | Compare reasoning traces, arithmetic steps, code outputs, and final answers                       | Accuracy drop exceeds allowed margin; critical reasoning item fails; code no longer compiles or executes                         |
+| **Schema & Tool Use**              | Full schema prompt with dense model                  | Multi-tool schema validation, function-call test sets           | Verify JSON/XML validity, required fields, enum choices, names, types, and tool argument values   | Any parser failure, malformed structure, missing required field, wrong argument type, or unsafe tool-call construction           |
+| **Retrieval & Recall**             | Uncompressed KV cache and full context precision     | NIAH, RULER, long-context recall probes                         | Check exact recovery of buried facts, citations, and long-range references                        | Retrieval accuracy falls below threshold; cited evidence is lost, displaced, or hallucinated                                     |
+| **Safety Alignment**               | Baseline refusal and compliance profile              | Adversarial prompts, policy probes, threat logs, red-team sets  | Audit refusal consistency, false refusals, unsafe compliance, and boundary behavior               | Any jailbreak increase, unsafe compliance, false-positive refusal drift, or alignment regression                                 |
+| **Latency & Cost**                 | Baseline serving profile under realistic traffic     | Concurrency load tests, trace replay, hardware telemetry        | Measure TTFT, ITL, TPS, RPS, VRAM footprint, preemption, and cost per successful task             | Candidate is slower, exceeds VRAM limits, raises preemption, or improves cost per token while worsening cost per successful task |
+| **Kernel & Runtime Compatibility** | Known-good runtime engine and hardware configuration | Engine compatibility tests, canary deploys, production replicas | Confirm quantization format, scheduler behavior, grammar parser, and draft verifier compatibility | Kernel mismatch, unsupported GPU path, dequantization in critical path, or runtime crash under batch load                        |
+
+**Promotion rule**: an optimization passes only if it improves the intended latency, memory, or cost target without crossing any behavioral regression gate. A faster model that fails reasoning, schemas, retrieval, safety, or runtime compatibility is not optimized; it is damaged efficiently.
 
 
 ### **Optimization Failure Mode Map**
 
 Altering model weights or runtime decoding execution can trigger specialized system failures.1 Platform teams should use this Failure Mode Map to identify, diagnose, and resolve optimization regressions:
 
-```
-+------------------------------------------------------------------------------------------------------------------------------------------+  
-|                                                         OPTIMIZATION FAILURE MODE MAP                                                    |  
-|                                                                                                                                          |  
-| Failure Syndrome   | Root-Cause Mechanism | Behavioral Presentation| System Detection Path    | Rollback Strategy                        |  
-|--------------------+----------------------+-------------------------+--------------------------+-----------------------------------------|  
-| **Fluent**         | Unstructured pruning | Output remains fluent   | Code compilation fails;  | Re-calibrate pruning using Wanda;       |  
-| **Degradation**    | or over-quantization | but contains reasoning  | logical errors in math   | fall back to higher bit-widths          |  
-|                    | [12, 14]             | errors                  | answers                  | [12, 14]                                |  
-|--------------------+----------------------+-------------------------+--------------------------+-----------------------------------------|  
-| **Outlier**        | Naive per-tensor     | Dynamic range           | Systemic output syntax   | Implement SmoothQuant layer scales;     |  
-| **Clipping**       | quantization scales  | saturation; value       | breakdown on specific    | use group-wise microscaling formats     |  
-|                    |                      | clipping                | activation paths         | [9, 50]                                 |  
-|--------------------+----------------------+-------------------------+--------------------------+-----------------------------------------|  
-| **Speculation**    | Mismatched or weak   | High draft-rejection    | Speculative metrics show | Switch draft model to EAGLE-3;          |  
-| **Overhead**       | draft model          | rates; generation       | acceptance rate < 50%    | fall back to standard autoregressive    |  
-|                    |                      | latency increases       | [11, 57]                 | decoding                                |  
-|--------------------+----------------------+-------------------------+--------------------------+-----------------------------------------|  
-| **Parser**         | Grammar logit-mask   | Constraint parser       | Generation halts or      | Enforce TagDispatch parsing;            |  
-| **Deadlock**       | compilation error    | enters recursive loop   | triggers timeout alarm   | fall back to downstream schema retries  |  
-|                    |                      |                         |                          | [39, 40]                                |  
-|--------------------+----------------------+-------------------------+--------------------------+-----------------------------------------|  
-| **Long-Context**   | Lossy KV Cache       | Model loses history     | "Needle-in-a-haystack"   | Deploy tiered KV cache with runtime     |  
-| **Divergence**     | compression          | coherence; retrieval    | retrieval tests fail     | system RAM fallback                     |  
-|                    |                      | failure                 |                          |                                         |  
-+------------------------------------------------------------------------------------------------------------------------------------------+
-```
+| Failure Syndrome                    | Root-Cause Mechanism                                                                                                             | Behavioral Presentation                                                                             | System Detection Path                                                                          | Smallest Effective Corrective Move                                                | Rollback Strategy                                                            |
+| :---------------------------------- | :------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------- | :--------------------------------------------------------------------------- |
+| **Fluent Degradation**              | Over-quantization, aggressive pruning, or lossy KV compression preserves surface fluency while damaging internal reasoning paths | Output sounds plausible but contains wrong math, bad code, weak reasoning, or subtle contradictions | Item-level reasoning evals, code execution tests, arithmetic checks, dense-baseline comparison | Raise precision, reduce pruning ratio, recalibrate with reasoning-heavy examples  | Revert to dense or higher-bit artifact                                       |
+| **Outlier Clipping**                | Per-tensor or poorly calibrated scales clip rare activation outliers                                                             | Syntax breaks on rare structures, code/math errors increase, safety boundaries shift                | Activation-range telemetry, outlier-channel inspection, targeted rare-token tests              | Use SmoothQuant, group-wise scaling, microscaling, or broader calibration data    | Roll back quantized activation path                                          |
+| **Calibration-Set Mismatch**        | Calibration corpus fails to represent production prompt shapes, schemas, languages, or context lengths                           | Model works on generic tests but fails real workloads                                               | Production trace replay, workload-distribution comparison, schema/tool evals                   | Rebuild calibration set from representative traces, isolate eval set, recalibrate | Freeze current artifact; reissue optimized build                             |
+| **Dequantization in Critical Path** | Runtime upcasts compressed weights before execution or uses inefficient layout                                                   | Disk/VRAM footprint improves but latency does not; ITL remains high                                 | Kernel profiling, memory-bandwidth counters, dequantization trace spans                        | Switch to layout-aware kernels such as Marlin-compatible paths                    | Revert to known-good runtime/kernel pair                                     |
+| **Kernel Incompatibility**          | Quantization format, sparse layout, GPU generation, or runtime engine do not match                                               | Worker crashes, illegal memory access, silent fallback to slow dense path                           | Runtime compatibility tests, canary crashes, kernel logs                                       | Pin supported engine/hardware pair; rebuild artifact for target kernel            | Route to compatible hardware pool or dense fallback                          |
+| **Speculation Overhead**            | Draft model mismatch, low acceptance rate, bad speculative depth, or weak verifier integration                                   | Generation slows down despite speculation; rejection loops dominate                                 | Draft acceptance rate, verification latency, rejected-token ratio                              | Lower draft length, switch draft model, or disable speculation below threshold    | Fall back to standard autoregressive decoding                                |
+| **Speculative Parity Drift**        | Approximate verifier, runtime bug, or draft integration changes target distribution                                              | Candidate output differs from target model beyond accepted tolerance                                | Target-output parity tests, seeded replay, canary divergence                                   | Tighten verification, disable approximate path, fix runtime integration           | Disable speculation and use target-only decoding                             |
+| **Parser Deadlock**                 | Grammar compiler, FSM/PDA state, or constrained decoder enters invalid recursive state                                           | Generation stalls, times out, or loops under strict schema                                          | Parser timeout alarms, grammar-state traces, retry-loop metrics                                | Use TagDispatch, simplify grammar, cache compiled fragments, add escape path      | Fall back to downstream validation/retry rather than token-level constraints |
+| **Semantic-Validity Gap**           | Constrained decoding enforces syntax but not truth                                                                               | JSON is valid but fields are wrong, enum choice is unsafe, tool arguments hallucinated              | Semantic validators, tool dry-runs, grounded claim checks                                      | Add external validation and tool-result verification                              | Disable action execution until semantic validation passes                    |
+| **Long-Context Divergence**         | KV-cache compression or low-rank state approximation damages attention over distant context                                      | Model loses buried facts, citations, or earlier tool state                                          | NIAH/RULER, long-context trace replay, citation-retention tests                                | Raise KV precision, enable bounded fallback, reduce compression on keys           | Disable compressed KV path for long-context workloads                        |
+| **Pruning Collapse**                | Structured sparsity removes behavior-critical parameters                                                                         | Reasoning, code, or rare-token performance collapses                                                | Dense-vs-sparse evals, item-level negative flips, perplexity jump                              | Reduce sparsity target, use SlideSparse/Wanda, retrain or recalibrate             | Restore dense checkpoint or lower-pruned artifact                            |
+| **Safety Boundary Shift**           | Quantization/pruning/preference interactions alter refusal or policy behavior                                                    | False refusals rise or unsafe compliance increases                                                  | Safety evals, jailbreak tests, refusal-classifier drift                                        | Raise precision on safety-sensitive routes, adjust safety layer, recalibrate      | Route safety-sensitive traffic to dense baseline                             |
+| **Cost-Per-Success Regression**     | Optimization lowers token cost but increases retries, failures, or human overrides                                               | Cost per generated token improves while total task cost worsens                                     | Cost-per-success telemetry, retry rate, override rate                                          | Optimize for successful task completion, not raw token cost                       | Roll back optimization for affected workflow                                 |
+| **Fallback Failure**                | Runtime lacks automatic exit from failed optimization path                                                                       | Bad artifact continues serving after threshold breach                                               | Alert threshold breach without route change, canary incident                                   | Add automatic precision/fallback thresholds                                       | Route all traffic to verified baseline manifest                              |
+
 
 ### **Deployment Compatibility Model**
 
 Before deploying any optimized artifact, platform teams must verify that it is fully compatible with all layers of the serving infrastructure 5:
 
 ```
-+-----------------------------------------------------------------------------------------+  
-|                               DEPLOYMENT COMPATIBILITY MODEL                            |  
-|                                                                                         |  
-|  [ Model Layer ] ---------> Verifies base model type, architecture, and tokenizer.      |  
-|                                                                                         |  
-|  [ Quantization Format ] -> Matches runtime engine (vLLM, TRT-LLM) and GPU support.     |  
-|                                                                                         |  
-|  [ Hardware Layer ] ------> Validates compute capability limits (Hopper, Blackwell).    |  
-|                                                                                         |  
-|  ------> Confirms schema parsing and draft speculative alignment.                       |  
-+-----------------------------------------------------------------------------------------+
++--------------------------------------------------------------------------------
+| DEPLOYMENT COMPATIBILITY MODEL
++--------------------------------------------------------------------------------
+|
+| Goal:
+|   Verify that the optimized artifact can actually run safely and efficiently
+|   in the target serving environment.
+|
+| [ Optimized Artifact ]
+|       |
+|       v
+| +-------------------------+
+| | Model Layer             |
+| | architecture, tokenizer |
+| | base checkpoint, heads  |
+| +-----------+-------------+
+|             |
+|             v
+| +-------------------------+
+| | Quantization Format     |
+| | AWQ, GPTQ, FP8, FP4,    |
+| | EXL2, sparse layout     |
+| +-----------+-------------+
+|             |
+|             v
+| +-------------------------+
+| | Runtime Kernel Layer    |
+| | Marlin, cuBLASLt,       |
+| | TRT-LLM, vLLM, SGLang   |
+| +-----------+-------------+
+|             |
+|             v
+| +-------------------------+
+| | Hardware Layer          |
+| | GPU generation, memory, |
+| | Tensor Core support     |
+| +-----------+-------------+
+|             |
+|             v
+| +-------------------------+
+| | Decoding Runtime Layer  |
+| | grammar engine, draft   |
+| | verifier, sampler, FSM  |
+| +-----------+-------------+
+|             |
+|             v
+| +-------------------------+
+| | Serving Policy Layer    |
+| | scheduler, batching,    |
+| | KV cache, fallback      |
+| +-----------+-------------+
+|             |
+|             v
+| +-------------------------+
+| | Validation Gate         |
+| | behavior, latency, cost,|
+| | safety, rollback        |
+| +-------------------------+
+|
++--------------------------------------------------------------------------------
+| Rule:
+|   An optimized checkpoint is not deployable merely because it loads. It must
+|   match the model architecture, runtime kernel path, hardware instruction set,
+|   decoding stack, scheduler policy, and behavioral validation gates.
++--------------------------------------------------------------------------------
 ```
 
 1. **Model Layer:** Verifies that the base architecture, parameter configuration, and tokenizer layout are fully supported.11  
@@ -999,102 +822,103 @@ This Compression Decision Ladder guides platform teams through a systematic sequ
 +---------------------------------------------------------------------------------------+
 |                              COMPRESSION DECISION LADDER                              |
 +---------------------------------------------------------------------------------------+
-|                                                                                       |
-|  Goal: reduce latency, memory pressure, or cost without crossing the quality          |
-|  degradation boundary. Climb only as far as the bottleneck requires.                  |
-|                                                                                       |
-|  [ Diagnose Bottleneck ]                                                              |
-|          |                                                                            |
-|          |  Is the problem TTFT, ITL, VRAM pressure, HBM bandwidth, schema overhead,  |
-|          |  long-context capacity, or cost-per-success?                               |
-|          v                                                                            |
-|                                                                                       |
-|  Level 1: Serving Engine Tuning                                                       |
-|  +--------------------------------------------------------------------------------+   |
-|  | Apply prefix caching / RadixAttention, prompt-root stabilization, batching,    |   |
-|  | scheduler tuning, and cache-hit instrumentation.                               |   |
-|  |                                                                                |   |
-|  | Savings: no static weight reduction; reduces redundant prefill work and KV use.|   |
-|  | Risk: lowest. No model behavior is directly changed.                           |   |
-|  | Gate: prefix hit rate, TTFT, queue wait, and cache eviction telemetry.         |   |
-|  +-----------------------------------+--------------------------------------------+   |
-|                                      |                                                |
-|                                      v                                                |
-|                                                                                       |
-|  Level 2: Native Low-Precision Runtime                                                |
-|  +--------------------------------------------------------------------------------+   |
-|  | Move to native FP8 / W8A8 execution where hardware and serving kernels support |   |
-|  | it cleanly.                                                                    |   |
-|  |                                                                                |   |
-|  | Savings: ~50% weight / activation footprint versus BF16 / FP16 paths.          |   |
-|  | Risk: low to moderate on modern Hopper / Blackwell-class systems.              |   |
-|  | Gate: reasoning, schema, tool-use, safety, and activation outlier tests.       |   |
-|  +-----------------------------------+--------------------------------------------+   |
-|                                      |                                                |
-|                                      v                                                |
-|                                                                                       |
-|  Level 3: KV Cache Compression                                                        |
-|  +--------------------------------------------------------------------------------+   |
-|  | Quantize or compress KV cache using FP8, tiered INT8 / INT4, bounded fallback, |   |
-|  | TurboQuant-style schemes, or low-rank KV compression.                          |   |
-|  |                                                                                |   |
-|  | Savings: expands context length and concurrency by shrinking dynamic state.    |   |
-|  | Risk: moderate; long-context recall can silently degrade.                      |   |
-|  | Gate: NIAH / RULER recall, citation fidelity, tool-state retention, H2D latency|   |
-|  +-----------------------------------+--------------------------------------------+   |
-|                                      |                                                |
-|                                      v                                                |
-|                                                                                       |
-|  Level 4: Speculative Acceleration                                                    |
-|  +--------------------------------------------------------------------------------+   |
-|  | Deploy EAGLE-3, P-EAGLE, Medusa, vanilla draft models, or HiSpec-style early   |   |
-|  | verification to accelerate decode.                                             |   |
-|  |                                                                                |   |
-|  | Savings: no weight savings; may add draft-model VRAM. Improves tokens/sec if   |   |
-|  | draft acceptance exceeds verification overhead.                                |   |
-|  | Risk: low to moderate when fallback to standard decoding is automatic.         |   |
-|  | Gate: draft acceptance rate, rejection-loop latency, VRAM split, output parity.|   |
-|  +-----------------------------------+--------------------------------------------+   |
-|                                      |                                                |
-|                                      v                                                |
-|                                                                                       |
-|  Level 5: INT4 Weight-Only Quantization                                               |
-|  +----------------------------------------------------------------------------------+ |
-|  | Apply AWQ, GPTQ, EXL2, or equivalent INT4 weight-only compression with optimized | |
-|  | kernels such as Marlin.                                                          | |
-|  |                                                                                  | |
-|  | Savings: ~75% static weight footprint reduction.                                 | |
-|  | Risk: high; reasoning, code, math, formatting, and rare-token behavior may fail. | |
-|  | Gate: item-level regression suite against full-precision baseline.               | |
-|  +-----------------------------------+----------------------------------------------+ |
-|                                      |                                                |
-|                                      v                                                |
-|                                                                                       |
-|  Level 6: Structured Sparsity / Pruning                                               |
-|  +--------------------------------------------------------------------------------+   |
-|  | Apply 2:4 structured sparsity, SlideSparse adaptation, Wanda, SparseGPT, or    |   |
-|  | other pruning paths only after safer interventions are exhausted.              |   |
-|  |                                                                                |   |
-|  | Savings: potential physical weight and GEMM acceleration when hardware kernels |   |
-|  | execute the sparse layout directly.                                            |   |
-|  | Risk: highest; aggressive pruning can cause cognitive collapse.                |   |
-|  | Gate: full behavioral regression, canary rollout, rollback-ready release plan. |   |
-|  +--------------------------------------------------------------------------------+   |
-|                                                                                       |
+|                                                                                       
+|  Goal: reduce latency, memory pressure, or cost without crossing the quality          
+|  degradation boundary. Climb only as far as the bottleneck requires.                  
+|                                                                                       
+|  [ Diagnose Bottleneck ]                                                              
+|          |                                                                            
+|          |  Is the problem TTFT, ITL, VRAM pressure, HBM bandwidth, schema overhead,  
+|          |  long-context capacity, or cost-per-success?                               
+|          v                                                                            
+|                                                                                       
+|  Level 1: Serving Engine Tuning                                                       
+|  +--------------------------------------------------------------------------------+   
+|  | Apply prefix caching / RadixAttention, prompt-root stabilization, batching,    |   
+|  | scheduler tuning, and cache-hit instrumentation.                               |   
+|  |                                                                                |   
+|  | Savings: no static weight reduction; reduces redundant prefill work and KV use.|   
+|  | Risk: lowest. No model behavior is directly changed.                           |   
+|  | Gate: prefix hit rate, TTFT, queue wait, and cache eviction telemetry.         |   
+|  +-----------------------------------+--------------------------------------------+   
+|                                      |                                                
+|                                      v                                                
+|                                                                                       
+|  Level 2: Native Low-Precision Runtime                                                
+|  +--------------------------------------------------------------------------------+   
+|  | Move to native FP8 / W8A8 execution where hardware and serving kernels support |   
+|  | it cleanly.                                                                    |   
+|  |                                                                                |   
+|  | Savings: ~50% weight / activation footprint versus BF16 / FP16 paths.          |   
+|  | Risk: low to moderate on modern Hopper / Blackwell-class systems.              |   
+|  | Gate: reasoning, schema, tool-use, safety, and activation outlier tests.       |   
+|  +-----------------------------------+--------------------------------------------+   
+|                                      |                                                
+|                                      v                                                
+|                                                                                       
+|  Level 3: KV Cache Compression                                                        
+|  +--------------------------------------------------------------------------------+   
+|  | Quantize or compress KV cache using FP8, tiered INT8 / INT4, bounded fallback, |   
+|  | TurboQuant-style schemes, or low-rank KV compression.                          |   
+|  |                                                                                |   
+|  | Savings: expands context length and concurrency by shrinking dynamic state.    |   
+|  | Risk: moderate; long-context recall can silently degrade.                      |   
+|  | Gate: NIAH / RULER recall, citation fidelity, tool-state retention, H2D latency|   
+|  +-----------------------------------+--------------------------------------------+   
+|                                      |                                                
+|                                      v                                                
+|                                                                                       
+|  Level 4: Speculative Acceleration                                                    
+|  +--------------------------------------------------------------------------------+   
+|  | Deploy EAGLE-3, P-EAGLE, Medusa, vanilla draft models, or HiSpec-style early   |   
+|  | verification to accelerate decode.                                             |   
+|  |                                                                                |   
+|  | Savings: no weight savings; may add draft-model VRAM. Improves tokens/sec if   |   
+|  | draft acceptance exceeds verification overhead.                                |   
+|  | Risk: low to moderate when fallback to standard decoding is automatic.         |   
+|  | Gate: draft acceptance rate, rejection-loop latency, VRAM split, output parity.|   
+|  +-----------------------------------+--------------------------------------------+   
+|                                      |                                                
+|                                      v                                                
+|                                                                                       
+|  Level 5: INT4 Weight-Only Quantization                                               
+|  +----------------------------------------------------------------------------------+ 
+|  | Apply AWQ, GPTQ, EXL2, or equivalent INT4 weight-only compression with optimized | 
+|  | kernels such as Marlin.                                                          | 
+|  |                                                                                  | 
+|  | Savings: ~75% static weight footprint reduction.                                 | 
+|  | Risk: high; reasoning, code, math, formatting, and rare-token behavior may fail. | 
+|  | Gate: item-level regression suite against full-precision baseline.               | 
+|  +-----------------------------------+----------------------------------------------+ 
+|                                      |                                                
+|                                      v                                                
+|                                                                                       
+|  Level 6: Structured Sparsity / Pruning                                               
+|  +--------------------------------------------------------------------------------+   
+|  | Apply 2:4 structured sparsity, SlideSparse adaptation, Wanda, SparseGPT, or    |   
+|  | other pruning paths only after safer interventions are exhausted.              |   
+|  |                                                                                |   
+|  | Savings: potential physical weight and GEMM acceleration when hardware kernels |   
+|  | execute the sparse layout directly.                                            |   
+|  | Risk: highest; aggressive pruning can cause cognitive collapse.                |   
+|  | Gate: full behavioral regression, canary rollout, rollback-ready release plan. |   
+|  +--------------------------------------------------------------------------------+   
+|                                                                                       
 +---------------------------------------------------------------------------------------+
 | Ladder rule: stop climbing when the bottleneck is solved. Every higher level buys     |
 | capacity by taking on more behavioral and deployment risk.                            |
 +---------------------------------------------------------------------------------------+
 ```
 
-| Level | Optimization Intervention | Primary VRAM Savings | Performance Latency Impact | Behavioral Regression Risk | Required Validation Suite |
-| :---- | :---- | :---- | :---- | :---- | :---- |
-| **1** | **Serving Engine Tuning** (Prefix Caged RadixAttention) 46 | Zero weight savings; dynamic KV cache block sharing 47 | Up to 6.4x throughput boost on prefix-heavy tasks 48 | Zero behavioral regression risk 48 | Prefill latency and cache hit monitors 46 |
-| **2** | **Dynamic Precision Scaling** (FP8 E4M3 Weights & Activations) 20 | 50% static footprint reduction 33 | 1.6x serving throughput increase 33 | Minimal risk on modern Hopper/Blackwell systems 20 | Standard perplexity and reasoning benchmarks 33 |
-| **3** | **KV Cache Quantization** (Tiered INT8 Keys / INT4 Values) 10 | Up to 4x KV Cache footprint reduction 10 | Bypasses memory bandwidth saturation at long context 10 | Moderate risk of long-context retrieval failure 10 | Needle-in-a-haystack (NIAH) and RULER benchmarks 10 |
-| **4** | **Speculative Acceleration** (EAGLE-3 Speculative Draft) 4 | None (adds 1B-3B draft model to VRAM) 57 | 2x to 3x serving speedup under batch loads 42 | Zero output quality degradation 11 | Draft acceptance rate and latency monitors 57 |
-| **5** | **Post-Training Quantization** (AWQ / GPTQ INT4 Weight-Only) 16 | 75% static parameter footprint reduction 16 | Up to 3.9x decode speedup at low batch sizes 44 | High risk of reasoning, code, and math regressions 13 | Detailed reasoning and structured output test sets 3 |
-| **6** | **Structured Sparsity** (SlideSparse 2:4 Pruning) 56 | 50% physical weight footprint reduction 12 | Up to 2x GEMM computation acceleration 12 | Extreme risk of cognitive collapse if uncalibrated 14 | Full model validation and multi-turn regression suites 14 |
+| Level | Optimization Intervention                                                                                         | Primary Savings                                                                               | Performance Impact                                                                        | Behavioral Regression Risk                                                                                                                     | Required Validation Suite                                                                                 |
+| :---- | :---------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------- |
+| **1** | **Serving Engine Tuning** — prefix caching, RadixAttention, prompt-root stabilization, batching, scheduler tuning | No static weight savings; reduces redundant prefill work and improves KV reuse                | Can strongly improve TTFT and throughput on prefix-heavy or multi-turn workloads          | Very low; model behavior is not directly altered                                                                                               | Prefix hit rate, TTFT, queue wait, cache eviction telemetry, prompt-layout stability tests                |
+| **2** | **Native Low-Precision Runtime** — FP8 / W8A8 where hardware and kernels support it                               | About 50% reduction versus BF16/FP16 paths for supported tensors                              | Improves memory movement and Tensor Core utilization on compatible accelerators           | Low to moderate; activation outliers and rare-token behavior can degrade                                                                       | Reasoning, schema, tool-use, safety, activation-outlier, and long-context tests                           |
+| **3** | **KV Cache Compression** — FP8 KV, tiered INT8/INT4, bounded fallback, TurboQuant, low-rank KV                    | Shrinks dynamic KV state; expands context length and concurrency                              | Reduces memory pressure under long-context or high-concurrency loads                      | Moderate; long-context recall and citation fidelity can silently degrade                                                                       | NIAH/RULER recall, citation fidelity, tool-state retention, H2D fallback latency, long-context regression |
+| **4** | **Speculative Acceleration** — EAGLE-3, P-EAGLE, Medusa, HiSpec, vanilla draft model                              | No weight savings; may add draft-model or verifier overhead                                   | Improves tokens/sec when accepted draft tokens exceed drafting and verification cost      | Low to moderate; exact verification should preserve target distribution, but implementation bugs and fallback behavior still need parity tests | Draft acceptance rate, target-output parity, rejection-loop latency, VRAM split, fallback monitoring      |
+| **5** | **INT4 Weight-Only Quantization** — AWQ, GPTQ, EXL2, Marlin-compatible paths                                      | About 75% static weight footprint reduction                                                   | Can improve decode speed when optimized kernels keep dequantization off the critical path | High; reasoning, code, math, formatting, tool-use, and rare-token behavior may degrade                                                         | Item-level regression suite against dense baseline, code/math evals, schema/tool tests, safety checks     |
+| **6** | **Structured Sparsity / Pruning** — 2:4 sparsity, SlideSparse, Wanda, SparseGPT                                   | Potential physical weight and GEMM savings only when sparse layout reaches hardware execution | Can accelerate compatible sparse Tensor Core paths; no benefit if expanded back to dense  | Highest; aggressive pruning can cause cognitive collapse                                                                                       | Full behavioral regression, pruning-specific evals, canary rollout, rollback-ready release plan           |
+
 
 ## **Strategic Integration and Canon Continuity**
 
@@ -1102,30 +926,22 @@ This Compression Decision Ladder guides platform teams through a systematic sequ
 
 The optimizations defined in AI-ENG-K directly impact downstream deployment configurations, routing architectures, and validation gates across the engineering canon:
 
-```
-+---------------------------------------------------------------------------------------------------------------------------------------+  
-|                                                          CROSS-CANON HANDOFF MAP                                                      |  
-|                                                                                                                                       |  
-| Downstream Canon  | Shared Artifact Bundle| Primary Operational                   | Downstream Risk Trigger                           |  
-| Module            |                       | Touchpoint                            |                                                   |  
-|-------------------+-----------------------+---------------------------------------+---------------------------------------------------|  
-| **AI-ENG-G**      | Precision Degradation | Evaluates accuracy vs. serving cost   | Out-of-domain logical errors and task failures    |  
-| (Model Selection) | Metrics [13]          | tradeoffs [6]                         | caused by aggressive quantization                 |  
-|-------------------+-----------------------+---------------------------------------+---------------------------------------------------|  
-| **AI-ENG-I**      | Quantized Checkpoint &| Registers compressed parameters inside| Missing tokenizers or kernel mismatches during    |  
-| (Release Gates)   | Model Metadata        | the production release manifest       | canary rollouts                                   |  
-|-------------------+-----------------------+---------------------------------------+---------------------------------------------------|  
-| **AI-ENG-J**      | KV Cache Quantization | Configures dynamic paged memory       | In-flight batching memory saturation and OOM      |  
-| (Throughput)      | Parameters            | allocations                           | failures under long context lengths [10, 57]      |  
-|-------------------+-----------------------+---------------------------------------+---------------------------------------------------|  
-| **AI-ENG-L**      | Specialized Dequant   | Deploys optimized model artifacts to  | Kernel compilation failures or missing GPU        |  
-| (Serving Topology)| Kernels               | target hardware platforms [64]        | instruction sets on older accelerators            |  
-|-------------------+-----------------------+---------------------------------------+---------------------------------------------------|  
-| **AI-ENG-N**      | Grammar Schema State  | Enforces structural logit masking at  | Parser deadlocks or slow schema compilation       |  
-| (Tool Contracts)  | Automata              | the scheduling layer                  | during high concurrency                           |  
-+---------------------------------------------------------------------------------------------------------------------------------------+
-```
-
+| Destination Report                        | Shared Artifact Bundle                                                                                         | Primary Operational Touchpoint                                                                                       | Downstream Risk Trigger                                                                            |
+| :---------------------------------------- | :------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------- |
+| **AI-ENG-G — Model Selection**            | Precision degradation metrics; cost/performance profiles; dense vs. optimized benchmark deltas                 | Feeds model choice decisions when compression changes quality, cost, latency, or deployment feasibility              | Aggressive quantization makes a previously acceptable model fail target tasks or safety boundaries |
+| **AI-ENG-H — Model Adaptation**           | Quantization-aware training requirements; adapter compatibility notes; calibration corpus constraints          | Determines whether adaptation artifacts can survive quantization, pruning, or runtime-kernel changes                 | LoRA adapters, fine-tuned weights, or preference-tuned models degrade after optimization           |
+| **AI-ENG-I — Regression Control**         | Quantized checkpoints; model metadata; optimization manifests; parity-evaluation signatures                    | Registers compressed artifacts into release manifests and gates them through replay, shadow, and canary workflows    | Missing tokenizer pins, kernel mismatches, or behavioral regressions during rollout                |
+| **AI-ENG-J — Throughput Mechanics**       | KV-cache quantization parameters; weight footprint; decoding latency profile; memory-bandwidth assumptions     | Configures dynamic memory budgets, batch capacity, HBM pressure limits, and scheduler policies                       | Long-context workloads trigger KV exhaustion, preemption, or degraded ITL                          |
+| **AI-ENG-L — Model Serving Architecture** | Specialized dequantization kernels; serving-engine compatibility; GPU generation requirements                  | Deploys optimized artifacts to target hardware pools and runtime engines                                             | Kernel compilation failure, unsupported hardware path, early dequantization, or runtime crash      |
+| **AI-ENG-M — Agent Orchestration**        | Speculative decoding behavior; tool-call formatting stability; schema adherence results                        | Determines whether optimized models remain reliable inside multi-step agent workflows                                | Compressed models fail planning, tool routing, or multi-turn state handling                        |
+| **AI-ENG-N — Tool Contracts**             | Grammar schema state; constrained decoding engines; parser behavior; tool-call eval results                    | Enforces structural logit masking and validates tool arguments at the decoding boundary                              | Parser deadlocks, malformed tool calls, correct schema with wrong values                           |
+| **AI-ENG-O — Action Verification**        | Semantic validation requirements; post-constraint verification; tool-result checking                           | Pairs constrained decoding with external correctness checks so valid structure does not masquerade as valid action   | Syntactically valid outputs contain hallucinated, unsafe, or semantically wrong action parameters  |
+| **AI-ENG-W — Fallbacks & Resilience**     | Precision fallback tiers; dense baseline routes; speculation-disable thresholds; rollback policies             | Routes around failed optimization paths by raising precision, disabling speculation, or falling back to dense models | Optimization improves speed but crosses a quality or safety boundary under live load               |
+| **AI-ENG-Z — Telemetry & APM**            | Draft acceptance rate; parser rejection rate; KV escalation rate; quantized artifact latency; cost-per-success | Monitors optimized artifacts after deployment and detects runtime degradation                                        | Acceptance collapse, parser-retry storms, KV fallback spikes, or hidden quality loss               |
+| **AI-ENG-AA — Evaluation Architecture**   | Dense baseline comparisons; optimization regression suites; long-context recall tests; item-level deltas       | Supplies the eval harnesses required to prove compression is behavior-preserving                                     | Benchmark averages improve while critical item-level behaviors regress                             |
+| **AI-ENG-AB — Auditability**              | Optimization manifest; calibration dataset hash; kernel version; hardware target; eval traces                  | Preserves reproducibility and explainability for optimized model artifacts                                           | No one can reconstruct why a compressed model behaved differently from the dense baseline          |
+| **AI-ENG-AC — Incident Response**         | Optimization failure modes; rollback triggers; canary failures; hardware incompatibility signals               | Converts runtime optimization regressions into operational playbooks                                                 | Latency, quality, or safety incident requires rapid dense-model rollback                           |
+| **AI-ENG-AD — Governance**                | Risk classification; safety evaluations; deployment approvals; data-handling constraints                       | Ensures compression, pruning, and constrained decoding changes respect governance boundaries                         | Unsafe capability shift, degraded refusal behavior, or noncompliant artifact promotion             |
 
 ## **Doctrinal Principles for Weight Dynamics and Decoding Strategy**
 

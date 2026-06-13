@@ -26,7 +26,7 @@ To ground high-dimensional AI system architecture in physical realities, the fol
 | **Prefix Reuse** | Cache Architecture | Reusing computed attention blocks of shared prefix strings (e.g., tool definitions) across multiple concurrent request paths.8 | Key mechanical benefit of SGLang's RadixAttention trie system.8 |
 | **High-Bandwidth Memory (HBM)** | GPU Architecture | Co-packaged, ultra-wide-bus memory stacked directly on the GPU substrate to deliver massive data throughput.1 | The foundational physical factor constraining decode-phase speeds and sequence concurrency.1 |
 | **Video Random Access Memory (VRAM)** | GPU Architecture | The aggregate physical memory pool directly addressable by the GPU, comprising high-speed HBM or GDDR modules.1 | Divided strictly between model weight parameters, runtime contexts, CUDA graphs, and the dynamic KV cache pool.1 |
-0| **Dynamic Random Access Memory (DRAM)** | Host Architecture | Standard system RAM residing on the host motherboard, accessible to the GPU over the PCIe system bus.9 | Serves as the backup swap tier for evicted KV cache blocks under extreme memory pressure.6 |
+| **Dynamic Random Access Memory (DRAM)** | Host Architecture | Standard system RAM residing on the host motherboard, accessible to the GPU over the PCIe system bus.9 | Serves as the backup swap tier for evicted KV cache blocks under extreme memory pressure.6 |
 | **Memory Bandwidth** | Data Transport | The rate at which data can be read from or written to physical storage by a processor, measured in Terabytes per second (TB/s).1 | The physical bottleneck governing decode performance; scales directly with GPU generational upgrades.1 |
 | **Offloading** | Memory Management | The process of transferring inactive KV cache blocks or model weights from GPU VRAM to system DRAM or SSD storage.9 | Enables execution of ultra-large contexts or batches but introduces severe transfer-latency penalties over PCIe.9 |
 | **Capacity Margin** | Capacity Sizing | The reserved physical compute, memory, and bandwidth headroom kept unallocated to absorb stochastic workload bursts and failovers. | Crucial for preventing preemption loops, cache thrashing, and SLA violations under dynamic production loads.3 |
@@ -217,28 +217,65 @@ Because workloads differ in their latency tolerance and user experience constrai
 
 ## **KV Cache: The Hidden Capacity Governor**
 
-While model weights require a static allocation in VRAM, the Key-Value (KV) cache is highly dynamic, scaling directly with sequence lengths and concurrent request volume.7 During autoregressive generation, the attention mechanism requires access to the computed key and value states of all past tokens in the sequence to compute the attention weights for the next token.6 To avoid recomputing these projections at every autoregressive step, they are persisted in memory.6  
-The physical memory footprint V_kv (in bytes) occupied by the KV cache for a single sequence of context length N_context is calculated as follows:  
-V_kv = 2 * L * H_kv * d * N_context * b 1  
-The leading coefficient of 2 accounts for the distinct storage of key and value states.1  
-For a concrete demonstration, consider the Llama-3-70B model served with FP8 precision (b = 1) and Grouped-Query Attention (GQA).1 The model architectural parameters are:
+While model weights require a static allocation in VRAM, the Key-Value (KV) cache is highly dynamic, scaling directly with sequence length, output length, and concurrent request volume. During autoregressive generation, the attention mechanism requires access to the computed key and value states of all previous tokens in the sequence. To avoid recomputing these projections at every generation step, the serving runtime persists them in GPU memory.
 
-* Layer Count (L): 80  
-* KV Head Count (H_kv): 8  
-* Head Dimension (d): 128
+The physical memory footprint `V_kv` occupied by the KV cache for a single sequence of context length `N_context` is calculated as:
 
-For a single sequence of 16,384 context tokens (16K):  
-V_kv_16K = 2 * 80 * 8 * 128 * 16384 * 1 byte = 26,843,545,600 bytes ~ 25.0 GB 1  
-At a target serving concurrency of B = 16 active requests with identical length:  
-V_kv_fleet = 16 * 25.0 GB = 400.0 GB 1  
-When utilizing standard multi-head attention (MHA) where H_kv equals the query head count (H_query = 64), this memory footprint scales eightfold, demanding 3.2 TB of HBM for the same concurrency. This highlights why architectural features like GQA are critical to modern inference hardware economics.1  
-Historically, serving frameworks allocated a contiguous block of physical memory for each request corresponding to the absolute maximum context window (e.g., N_max = 8192 or 32768).6 This native strategy introduced three distinct vectors of severe memory fragmentation and waste 6:
+`V_kv = 2 * L * H_kv * d * N_context * b`
 
-1. **Internal Fragmentation**: Memory is allocated for the maximum sequence length, but the client terminates generation early.6 If 2048 tokens are reserved but only 300 are generated, the remaining 1748 token allocations remain idle, locked, and unusable by other requests.6  
-2. **Reservation Waste**: Memory is reserved for future tokens that have not yet been generated.6 In a sequence currently at token 100, the memory for tokens 101 through 2048 is actively held empty, representing a structural zero-utilization penalty.6  
-3. **External Fragmentation**: Non-contiguous gaps form in GPU memory as requests with varying sequence lengths are initialized, completed, and evicted.6 Because memory allocations are historically contiguous, a new request requiring 1024 continuous token allocations will fail to initialize if the free memory is split into separate, non-adjacent blocks of 512.6
+Where:
 
-Under these contiguous allocation schemes, empirical measurements show that actual GPU memory utilization hovers between 20% and 40%, meaning up to 80% of valuable HBM sits idle, restricting batch sizes and causing artificial throughput bottlenecks.6
+| Symbol | Meaning |
+| :--- | :--- |
+| `2` | Separate storage for key and value tensors. |
+| `L` | Transformer layer count. |
+| `H_kv` | Number of key-value heads. |
+| `d` | Head dimension. |
+| `N_context` | Active context length in tokens, including prompt and generated tokens. |
+| `b` | Bytes per KV element, such as `2` for BF16/FP16 or `1` for FP8. |
+
+For a concrete demonstration, consider a Llama-class 70B model served with FP8 KV cache precision (`b = 1`) and Grouped-Query Attention (GQA). The architectural parameters are:
+
+* Layer count: `L = 80`
+* KV head count: `H_kv = 8`
+* Head dimension: `d = 128`
+
+For a single sequence of 16,384 context tokens:
+
+`V_kv_16K = 2 * 80 * 8 * 128 * 16,384 * 1`
+
+`V_kv_16K = 2,684,354,560 bytes`
+
+This is approximately:
+
+* `2.68 GB` in decimal units
+* `2.50 GiB` in binary units
+
+At a target serving concurrency of `B = 16` active requests with the same context length:
+
+`V_kv_fleet = 16 * 2.50 GiB = 40.0 GiB`
+
+This is the dynamic KV-cache footprint alone. It does not include model weights, activations, CUDA graphs, adapter memory, allocator metadata, fragmentation margin, or serving-engine overhead.
+
+If the same model used standard multi-head attention (MHA) with `H_kv = H_query = 64`, the KV-cache footprint would scale by a factor of eight:
+
+`V_kv_16K_MHA = 8 * 2.50 GiB = 20.0 GiB per sequence`
+
+At `B = 16` concurrent requests:
+
+`V_kv_fleet_MHA = 16 * 20.0 GiB = 320.0 GiB`
+
+This illustrates why GQA and MQA are central to modern inference economics. They do not merely improve elegance on a model card; they directly reduce dynamic memory pressure under concurrent serving loads.
+
+Historically, serving frameworks allocated contiguous physical memory for each request according to the maximum possible context window. This naive strategy created three severe forms of waste:
+
+1. **Internal Fragmentation**: Memory is allocated in larger chunks than the sequence actually uses. If a block reserves space for 2,048 tokens but the request ends after 300 tokens, the unused allocation remains unavailable to other requests.
+
+2. **Reservation Waste**: Memory is reserved for future tokens that may never be generated. A sequence currently at token 100 may hold capacity for thousands of possible future tokens.
+
+3. **External Fragmentation**: Non-contiguous gaps form as requests of different lengths are admitted, completed, and evicted. A new request can fail to initialize even when the total free memory is sufficient, because the free space is scattered across incompatible physical gaps.
+
+Under contiguous allocation schemes, practical GPU memory utilization can fall dramatically below physical capacity. PagedAttention and related cache-virtualization methods solve this by dividing the KV cache into fixed-size physical blocks and mapping logical token positions onto non-contiguous memory pages.
 
 ## **Paged Attention, Cache Virtualization, and Eviction**
 
@@ -246,19 +283,64 @@ To reclaim fragmented memory, modern serving runtimes employ cache virtualizatio
 The physical HBM reserved for KV cache is partitioned into a global pool of fixed-sized physical blocks.6 Each block contains KV projections for a small, fixed number of tokens, typically designated as a block size of B_size = 16 or 32 tokens.7  
 When a request arrives, its logical sequence of tokens is divided into logical blocks.6 The scheduler's memory manager maps these logical blocks to non-contiguous physical blocks anywhere in the global pool, maintaining this mapping inside a sequence-specific block table.6
 
-Logical Blocks (Sequence Order):  
- ───► Maps to physical block   
- ──► Maps to physical block   
- ──► Maps to physical block   
- ──► Maps to physical block 
-
-Physical HBM Block Pool (Scattered non-contiguously):  
-         
-                                  (Log 2)                                     (Log 0)  
-    
-                                             (Log 1)
-
-                                  (Log 3)
+```
++--------------------------------------------------------------------------------
+| PAGEDATTENTION LOGICAL-TO-PHYSICAL KV CACHE MAPPING
++--------------------------------------------------------------------------------
+|
+| Goal:
+|   Decouple the logical token order of a sequence from the physical location
+|   of its KV-cache blocks in GPU memory.
+|
+| Logical sequence order:
+|
+|   Sequence A tokens
+|     [0..15]    [16..31]    [32..47]    [48..63]
+|       |           |           |           |
+|       v           v           v           v
+|   Logical Block 0  Logical Block 1  Logical Block 2  Logical Block 3
+|
+| Block table for Sequence A:
+|
+|   logical_block_id    physical_block_id
+|   ----------------    -----------------
+|        0                    7
+|        1                    2
+|        2                   11
+|        3                    5
+|
+| Physical HBM block pool:
+|
+|   +----------+  +----------+  +----------+  +----------+
+|   | Block 0  |  | Block 1  |  | Block 2  |  | Block 3  |
+|   | free     |  | seq C    |  | seq A L1 |  | seq B    |
+|   +----------+  +----------+  +----------+  +----------+
+|
+|   +----------+  +----------+  +----------+  +----------+
+|   | Block 4  |  | Block 5  |  | Block 6  |  | Block 7  |
+|   | free     |  | seq A L3 |  | seq B    |  | seq A L0 |
+|   +----------+  +----------+  +----------+  +----------+
+|
+|   +----------+  +----------+  +----------+  +----------+
+|   | Block 8  |  | Block 9  |  | Block 10 |  | Block 11 |
+|   | seq C    |  | free     |  | seq D    |  | seq A L2 |
+|   +----------+  +----------+  +----------+  +----------+
+|
+| Attention kernel lookup:
+|
+|   token_position i
+|       -> logical_block_id = floor(i / block_size)
+|       -> offset           = i % block_size
+|       -> physical_block   = block_table[logical_block_id]
+|       -> address          = physical_block.base + offset
+|
++--------------------------------------------------------------------------------
+| Result:
+|   Sequence A remains logically contiguous even though its KV blocks are
+|   physically scattered across HBM. This eliminates most external fragmentation
+|   and bounds internal waste to the final partially filled block.
++--------------------------------------------------------------------------------
+```
 
 During attention execution, the CUDA attention kernel is modified to perform dynamic gather operations.6 Instead of reading a single continuous memory stride, the kernel resolves physical memory addresses on the fly 6:  
 Logical Block Index (idx_block) = floor(i / B_size) 6  
@@ -279,40 +361,74 @@ Preemption is executed via one of two distinct strategies:
 The core scheduler scheduling loop, depicting the iteration-level execution validation and preemption triggers, is outlined as follows 10:
 
 ```Python  
-# Reference implementation based on vllm.core.scheduler._schedule()  
-# Coordinates physical block allocation and checks preemption boundaries.
+# Reference-style pseudocode inspired by iteration-level LLM schedulers.
+# Purpose: allocate the next decode slot for each running sequence while
+# preventing KV-cache block exhaustion from crashing the worker.
 
-def schedule_iteration(self) -> SchedulerOutputs:  
-    running_pool: List =  
-    preempted_pool: List =  
-      
-    # Process running queue sequentially  
-    while self.running_queue:  
-        seq_group = self.running_queue.pop(0)  
-          
-        # Verify physical block availability for the next step   
-        while not self.block_manager.can_append_slot(seq_group):  
-            # Resolve physical block starvation via immediate preemption   
-            if self.running_queue:  
-                # Select the lowest-priority running sequence as eviction victim   
-                victim = self.running_queue.pop(-1)  
-                self._execute_preemption(victim, mode=self.preemption_config.mode)  
-                preempted_pool.append(victim)  
-            else:  
-                # Evict the current sequence if no lower-priority victims remain   
-                self._execute_preemption(seq_group, mode=self.preemption_config.mode)  
-                preempted_pool.append(seq_group)  
-                break  
-        else:  
-            # Allocate token slot and commit sequence to the active batch   
-            self.block_manager.allocate_slot(seq_group)  
-            running_pool.append(seq_group)  
-              
-    self.running_queue = running_pool  
-    return SchedulerOutputs(running=running_pool, preempted=preempted_pool)
+from dataclasses import dataclass
+from typing import List, Literal
+
+
+PreemptionMode = Literal["recompute", "swap"]
+
+
+@dataclass
+class SchedulerOutputs:
+    running: List["SequenceGroup"]
+    preempted: List["SequenceGroup"]
+
+
+def schedule_iteration(self) -> SchedulerOutputs:
+    running_batch: List["SequenceGroup"] = []
+    preempted_batch: List["SequenceGroup"] = []
+
+    # Work from the current running queue. New admissions happen elsewhere.
+    pending: List["SequenceGroup"] = list(self.running_queue)
+    self.running_queue.clear()
+
+    while pending:
+        seq_group = pending.pop(0)
+
+        # Each decode step may require one more KV slot.
+        while not self.block_manager.can_append_slot(seq_group):
+            victim = self.select_preemption_victim(
+                current=seq_group,
+                candidates=pending,
+                policy=self.preemption_policy,
+            )
+
+            if victim is None:
+                # No safe victim exists. Preempt the current sequence.
+                self.execute_preemption(
+                    seq_group,
+                    mode=self.preemption_mode,  # "recompute" or "swap"
+                )
+                preempted_batch.append(seq_group)
+                seq_group = None
+                break
+
+            # Remove victim from pending work and free its KV blocks.
+            pending.remove(victim)
+            self.execute_preemption(
+                victim,
+                mode=self.preemption_mode,
+            )
+            preempted_batch.append(victim)
+
+        if seq_group is None:
+            continue
+
+        # Physical memory is available. Commit the sequence to this iteration.
+        self.block_manager.append_slot(seq_group)
+        running_batch.append(seq_group)
+
+    self.running_queue = running_batch
+
+    return SchedulerOutputs(
+        running=running_batch,
+        preempted=preempted_batch,
+    )
 ```
-
-💠‍🌐 Here’s a corrected, drop-in version of that subsection. I tightened the mechanics and fixed the misleading “0-prefill” implication: a hit bypasses prefill **only for the matched prefix**, not necessarily for the entire request. I also made explicit that RadixAttention is an **exact token-prefix cache**, not semantic caching with a fancy tree hat. 
 
 ### **The Radix Tree Cache**
 
@@ -423,14 +539,69 @@ To minimize compute redundancy and physical transport bottlenecks, modern runtim
 
 ### **The Tenure Principle and Cache Key Composition**
 
-To guarantee that cached states do not bypass security controls, data freshness guarantees, or deployment boundaries, every cache entry must adhere to the **Tenure Principle**. Under this framework, cached data is never stored as an anonymous tensor or raw text fragment; it must carry a structured tenure wrapper that defines its execution context.  
-The physical cache key is computed as a cryptographic hash of the input tokens concatenated with metadata representing the exact environment that produced the artifact:  
-CacheKey = Hash(TokenIDs |  
-| TenantID |  
-| AccessPermissions |  
-| ReleaseManifestID |  
-| TemporalTTL)  
-If an incoming request matches the exact TokenIDs but fails to satisfy the TenantID match or access controls, the cache hit is rejected. The request is routed to a clean computation path, preventing security boundaries from being bypassed by memory optimizations.
+To prevent cached states from bypassing security controls, freshness guarantees, or deployment boundaries, every cache entry must obey the **Tenure Principle**:
+
+**A cached artifact is valid only inside the exact execution tenure that produced it.**
+
+A cache entry must never be treated as an anonymous tensor, text fragment, or response string. It must carry a structured wrapper describing who may reuse it, when it expires, which release produced it, and which policy boundaries were active at creation time.
+
+A safe cache key binds the physical token content to the surrounding execution context:
+
+```text
+CacheKey = Hash(
+  TokenIDs,
+  TenantID,
+  UserOrPrincipalScope,
+  AccessPermissionSet,
+  ReleaseManifestID,
+  ModelOrEmbeddingVersion,
+  PromptTemplateVersion,
+  CorpusSnapshotID,
+  ToolSchemaVersionSet,
+  SafetyPolicyVersion,
+  TemporalTTL,
+  CachePurpose
+)
+```
+
+This prevents a cache hit from crossing boundaries that merely happen to share the same token string.
+
+For example, two users may submit identical prompts, but their cache entries must diverge if they have different tenant IDs, document permissions, release manifests, retrieval snapshots, or tool authorization scopes. A token-level match is necessary but not sufficient for reuse.
+
+| Cache-Key Component       | Purpose                                                                                  |
+| :------------------------ | :--------------------------------------------------------------------------------------- |
+| `TokenIDs`                | Ensures the cached artifact corresponds to the exact serialized model input.             |
+| `TenantID`                | Prevents cross-tenant leakage.                                                           |
+| `UserOrPrincipalScope`    | Binds reuse to the authenticated caller or authorized group.                             |
+| `AccessPermissionSet`     | Prevents reuse when document or tool permissions differ.                                 |
+| `ReleaseManifestID`       | Invalidates cache entries when model, prompt, schema, routing, or safety config changes. |
+| `ModelOrEmbeddingVersion` | Prevents reuse across incompatible model or embedding coordinate spaces.                 |
+| `PromptTemplateVersion`   | Invalidates prefix and answer caches after prompt layout changes.                        |
+| `CorpusSnapshotID`        | Prevents stale retrieval or answer caches after source documents change.                 |
+| `ToolSchemaVersionSet`    | Prevents cached tool calls or tool results from surviving schema changes.                |
+| `SafetyPolicyVersion`     | Prevents reuse across changed moderation or refusal boundaries.                          |
+| `TemporalTTL`             | Bounds cache lifetime for dynamic facts and volatile tool results.                       |
+| `CachePurpose`            | Separates prefix, semantic, retrieval-result, tool-result, and answer caches.            |
+
+If an incoming request matches the same `TokenIDs` but fails any tenure check, the runtime must reject the cache hit and route the request to a clean computation path.
+
+This distinction is especially important for semantic caching. A semantic cache may find that two queries are meaningfully similar, but semantic similarity does not imply equivalent authorization, freshness, or execution context. The cache hit is valid only if the tenure wrapper also matches.
+
+```text
+Cache lookup decision:
+
+  token or semantic match?
+        |
+        v
+  tenure wrapper match?
+        |
+        +--> no  -> reject cache hit; recompute safely
+        |
+        +--> yes -> reuse cached artifact within its allowed scope
+```
+
+The Tenure Principle turns caching from an unsafe shortcut into a governed performance layer. It preserves the speed benefits of reuse without allowing stale, cross-tenant, or policy-invalid data to leak through the memory system.
+
 
 ## **GPU Memory Pressure and CPU/GPU Tradeoffs**
 
@@ -483,14 +654,91 @@ To amortize the high memory bandwidth cost of weight transfers, runtimes aggrega
 
 Traditional static batching processes a fixed set of requests simultaneously, running until the longest response completes.5 This approach introduces severe tail latency (P99) because short requests are blocked by long-running requests.9 Continuous batching (or iteration-level scheduling) resolves this by evaluating the batch at every token generation step.5 Completed requests are dropped immediately, and new requests are admitted from the queue.5
 
-Static Batching:  
-Batch Step 1 (Wait for slowest) ──►  
-Batch Step 2                    ──► GPU sits idle waiting for Req B to complete...
+```
++--------------------------------------------------------------------------------
+| STATIC BATCHING
++--------------------------------------------------------------------------------
+|
+| Behavior:
+|   A fixed batch is admitted. The batch runs until the slowest sequence finishes.
+|
+| Time ---->
+|
+|   Req A: [prefill][decode][done]
+|   Req B: [prefill][decode][decode][decode][decode][done]
+|   Req C: [prefill][decode][done]
+|   Req D: [prefill][decode][decode][done]
+|
+| Batch slot occupancy:
+|
+|   Step 1: A B C D active
+|   Step 2: A B C D active
+|   Step 3:   B   D active     A and C are done, but their slots are wasted
+|   Step 4:   B     active     D is done, but the batch still waits on B
+|   Step 5:   B     active
+|
+| Consequence:
+|   Short requests suffer head-of-line blocking behind long requests.
+|   GPU work is wasted on padding or idle batch slots.
++--------------------------------------------------------------------------------
+```
 
-Continuous Batching:  
-Iteration 10  ──►  
-Iteration 11  ──►  
-Iteration 12  ──►
+```
++--------------------------------------------------------------------------------
+| CONTINUOUS BATCHING / ITERATION-LEVEL SCHEDULING
++--------------------------------------------------------------------------------
+|
+| Behavior:
+|   The scheduler updates the active batch at every decode iteration.
+|   Completed sequences leave immediately. New sequences enter available slots.
+|
+| Time ---->
+|
+|   Iteration 1:  Req A   Req B   Req C   Req D
+|   Iteration 2:  Req A   Req B   Req C   Req D
+|   Iteration 3:  Req E   Req B   Req F   Req D     A and C completed; E/F enter
+|   Iteration 4:  Req E   Req B   Req F   Req G     D completed; G enters
+|   Iteration 5:  Req H   Req B   Req F   Req G     E completed; H enters
+|
+| Scheduler loop:
+|
+|   decode one token for active sequences
+|   release completed sequences
+|   admit waiting sequences if memory blocks are available
+|   preempt or delay sequences if KV-cache pressure is too high
+|
+| Consequence:
+|   GPU utilization rises because batch slots are continuously recycled.
+|   Tail latency improves, but scheduler policy now directly shapes fairness.
++--------------------------------------------------------------------------------
+```
+
+```
++--------------------------------------------------------------------------------
+| WHY CHUNKED PREFILL MATTERS
++--------------------------------------------------------------------------------
+|
+| Problem:
+|   A long prompt prefill can monopolize compute and delay active decode streams.
+|
+| Without chunked prefill:
+|
+|   [Huge 64K prefill block........................................]
+|                                                        [decode waits]
+|                                                        [decode waits]
+|                                                        [decode waits]
+|
+| With chunked prefill:
+|
+|   [prefill chunk][decode][prefill chunk][decode][prefill chunk][decode]
+|
+| Consequence:
+|   Chunked prefill interleaves compute-heavy prompt processing with
+|   memory-bound token generation, reducing streaming stalls and p99 latency.
++--------------------------------------------------------------------------------
+```
+
+
 
 Under continuous batching, the scheduler manages sequence length heterogeneity and early finishes dynamically, keeping the GPU highly utilized.8
 
@@ -557,16 +805,77 @@ V_seq_conversational = 2 * 80 * 8 * 128 * (1024 + 256) * 1 = 209,715,200 bytes ~
 V_seq_rag = 2 * 80 * 8 * 128 * (16384 + 512) * 1 = 2,768,240,640 bytes ~ 2.578 GB 1  
 V_seq_agent = 2 * 80 * 8 * 128 * (32768 + 128) * 1 = 5,389,680,640 bytes ~ 5.019 GB 1
 
-#### **Step 3: Size Concurrency and Cluster Replication**
+#### **Step 3: Size Concurrency Against the Safe KV Pool**
 
-If the average concurrent active streams are B = 40 under peak loads, running all sequences on a single GPU is impossible because the memory requirements exceed physical HBM limits:  
-V_total_required = (28 * 0.195) + (8 * 2.578) + (4 * 5.019) = 5.46 + 20.624 + 20.076 = 46.16 GB  
-While the total memory requirement (46.16 GB) fits within the 66 GB pool, a sudden burst to p99 context lengths will exhaust HBM, triggering preemption and latency spikes.  
-To maintain system stability, architects must size capacity using a 30% system margin budget (M_margin = 0.30):  
-V_limit_safe = V_pool * (1 - M_margin) = 66 GB * 0.70 = 46.2 GB  
-This indicates the GPU is operating at its exact capacity threshold. To handle arrival spikes and support failover operations, the cluster must be sized to scale horizontally:  
-Replicas = ceiling(B_concurrency_peak / B_safe_limit) * (1 + Failover Overhead)  
-Using TP = 4 over an NVLink interconnect provides 264 GB of dynamic block pool memory, allowing the fleet to absorb peak concurrent sequences with a secure capacity margin.8
+Using the p95 sequence lengths, compute the memory requirement for each workload type:
+
+`V_seq_conversational = 2 * 80 * 8 * 128 * (1024 + 256) * 1 = 209,715,200 bytes ≈ 0.195 GiB`
+
+`V_seq_rag = 2 * 80 * 8 * 128 * (16384 + 512) * 1 = 2,768,240,640 bytes ≈ 2.578 GiB`
+
+`V_seq_agent = 2 * 80 * 8 * 128 * (32768 + 128) * 1 = 5,389,680,640 bytes ≈ 5.019 GiB`
+
+If the peak active batch contains `B = 40` concurrent streams with the workload mix:
+
+* 28 conversational requests
+* 8 RAG requests
+* 4 agent-loop requests
+
+Then the p95 KV-cache demand is:
+
+`V_total_required = (28 * 0.195 GiB) + (8 * 2.578 GiB) + (4 * 5.019 GiB)`
+
+`V_total_required = 5.46 GiB + 20.62 GiB + 20.08 GiB`
+
+`V_total_required ≈ 46.16 GiB`
+
+Given a single H200-class GPU with `141 GB` HBM, `70 GB` allocated to FP8 model weights, and `5 GB` reserved for runtime overhead, the remaining dynamic block pool is approximately:
+
+`V_pool = 141 GB - 70 GB - 5 GB = 66 GB`
+
+Using a 30% capacity margin:
+
+`V_limit_safe = V_pool * (1 - 0.30)`
+
+`V_limit_safe = 66 GB * 0.70 = 46.2 GB`
+
+This means the p95 workload technically fits, but only barely. It sits directly at the safe operating boundary. The deployment is therefore vulnerable to p99 context spikes, bursty arrivals, tenant skew, cache-miss storms, tool-wait amplification, and failover events.
+
+The correct conclusion is not that a single GPU is mathematically impossible. The correct conclusion is that a single GPU leaves no practical safety margin.
+
+#### **Step 4: Interpret Horizontal Scaling and Tensor Parallelism Carefully**
+
+To maintain stable service, architects must add capacity until the p95 workload fits comfortably below the safe dynamic block-pool limit and p99 workloads can be absorbed without persistent preemption.
+
+Horizontal replication increases request-serving capacity by spreading independent requests across multiple model replicas. Tensor parallelism increases the aggregate HBM available to one sharded model instance, but its usable KV-cache capacity depends on the serving architecture.
+
+A statement such as “TP = 4 provides 264 GB of dynamic block-pool memory” should be treated as an approximation, not a universal law. The usable memory depends on:
+
+* how model weights are sharded
+* whether KV cache is replicated, sharded, or partitioned by runtime policy
+* tensor-parallel communication overhead
+* CUDA graph and allocator overhead
+* interconnect bandwidth and latency
+* whether the deployment uses prefill/decode disaggregation
+* whether adapters, speculative decoding, or constrained decoding consume additional memory
+
+A cleaner capacity statement is:
+
+Using four H200-class GPUs increases aggregate HBM and allows the runtime to distribute model weights and serving state across a larger memory pool. Under tensor parallelism, this can substantially expand the practical KV-cache budget, but the exact safe concurrency limit must be measured with the target serving engine, model architecture, sharding plan, and workload trace distribution.
+
+#### **Step 5: Capacity Planning Rule**
+
+A serving plan is healthy only when all of the following remain true under p95 and burst-tested p99 traffic:
+
+* free KV block count remains above the safety threshold
+* preemption rate remains near zero
+* p95 TTFT remains inside the latency SLO
+* p99 ITL does not spike during long-context prefills
+* queue wait time does not grow monotonically
+* cache-hit collapse does not push the system into sustained full-prefill mode
+* failover can occur without saturating the surviving replicas
+
+Capacity planning should therefore be based on trace replay and stress simulation, not average request length or theoretical maximum context size.
 
 ## **Runtime Failure Mode Map**
 
