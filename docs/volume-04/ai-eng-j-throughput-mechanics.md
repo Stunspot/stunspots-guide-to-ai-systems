@@ -345,7 +345,7 @@ When a request arrives, its logical sequence of tokens is divided into logical b
 During attention execution, the CUDA attention kernel is modified to perform dynamic gather operations.6 Instead of reading a single continuous memory stride, the kernel resolves physical memory addresses on the fly 6:  
 Logical Block Index (idx_block) = floor(i / B_size) 6  
 Offset within Block (offset) = i % B_size 6  
-Physical Address = PoolAddress[idx_block] * B_size + offset 6  
+address = physical_block.base + offset * kv_token_stride.
 This indirection introduces a negligible overhead of a single memory lookup per block but reduces KV cache memory waste to less than 4% by eliminating external fragmentation and restricting internal fragmentation to the final block of a sequence.6
 
 ### **Sequence Scheduler Mechanics**
@@ -407,7 +407,7 @@ def schedule_iteration(self) -> SchedulerOutputs:
                 seq_group = None
                 break
 
-            # Remove victim from pending work and free its KV blocks.
+            # Remove victim from pending work and free its KV blocks. victim must be selected only from pending; current sequence is handled by the victim is None branch
             pending.remove(victim)
             self.execute_preemption(
                 victim,
@@ -609,27 +609,70 @@ The capacity of an accelerator memory system (such as HBM3/HBM3e) is the primary
 
 ### **VRAM Memory Pressure Map**
 
-The total allocated VRAM (V_allocated) of an active inference-serving GPU is defined by:  
-V_allocated = V_weights + V_cache + V_activations + V_adapters + V_metadata + V_scratch 1
+The total allocated VRAM of an active inference-serving GPU is divided across static model residency, dynamic request state, and runtime execution overhead:
+
+`V_allocated = V_weights + V_cache + V_activations + V_adapters + V_runtime + V_scratch`
+
+Where:
+
+| Term | Allocation Domain | Behavior |
+| :--- | :--- | :--- |
+| `V_weights` | Model weights | Mostly static after model load. Depends on parameter count, quantization format, and tensor-parallel sharding. |
+| `V_cache` | KV cache pool | Dynamic. Grows with sequence length, output length, and active concurrency. Usually the main production capacity governor. |
+| `V_activations` | Temporary activations | Transient. Spikes during prefill and forward passes, then is reclaimed. |
+| `V_adapters` | LoRA / adapter weights | Semi-dynamic. Depends on active adapter count, rank, serving policy, and tenant mix. |
+| `V_runtime` | Runtime metadata and CUDA graph overhead | Runtime-reserved memory for block tables, scheduler state, allocator metadata, CUDA graphs, compiled kernels, and framework buffers. |
+| `V_scratch` | Scratchpad tensors | Temporary workspace for kernels, sorting, copying, sampling, dequantization, and intermediate operations. |
 
 ```
-┌────────────────────────────────────────────────────────────────────────┐  
-│ Total GPU HBM/VRAM Capacity                                            │  
-├─────────────────┬─────────────────┬──────────┬──────────┬──────────────┤  
-│ Model Weights   │ KV Cache Pool   │ Activ.   │ Adapters │ Runtime/     │  
-│ (V_weights)     │ (V_cache)       │ (V_act)  │ (V_adap) │ CUDA Graphs  │  
-│ Fixed footprint │ Dynamic allocation│ Dynamic  │ Dynamic  │ Overhead   │  
-└─────────────────┴─────────────────┴──────────┴──────────┴──────────────┘
++--------------------------------------------------------------------------------
+| GPU HBM / VRAM PRESSURE MAP
++--------------------------------------------------------------------------------
+|
+| Total GPU HBM / VRAM Capacity
+|
+|   +-------------------+-------------------+-------------+-------------+
+|   | Model Weights     | KV Cache Pool     | Activations | Adapters    |
+|   | V_weights         | V_cache           | V_act       | V_adapters  |
+|   |                   |                   |             |             |
+|   | fixed / sharded   | dynamic blocks    | transient   | semi-dynamic|
+|   +-------------------+-------------------+-------------+-------------+
+|
+|   +-------------------------------+-------------------------------+
+|   | Runtime Metadata / CUDA Graphs| Scratchpad / Workspace        |
+|   | V_runtime                     | V_scratch                     |
+|   |                               |                               |
+|   | allocator state, block tables,| temporary kernel workspaces,  |
+|   | CUDA graphs, scheduler state, | copies, sampling buffers,     |
+|   | compiled kernels, framework   | dequantization buffers        |
+|   | overhead                      |                               |
+|   +-------------------------------+-------------------------------+
+|
++--------------------------------------------------------------------------------
+| Practical reading:
+|
+|   Model weights determine the static floor.
+|   KV cache determines concurrency and sustainable context length.
+|   Activations determine prefill spikes.
+|   Adapters determine multi-tenant specialization overhead.
+|   Runtime and scratch allocations determine the safety margin.
++--------------------------------------------------------------------------------
 ```
 
-* **Model Weights (V_weights)**: The static memory footprint required to hold parameter matrices in memory.1 For example, a 70B parameter model demands a fixed allocation of 140 GB in FP16 (2 bytes/param) and 70 GB in FP8 (1 byte/param).1  
-* **KV Cache Pool (V_cache)**: The dynamic pool pre-allocated by the serving engine during boot to prevent runtime CUDA allocation failures.8 It is managed directly by parameters like -mem-fraction-static.8  
-* **Activations (V_activations)**: The temporary memory required to store intermediate layer activations during forward passes.21 It scales with batch size and layer width but is reclaimed immediately following kernel execution.21  
-* **Adapters (V_adapters)**: VRAM allocated for parameter-efficient fine-tuning weights (e.g., LoRA checkpoints) loaded dynamically at runtime.26  
-* **Runtime Overhead / CUDA Graphs (V_metadata)**: VRAM reserved by the serving engine (e.g., vLLM or SGLang) for metadata tracking, memory lookup tables, and pre-compiled execution graphs (CUDA Graphs).8  
-* **Scratchpad Tensors (V_scratch)**: Transitory workspace buffers allocated for intermediate mathematical operations, such as token sorting or memory copying.
+* **Model Weights (`V_weights`)**: The static footprint required to keep parameter matrices resident in GPU memory. A 70B parameter model requires about `140 GB` in FP16/BF16 or about `70 GB` in FP8/INT8-style one-byte formats before accounting for sharding, metadata, and runtime overhead.
 
-Because model weights are static, optimization focus targets the trade-off between weight precision and KV cache budget.1 If a 70B model is compressed from FP16 to FP8 on an A100 80GB GPU cluster (TP = 2, providing 160 GB aggregate VRAM), the weights footprint drops from 140 GB to 70 GB.1 This shift reclaims 70 GB of physical memory, directly expanding the KV cache pool from 15 GB (restricted to low concurrency) to 85 GB (supporting hundreds of concurrent sequences).1
+* **KV Cache Pool (`V_cache`)**: The dynamic pool reserved for attention key/value states. It scales with active sequence count, context length, generated tokens, layer count, KV head count, head dimension, and KV precision. In production serving, this is usually the first domain to create capacity pressure.
+
+* **Activations (`V_activations`)**: Temporary intermediate tensors created during forward passes. Activation pressure is especially visible during large prefill operations and high batch concurrency. These allocations are reclaimed after the kernel path completes but can still trigger short-lived memory spikes.
+
+* **Adapters (`V_adapters`)**: Memory allocated for parameter-efficient fine-tuning artifacts such as LoRA adapters. Adapter pressure increases when many tenants, domains, or workflows require concurrently resident adapters.
+
+* **Runtime Metadata and CUDA Graph Overhead (`V_runtime`)**: Memory reserved by the serving engine for allocator structures, block tables, CUDA graphs, scheduler metadata, compiled kernels, framework state, and execution bookkeeping. This should be treated as a real capacity reservation, not miscellaneous dust under the GPU couch.
+
+* **Scratchpad Tensors (`V_scratch`)**: Temporary workspace used for kernel execution, tensor copies, sampling, sorting, dequantization, constrained decoding, and other intermediate operations.
+
+Because model weights are mostly static after load, optimization focuses on the trade-off between weight precision and KV-cache budget. Reducing the model weight footprint can reclaim HBM for dynamic sequence state, but safe capacity planning must reserve margin for activations, adapters, runtime metadata, scratchpad buffers, and burst traffic.
+
 
 ### **CPU/GPU Tradeoff Model**
 
@@ -777,79 +820,124 @@ Scheduler policies directly shape user experience and system cost profiles. Sche
 
 ## **Capacity Planning Framework**
 
-To size physical GPU capacity, architects must evaluate production traces using p50, p95, and p99 distributions rather than average workload metrics.
+To size physical GPU capacity, architects must evaluate production traces using p50, p95, and p99 distributions rather than average workload metrics. Inference capacity is governed by the interaction between model weight residency, dynamic KV-cache growth, sequence length, batch concurrency, cache-hit behavior, and arrival-rate burstiness.
+
+This section uses **GiB** for memory-capacity arithmetic. Vendor GPU specifications are often advertised in decimal **GB**, so they must be converted before comparing against binary workload calculations.
 
 ### **Sizing Methodology**
 
-Let a multi-tenant production environment be characterized by three distinct workload profiles:  
-T_mix = { w_conversational -> 70%, w_rag -> 20%, w_agent_loops -> 10% }  
-The distribution attributes are:
+Let a multi-tenant production environment be characterized by three workload profiles:
 
-* **Conversational (w_conversational)**: N_in_p95 = 1024, N_out_p95 = 256, average arrival rate lambda_1 = 30 req/sec.  
-* **RAG Contexts (w_rag)**: N_in_p95 = 16384, N_out_p95 = 512, average arrival rate lambda_2 = 8 req/sec.  
-* **Agent Loops (w_agent_loops)**: N_in_p95 = 32768, N_out_p95 = 128, average arrival rate lambda_3 = 2 req/sec.
+`T_mix = { w_conversational -> 70%, w_rag -> 20%, w_agent_loops -> 10% }`
 
-The objective is to size an accelerator cluster to guarantee an ITL of t_step <= 25 ms under peak concurrent execution using the Llama-3-70B model in FP8 precision (b = 1).1
+The p95 workload attributes are:
 
-#### **Step 1: Calculate the Worst-Case Weight Footprint**
+* **Conversational:** `N_in_p95 = 1024`, `N_out_p95 = 256`
+* **RAG Contexts:** `N_in_p95 = 16384`, `N_out_p95 = 512`
+* **Agent Loops:** `N_in_p95 = 32768`, `N_out_p95 = 128`
 
-Choose an NVIDIA H200 SXM5 GPU (141 GB HBM3e, beta = 4.8 TB/s).1 The model weights footprint is:  
-V_weights = 70B * 1 byte = 70 GB 1  
-With 5 GB reserved for runtime APM metadata, the unallocated HBM capacity available for the dynamic block pool is:  
-V_pool = 141 GB - 70 GB - 5 GB = 66 GB 1
+The objective is to size an accelerator cluster to guarantee an inter-token latency target of:
 
-#### **Step 2: Compute Dynamic Memory Demands**
+`t_step <= 25 ms`
 
-Using the p95 sequence lengths, compute the memory requirement for each workload type:  
-V_seq_conversational = 2 * 80 * 8 * 128 * (1024 + 256) * 1 = 209,715,200 bytes ~ 0.195 GB 1  
-V_seq_rag = 2 * 80 * 8 * 128 * (16384 + 512) * 1 = 2,768,240,640 bytes ~ 2.578 GB 1  
-V_seq_agent = 2 * 80 * 8 * 128 * (32768 + 128) * 1 = 5,389,680,640 bytes ~ 5.019 GB 1
+under peak concurrent execution using a Llama-class 70B model with FP8 KV-cache precision:
 
-#### **Step 3: Size Concurrency Against the Safe KV Pool**
+`b = 1 byte`
 
-Using the p95 sequence lengths, compute the memory requirement for each workload type:
+Architectural parameters:
 
-`V_seq_conversational = 2 * 80 * 8 * 128 * (1024 + 256) * 1 = 209,715,200 bytes ≈ 0.195 GiB`
+* Layer count: `L = 80`
+* KV head count: `H_kv = 8`
+* Head dimension: `d = 128`
 
-`V_seq_rag = 2 * 80 * 8 * 128 * (16384 + 512) * 1 = 2,768,240,640 bytes ≈ 2.578 GiB`
+### **Step 1: Calculate Static Weight and Runtime Footprint**
 
-`V_seq_agent = 2 * 80 * 8 * 128 * (32768 + 128) * 1 = 5,389,680,640 bytes ≈ 5.019 GiB`
+Choose an H200-class GPU advertised with approximately `141 GB` of HBM.
 
-If the peak active batch contains `B = 40` concurrent streams with the workload mix:
+Convert advertised decimal capacity to binary capacity:
 
-* 28 conversational requests
-* 8 RAG requests
-* 4 agent-loop requests
+`141 GB decimal = 141,000,000,000 bytes ≈ 131.32 GiB`
 
-Then the p95 KV-cache demand is:
+The FP8 model weight footprint is:
 
-`V_total_required = (28 * 0.195 GiB) + (8 * 2.578 GiB) + (4 * 5.019 GiB)`
+`V_weights = 70,000,000,000 bytes ≈ 65.19 GiB`
 
-`V_total_required = 5.46 GiB + 20.62 GiB + 20.08 GiB`
+Reserve runtime and allocator overhead:
 
-`V_total_required ≈ 46.16 GiB`
+`V_runtime = 5,000,000,000 bytes ≈ 4.66 GiB`
 
-Given a single H200-class GPU with `141 GB` HBM, `70 GB` allocated to FP8 model weights, and `5 GB` reserved for runtime overhead, the remaining dynamic block pool is approximately:
+The remaining dynamic block pool is therefore:
 
-`V_pool = 141 GB - 70 GB - 5 GB = 66 GB`
+`V_pool = 131.32 GiB - 65.19 GiB - 4.66 GiB`
 
-Using a 30% capacity margin:
+`V_pool ≈ 61.47 GiB`
+
+This is the approximate pool available for dynamic KV cache, allocator metadata, active sequence state, and operational margin.
+
+#### **Step 2: Compute Per-Sequence KV-Cache Demand**
+
+The KV-cache footprint for a single active sequence is:
+
+`V_seq = 2 * L * H_kv * d * N_context * b`
+
+Where:
+
+`N_context = N_in + N_out`
+
+Using the p95 sequence lengths:
+
+| Workload Type | p95 Input Tokens | p95 Output Tokens | p95 Context Tokens | Per-Sequence KV Demand |
+| :--- | ---: | ---: | ---: | ---: |
+| **Conversational** | `1,024` | `256` | `1,280` | `209,715,200 bytes ≈ 0.195 GiB` |
+| **RAG Contexts** | `16,384` | `512` | `16,896` | `2,768,240,640 bytes ≈ 2.578 GiB` |
+| **Agent Loops** | `32,768` | `128` | `32,896` | `5,389,680,640 bytes ≈ 5.020 GiB` |
+
+These values represent dynamic KV-cache demand only. They do not include model weights, transient activations, adapters, runtime metadata, CUDA graphs, scratchpad tensors, fragmentation margin, or serving-engine overhead.
+
+#### **Step 3: Size Active Concurrency Against the Safe KV Pool**
+
+Assume the peak active batch contains `B = 40` concurrent streams with the target workload mix:
+
+| Workload Type | Share | Active Streams | Per-Sequence KV Demand | Aggregate KV Demand |
+| :--- | ---: | ---: | ---: | ---: |
+| **Conversational** | `70%` | `28` | `0.195 GiB` | `5.46 GiB` |
+| **RAG Contexts** | `20%` | `8` | `2.578 GiB` | `20.62 GiB` |
+| **Agent Loops** | `10%` | `4` | `5.020 GiB` | `20.08 GiB` |
+| **Total** | `100%` | `40` | — | `46.16 GiB` |
+
+The remaining dynamic block pool from Step 1 is:
+
+`V_pool ≈ 61.47 GiB`
+
+Apply a 30% capacity margin to absorb p99 sequence growth, bursty arrivals, cache-miss storms, tenant skew, tool-wait amplification, allocator overhead, and failover pressure:
 
 `V_limit_safe = V_pool * (1 - 0.30)`
 
-`V_limit_safe = 66 GB * 0.70 = 46.2 GB`
+`V_limit_safe = 61.47 GiB * 0.70`
 
-This means the p95 workload technically fits, but only barely. It sits directly at the safe operating boundary. The deployment is therefore vulnerable to p99 context spikes, bursty arrivals, tenant skew, cache-miss storms, tool-wait amplification, and failover events.
+`V_limit_safe ≈ 43.03 GiB`
 
-The correct conclusion is not that a single GPU is mathematically impossible. The correct conclusion is that a single GPU leaves no practical safety margin.
+The p95 active workload therefore exceeds the safe operating envelope:
 
-#### **Step 4: Interpret Horizontal Scaling and Tensor Parallelism Carefully**
+`46.16 GiB > 43.03 GiB`
+
+The workload may technically fit inside the raw dynamic pool:
+
+`46.16 GiB < 61.47 GiB`
+
+But it does **not** fit inside the production-safe capacity envelope. A single GPU may hold the p95 batch under ideal conditions, but it leaves insufficient margin for p99 contexts, sudden arrival bursts, cache-hit collapse, preemption recovery, tool waits, and failover events.
+
+The capacity conclusion is:
+
+**This single-GPU configuration is physically plausible but operationally unsafe. The fleet must add memory capacity, reduce active concurrency, shorten contexts, improve cache reuse, or route long-context workloads to a separate lane.**### **Step 4: Interpret Horizontal Scaling and Tensor Parallelism Carefully**
 
 To maintain stable service, architects must add capacity until the p95 workload fits comfortably below the safe dynamic block-pool limit and p99 workloads can be absorbed without persistent preemption.
 
-Horizontal replication increases request-serving capacity by spreading independent requests across multiple model replicas. Tensor parallelism increases the aggregate HBM available to one sharded model instance, but its usable KV-cache capacity depends on the serving architecture.
+Horizontal replication increases request-serving capacity by spreading independent requests across multiple model replicas.
 
-A statement such as “TP = 4 provides 264 GB of dynamic block-pool memory” should be treated as an approximation, not a universal law. The usable memory depends on:
+Tensor parallelism increases the aggregate HBM available to one sharded model instance, but its usable KV-cache capacity depends on the serving architecture.
+
+A statement such as “TP = 4 provides 264 GB of dynamic block-pool memory” should be treated as an approximation, not a universal rule. The usable memory depends on:
 
 * how model weights are sharded
 * whether KV cache is replicated, sharded, or partitioned by runtime policy
@@ -863,7 +951,7 @@ A cleaner capacity statement is:
 
 Using four H200-class GPUs increases aggregate HBM and allows the runtime to distribute model weights and serving state across a larger memory pool. Under tensor parallelism, this can substantially expand the practical KV-cache budget, but the exact safe concurrency limit must be measured with the target serving engine, model architecture, sharding plan, and workload trace distribution.
 
-#### **Step 5: Capacity Planning Rule**
+### **Step 5: Capacity Planning Rule**
 
 A serving plan is healthy only when all of the following remain true under p95 and burst-tested p99 traffic:
 
@@ -887,7 +975,7 @@ Under high workload intensity, inference runtimes face unique failure modes driv
 | **KV Cache Exhaustion** 12 | Latency spikes; token generation stalls mid-sequence.5 | Concurrency of long-context requests exhausts the physical block pool.9 | free_block_queue count drops to zero; preemption alerts spike.12 | Dynamically lower -max-running-requests to throttle ingress.8 | Transition to GQA; configure sliding-window attention mechanisms. |
 | **Cache Fragmentation** 6 | Batch capacity degrades; GPU utilization drops. | Allocation of non-contiguous variable memory chunks under naive managers.6 | Memory allocation retry flags; high external memory gaps. | Force a garbage collection sweep; restart the serving worker. | Deploy PagedAttention to virtualize cache memory into fixed blocks.6 |
 | **Prefix-Cache Miss Storm** 8 | TTFT spikes across all ingress lanes.8 | Minor changes in instructions invalidate radix tree matches, forcing full prefills.8 | radix_cache_hit_rate drops to zero; prefill FLOPS spike.8 | Standardize and freeze prompt templates in the context compiler.8 | Implement exact-match token boundaries; locate static prefixes at prompt root.8 |
-| **Semantic-Cache Staleness** | System serves incorrect, outdated, or low-quality responses. | Semantic similarity thresholds fail to capture temporal or contextual state drift. | Increased client-side error flags; user-driven downvotes. | Flush the vector index; increase the similarity distance threshold. | Apply the **Tenure Principle**; bind cache TTLs to source data release manifests. |
+| **Semantic-Cache Staleness** | System serves incorrect, outdated, or low-quality responses. | Semantic similarity thresholds fail to capture temporal or contextual state drift. | Increased client-side error flags; user-driven downvotes. | Flush semantic/answer cache; tighten similarity threshold; bind cache TTL to corpus/release manifest. | Apply the **Tenure Principle**; bind cache TTLs to source data release manifests. |
 | **Queue Buildup** 3 | User-facing TTFT climbs linearly over time.5 | Arrival rate (lambda) consistently exceeds the service capacity (mu) of the active fleet. | queue_depth increases; W_q metrics rise exponentially. | Enable aggressive shedding of low-priority traffic. | Deploy dynamic horizontal autoscaling; scale replica counts based on queue latency. |
 | **p95/p99 Latency Spikes** | Generation rates freeze; tail user latency spikes. | Compute-bound prefill phases block memory-bound decode steps in the batch.5 | ITL variance increases; p99_latency metrics spike. | Enable chunked prefill to interleave execution phases.8 | Disaggregate prefill and decode tasks into dedicated hardware nodes.31 |
 | **Head-of-Line (HOL) Blocking** 5 | Short requests suffer high latency in ingestion buffers.22 | Long-context requests monopolize scheduler slots under simple FCFS policies.5 | queue_wait_time variance spikes; short-request latencies climb. | Reorder execution queues to prioritize short requests. | Transition to length-predictive scheduling (e.g., SRTF). |
