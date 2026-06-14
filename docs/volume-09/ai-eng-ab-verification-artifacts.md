@@ -8,28 +8,24 @@ To resolve this visibility deficit, modern systems architectures isolate monitor
 
 This architecture is governed by the core doctrine: every consequential AI output or action must leave behind a replayable evidence trail.1 This trail must link the exact prompt template, model weights snapshot, retrieval context, tool payload, policy execution state, human modification, and final output in an unbroken, cryptographically signed chain of custody.1 The fundamental engineering question shifts from "did we record a log entry?" to "can the organization reconstruct the exact decision path from user input to final output or action, including the evidence, versions, state transitions, checks, edits, and approvals that shaped it?".1 Without this capability, compliance becomes guesswork, debugging degrades into digital archaeology, and the system cannot be safely governed.1
 
-## 
-
 ## **Logs-Traces-Artifacts-Evidence Taxonomy**
 
 To establish a clear hierarchy, the following taxonomy contrasts these diagnostic layers across operational, technical, and evidentiary boundaries, proving why generic logs are insufficient for AI auditability:
 
 | Layer | Technical Scope & Composition | Primary Operational Purpose | System Proof Capability | Architectural Limitations |
 | :---- | :---- | :---- | :---- | :---- |
-| **Event Log** | Flat, line-delimited unstructured text or JSON strings printed to standard output streams.2 | Infrastructure debugging, error rate monitoring, and system metrics.8 | Proves an execution thread reached a specific code block at a timestamp.2 | Lacks context; cannot connect parallel operations, show prompt states, or track user edits.1 |
-| **Metric** | Numeric aggregations and time-series counters scraped at fixed intervals.2 | Capacity planning, auto-scaling triggers, and hardware performance profiling.2 | Proves rate, duration, and volume of transactions over time.2 | Completely blind to semantic content, factual correctness, and policy violations.1 |
-| **Execution Trace** | Directed acyclic graphs of parent-child spans conforming to OpenTelemetry semantic conventions.2 | Distributed performance profiling and latency bottleneck isolation.10 | Proves the causal execution path of a request across network boundaries.10 | Ephemeral storage; span attributes are typically stripped of bulky inputs or redacted.2 |
-| **Span** | The atomic unit of work representing a single model call, retrieval, or tool execution.2 | Granular execution latency and local error capture.2 | Proves the parameters and execution of an isolated transaction step.9 | Lacks end-to-end user edit history and global policy bundle context.1 |
-| **Verification Artifact** | Immutable, schema-validated, and cryptographically signed data packets (e.g., CBOR, JSON-LD).1 | Precise auditability of individual decision boundaries.1 | Proves the exact inputs, variables, parameters, and outputs of a single step.13 | Isolated; does not inherently prove how adjacent steps or agents influenced the state.6 |
-| **Manifest** | Declarative configuration templates, prompt structures, and dependency lockfiles.5 | Pining system state and baseline capability configurations.13 | Proves the expected system behavior and version constraints before execution.5 | Cannot prove runtime dynamic inputs or actual execution paths.1 |
-| **Ledger** | Append-only transactional records of agent planning loops and external database writes.1 | Multi-agent coordination auditing and transaction sequencing.1 | Proves the logical progression and commit status of agent decisions.1 | Blind to physical rendering modifications and raw token generation.1 |
-| **Snapshot** | Point-in-time state captures of vector databases, local memory, and prompt variables.1 | Preserving context data and index states during an active run.1 | Proves the exact information available to the system at execution time.1 | Highly storage-intensive; requires strict deduplication to avoid overhead.1 |
-| **Diff** | Step-by-step character and structural comparisons of system inputs and outputs.1 | Tracking content mutations, policy redactions, and human overrides.5 | Proves the exact modifications made to an asset during its lifecycle.5 | Focuses strictly on text changes; blind to underlying tool executions.1 |
-| **Evidence Trail** | Hash-linked sequence of verification artifacts anchored to WORM archives or public ledgers.1 | Continuous compliance auditing and forensic incident reconstruction.3 | Proves system-wide integrity, policy compliance, and the origin of any claim.14 | Introduces storage overhead and slight execution delays due to signing pipelines.16 |
+| **Event Log** | Flat structured or unstructured events emitted by applications, services, or workers. | Debugging, operational status, exception capture, and coarse audit hints. | Shows that a code path emitted an event at a time. | Does not prove full context, prompt state, evidence, policy checks, user edits, or side effects. |
+| **Metric** | Aggregated numeric counters, gauges, histograms, and time-series measurements. | Capacity planning, alerting, scaling, and SLO monitoring. | Shows rates, volumes, durations, and resource pressure. | Blind to semantic correctness, grounding, authorization, and user-visible truth. |
+| **Execution Trace** | Parent-child span graph linking distributed work across model calls, retrieval, tools, queues, and services. | Latency analysis, causal path reconstruction, and system debugging. | Shows the causal execution path and timing relationships. | Often redacted, sampled, or incomplete for bulky or sensitive payloads. |
+| **Span** | Atomic observable unit of work such as inference, retrieval, rerank, parser, tool call, guardrail, or review step. | Local timing, status, error, and attribute capture. | Shows what a specific execution step attempted and how it ended. | Does not by itself prove global policy state, source lineage, or final user-facing transformation. |
+| **Verification Artifact** | Schema-validated evidence packet containing hashes, references, versions, decisions, state checks, and selected payload evidence. | Auditing a specific decision boundary or execution step. | Proves integrity of recorded inputs, outputs, parameters, and decisions to the degree captured. | Cannot prove uncaptured state; raw payload capture must be governed by privacy policy. |
+| **Manifest** | Declarative version record for prompts, models, tools, dependencies, policies, routes, and environments. | Pinning expected system state and baseline capability configuration. | Shows what configuration was intended or eligible for execution. | Does not prove which dynamic inputs arrived or whether runtime behavior matched intent. |
+| **Ledger** | Append-only record of actions, approvals, state transitions, tool calls, retries, and commit/verification status. | Sequencing, accountability, and action-state audit. | Shows logical progression and final known state of operations. | Does not automatically preserve full prompts, retrieved evidence, or rendered UI output. |
+| **Snapshot** | Point-in-time capture or reference to context, retrieval state, memory, index version, tool state, or UI state. | Preserving what information was available at execution time. | Shows the evidence/context surface available to the system. | Storage-intensive; may require deduplication, redaction, and secure references. |
+| **Diff** | Structural, textual, semantic, or field-level comparison between artifact versions. | Tracking edits, redactions, transformations, overrides, and regressions. | Shows exactly what changed between two captured states. | Does not explain why the change occurred unless linked to trace, policy, or reviewer artifacts. |
+| **Evidence Trail** | Hash-linked sequence of artifacts, manifests, ledgers, snapshots, and diffs with retention and access policy. | Forensic reconstruction, compliance proof, replay, and dispute resolution. | Shows an integrity-protected chain of recorded evidence across a consequential workflow. | Tamper-evident, not omniscient; evidence quality depends on capture coverage and governance. |
 
 Legacy logs are fundamentally insufficient for auditing probabilistic architectures.1 Recording that an API returned a response does not show the prompt template that generated it, the vector database coordinates that informed it, the safety policies that validated it, or the user edits that overrode it before execution.1 If an administrator cannot inspect these intermediate states, they cannot defend automated decisions to regulators, resolve disputes, or debug system drift.1
-
-## 
 
 ## **Replay and Reproducibility Typology**
 
@@ -46,9 +42,7 @@ To enforce true bit-exact determinism, the model must be executed on an inferenc
 
 In empirical testing over a Qwen3-8B model, executing 1,000 runs under standard vLLM produced 80 unique completions, while forcing batch-invariant operations yielded a single, consistent completion across all runs, accompanied by a 61.5% execution latency penalty.18
 
-### 
-
-### **The Replay and Reproducibility Typology**
+#### **The Replay and Reproducibility Typology**
 
 Because forcing bit-exact determinism across third-party cloud providers, variable GPU clusters, and dynamic databases is often impractical, systems must design for graded levels of verification 1:
 
@@ -76,123 +70,107 @@ To address this, platforms must avoid false promises of bit-exact determinism, d
 
 ## **Verification Artifact Bundle Schema**
 
-The central evidence container of this architecture is the Verification Artifact Bundle.1 It is an immutable, structured record containing twelve specialized blocks.1 To ensure interoperability, the bundle schema is serialized using Concise Binary Object Representation (CBOR) and wrapped in a standard in-toto envelope.25  
-The schema parameters, field definitions, and validation constraints are specified as follows:
+The central evidence container of this architecture is the **Verification Artifact Bundle**. It is a structured, schema-validated evidence object that records the minimum sufficient information required to audit, replay, or explain a consequential AI output or action.
 
-| Block Name | JSON Field Key Path | Data Type | Validation Constraint | Description / Key Purpose |
-| :---- | :---- | :---- | :---- | :---- |
-| **Identity & Scope** | identity.request_id | String | Regex UUIDv4 | Correlates the initial user request across systems.2 |
-|  | identity.trace_id | String | Hex (32 chars) | Maps the transaction directly to OpenTelemetry spans.2 |
-|  | identity.session_id | String | String (64 chars max) | Groups related interactions within a conversation.10 |
-|  | identity.tenant_id | String | String (64 chars max) | Enforces tenant boundary isolation and data governance.2 |
-|  | identity.user_role | String | String (32 chars max) | Verifies user authorization levels before acting.1 |
-|  | identity.workflow_id | String | String (64 chars max) | Maps the transaction to a specific business workflow.1 |
-|  | identity.risk_class | Enum | low | medium | high | Determines the required storage and signature policies.1 |
-| **Prompt Lineage** | prompt.template_id | String | String (64 chars max) | Identifies the registered prompt template utilized.1 |
-|  | prompt.template_version | String | Semantic Version | Tracks template updates and prompt regressions.1 |
-|  | prompt.compiled_hash | String | SHA-256 Hex | Verifies the exact compiled prompt text before inference.1 |
-| **Model Manifest** | model.provider_name | String | Enum (list) | Documents the model host (e.g., openai, local).2 |
-|  | model.model_id | String | String (64 chars max) | Records the requested model name.1 |
-|  | model.selected_model | String | String (64 chars max) | Documents the actual model executed (downgrade check).2 |
-|  | model.routing_reason | String | Enum (list) | Records why the gateway selected a specific model.2 |
-| **Retrieval Snapshot** | retrieval.index_id | String | String (128 chars max) | Tracks the vector index partition searched.1 |
-|  | retrieval.query_rewrites | Array | String Array | Logs query expansion steps to audit search intent.1 |
-|  | retrieval.chunks | Array | Object Array | Saves the text, scores, and IDs of retrieved items.1 |
-|  | retrieval.citation_coords | Array | Bounding Box Array | Pinpoints exact page coordinates of retrieved data.1 |
-| **Tool Execution** | tool.planned_tool | String | String (64 chars max) | Documents the tool the model intended to invoke.1 |
-|  | tool.selected_tool | String | String (64 chars max) | Logs the tool actually executed.1 |
-|  | tool.argument_hash | String | SHA-256 Hex | Verifies that tool arguments matched the planned schema.1 |
-|  | tool.idempotency_key | String | String (128 chars max) | Prevents duplicate writes on stateful APIs.1 |
-|  | tool.state_pre_hash | String | SHA-256 Hex | Documents database state before tool execution.1 |
-|  | tool.state_post_hash | String | SHA-256 Hex | Documents database state after tool execution.1 |
-| **State Ledger** | state.plan_steps | Array | String Array | Tracks the active plan and task transitions.1 |
-|  | state.loop_counter | Integer | Integer (<= 10) | Prevents runaway costs and infinite tool loops.1 |
-|  | state.validation_errors | Array | Object Array | Logs syntax and type exceptions encountered.1 |
-| **User Edit** | edit.model_draft_hash | String | SHA-256 Hex | Verifies the raw, un-edited output text.1 |
-|  | edit.user_id | String | String (64 chars max) | Identifies the operator executing modifications.1 |
-|  | edit.character_diff | String | Standard Unified Diff | Captures exact changes made by the operator.1 |
-| **Output Lineage** | output.raw_text_hash | String | SHA-256 Hex | Verifies the raw output generated by the model.1 |
-|  | output.redacted_hash | String | SHA-256 Hex | Verifies the output after safety/PII masking.1 |
-|  | output.rendered_hash | String | SHA-256 Hex | Verifies the final text displayed on the UI.1 |
-| **Policy Enforcement** | policy.bundle_version | String | Semantic Version | Tracks the active safety and regulatory rule versions.1 |
-|  | policy.fired_rules | Array | String Array | Logs the specific rules that triggered blocks or edits.1 |
-|  | policy.exception_raised | Boolean | Boolean | Flags whether the run triggered safety overrides.1 |
-| **Auditing & Verification** | audit.chain_signature | String | COSE_Sign1 Signature | Cryptographically seals the bundle to prevent tampering.12 |
-|  | audit.parent_bundle_hash | String | SHA-256 Hex | Hash-links the bundle to the previous transaction.1 |
-|  | audit.retention_class | String | Enum (list) | Defines the storage lifespan (e.g., 7 years).1 |
+The bundle should support JSON or CBOR serialization depending on platform tooling. It may be wrapped in an in-toto / DSSE-style envelope or another signed attestation format when the artifact class requires cryptographic proof. The important architectural rule is not the file format fetish—tempting though that altar is—but the preservation of signed, versioned, replayable evidence.
 
-To optimize storage performance across high-volume systems, the platform implements a dynamic Risk-Class Tiering Policy.1 Low-risk transactional queries (e.g., chitchat, public FAQs) utilize a lightweight metadata schema where bulky content arrays (such as raw text and retrieved chunks) are stripped and replaced with content-addressed hashes.1 High-risk workflows (e.g., financial ledgers, legal contract audits, automated clinical decisions) mandate the complete, un-redacted verification bundle with hardware-backed digital signatures.1
+| Block Name | Example Field Paths | Capture Rule | Purpose |
+| :---- | :---- | :---- | :---- |
+| **Identity & Scope** | `identity.request_id`, `identity.trace_id`, `identity.session_hash`, `identity.tenant_hash`, `identity.subject_hash`, `identity.workflow_id`, `identity.risk_class` | Store opaque IDs or scoped hashes by default; raw identifiers only in restricted audit stores. | Correlates the bundle with traces, sessions, tenants, subjects, workflows, and risk policy. |
+| **Prompt Lineage** | `prompt.template_id`, `prompt.template_version`, `prompt.compiler_hash`, `prompt.compiled_hash`, `prompt.payload_ref`, `prompt.token_count` | Store hash and secure reference for compiled prompt; raw prompt only under access-controlled registry. | Proves which prompt template and compiled prompt shaped execution. |
+| **Model / Route Manifest** | `model.requested_route`, `model.selected_route`, `model.provider`, `model.model_version_ref`, `model.decoding_settings_hash`, `model.routing_reason` | Store route/model manifest and provider-visible version; note when hosted provider cannot provide weight hash. | Documents model selection, fallback, decoding, and route changes. |
+| **Retrieval Snapshot** | `retrieval.index_id`, `retrieval.index_version`, `retrieval.query_hash`, `retrieval.rewrite_hashes`, `retrieval.chunk_ids`, `retrieval.source_version_hashes`, `retrieval.evidence_refs` | Store document IDs, chunk IDs, source hashes, scores, coordinates, and secure refs; avoid raw text in general bundle. | Proves what evidence was searched, selected, omitted, cited, or unavailable. |
+| **Tool Execution** | `tool.name`, `tool.schema_version`, `tool.action_class`, `tool.payload_hash`, `tool.idempotency_key_hash`, `tool.pre_state_hash`, `tool.post_state_hash`, `tool.verification_status` | Store payload hashes and redacted summaries; sensitive request/response bodies by secure reference. | Proves tool intent, arguments, authorization, side-effect status, and verification outcome. |
+| **State Ledger** | `state.plan_id`, `state.step_id`, `state.transition_log`, `state.loop_count`, `state.no_progress_count`, `state.fallback_state`, `state.termination_reason` | Store state transitions and hashes; never require hidden chain-of-thought capture. | Reconstructs the workflow trajectory without exposing private reasoning. |
+| **User / Reviewer Edit** | `edit.draft_hash`, `edit.final_hash`, `edit.diff_ref`, `edit.editor_hash`, `edit.edit_class`, `edit.approval_state` | Store diffs, hashes, and secure refs; redact sensitive text as required. | Shows how user or reviewer modifications changed the artifact. |
+| **Output Lineage** | `output.raw_hash`, `output.post_processed_hash`, `output.policy_filtered_hash`, `output.redacted_hash`, `output.rendered_hash`, `output.final_hash` | Store transformation hashes and secure refs; raw outputs only under policy. | Tracks every transformation between model output and final displayed/submitted output. |
+| **Policy Enforcement** | `policy.bundle_version`, `policy.rule_ids`, `policy.decisions`, `policy.enforcement_points`, `policy.override_state`, `policy.reviewer_hash` | Store deterministic rule results separately from classifier scores. | Proves which policy checks ran, where, and with what outcome. |
+| **Human Approval** | `approval.request_id`, `approval.status`, `approval.maker_hash`, `approval.checker_hash`, `approval.payload_hash`, `approval.expires_at`, `approval.signature_ref` | Store signed approval metadata and payload hash. | Proves approval state, separation of duties, and freshness of authorization. |
+| **Audit & Integrity** | `audit.bundle_hash`, `audit.parent_hash`, `audit.signature_ref`, `audit.created_at`, `audit.retention_class`, `audit.legal_hold`, `audit.redaction_class` | Sign bundle hash or envelope; store chain metadata and retention policy. | Makes the evidence record tamper-evident and governed. |
+
+### **Risk-Class Tiering Policy**
+
+The bundle should adapt to risk class:
+
+| Risk Class | Capture Profile |
+| :---- | :---- |
+| **Low** | Metadata, hashes, route IDs, status, and short-retention trace links. |
+| **Medium** | Metadata plus selected redacted snippets, secure refs, policy decisions, and tool hashes. |
+| **High** | Complete-enough evidence trail with secure references, signatures, approval records, state verification, and stricter retention. |
+| **Critical / Regulated** | High-risk profile plus legal hold support, stronger signing, replay package linkage, reviewer identity controls, and access-audited payload vaults. |
+
+High risk does **not** mean “store everything raw forever.” It means preserve enough evidence to audit and replay the decision while minimizing raw sensitive payloads, enforcing access controls, and recording when data was intentionally not captured.
 
 ## **Reproducibility Envelope Model**
 
-Every consequential AI execution must operate within a deterministic Reproducibility Envelope, acknowledging that the entire execution runtime is the reproducibility unit, not simply the model checkpoint.1 The envelope maps all dependencies, templates, feature flags, and degraded-mode parameters:
+Every consequential AI execution should run inside a **Reproducibility Envelope**. The envelope records the system state needed to recompile, inspect, simulate, or replay the run. The reproducibility unit is not “the model” alone; it is the model route, prompt compiler, retrieval surface, policy bundle, tool contracts, feature flags, runtime configuration, and evidence state.
 
 ```
-+-------------------------------------------------------------------------------+  
-|                            REPRODUCIBILITY ENVELOPE                           |  
-+-------------------------------------------------------------------------------+  
-|  PROMPT TEMPLATE  ----> [ prompt_compiler: v1.4.2 ]                           |  
-|  RETRIEVAL INDEX  ----> [ embedding_model: bge-large-v1.5, index_hash: sha256]|  
-|  MODEL LOADER     ----> [ transformers: v5.3.0, quantized: fp8_e4m3 ]         |  
-|  HARDWARE COMPUTE ----> [ cuda_version: 12.4, device_hash: nvidia_h100 ]      |  
-+-------------------------------------------------------------------------------+
+REPRODUCIBILITY ENVELOPE
+
++----------------------------------------------------------+
+| Prompt Assembly                                          
+| template id/version | compiler hash | context policy     
++----------------------------------------------------------+
+| Inference Route                                          
+| provider route | model ref | tokenizer | decoding config 
++----------------------------------------------------------+
+| Retrieval Surface                                        
+| corpus version | index hash | embedding model | filters  
++----------------------------------------------------------+
+| Tool and Action Surface                                  
+| tool schemas | mock mode | credential policy | idempotency
++----------------------------------------------------------+
+| Policy and Governance                                    
+| policy bundle | approval flow | safety filters | retention
++----------------------------------------------------------+
+| Runtime Environment                                      
+| container image | dependency lock | feature flags | region 
++----------------------------------------------------------+
+| Replay Constraints                                       
+| exact | constrained | semantic | counterfactual | forensic
++----------------------------------------------------------+
 ```
 
-The specific properties of the Reproducibility Envelope are mapped in the following schema:
+| Parameter Category | Example Field Paths | Validation Source Registry |
+| :---- | :---- | :---- |
+| **Prompt Assembly** | `env.prompt.template_id`, `env.prompt.template_version`, `env.prompt.compiler_hash`, `env.prompt.context_assembler_hash`, `env.prompt.memory_policy_version` | Prompt registry, compiler release manifest, context policy registry. |
+| **Inference Runtime** | `env.model.requested_route`, `env.model.selected_route`, `env.model.provider_api_version`, `env.model.snapshot_ref`, `env.model.tokenizer_ref`, `env.model.decoding_settings_hash` | Model registry, provider manifest, gateway route manifest. |
+| **Serving Environment** | `env.serving.container_digest`, `env.serving.runtime_version`, `env.serving.cuda_or_accelerator_version`, `env.serving.batch_policy`, `env.serving.determinism_mode` | Container registry, deployment manifest, serving-engine config. |
+| **Retrieval Engine** | `env.retrieval.index_id`, `env.retrieval.index_version`, `env.retrieval.corpus_version`, `env.retrieval.embedding_model_ref`, `env.retrieval.chunker_version`, `env.retrieval.reranker_ref`, `env.retrieval.permission_policy_version` | Vector/index registry, corpus manifest, ingestion pipeline records. |
+| **Tool Integration** | `env.tool.manifest_hash`, `env.tool.schema_versions`, `env.tool.server_digest`, `env.tool.mock_mode`, `env.tool.side_effect_mode`, `env.tool.credential_policy_version` | Tool registry, container registry, credential broker policy. |
+| **Policy and Safety** | `env.policy.bundle_hash`, `env.policy.safety_filter_version`, `env.policy.redaction_policy_version`, `env.policy.approval_flow_version`, `env.policy.retention_class` | Policy registry, governance manifest, approval workflow registry. |
+| **System and UI** | `env.ui.version`, `env.ui.renderer_hash`, `env.feature_flags.hash`, `env.deployment.hash`, `env.region`, `env.cache_state`, `env.degraded_mode_state` | Web client registry, feature-flag snapshot, deployment manifest. |
+| **Replay Controls** | `env.replay.mode`, `env.replay.egress_policy`, `env.replay.payload_capture_class`, `env.replay.tool_response_source`, `env.replay.allowed_counterfactuals` | Replay policy registry and audit configuration. |
 
-| Parameter Category | JSON Schema Field Path | Physical Data Type | Validation Source Registry |
-| :---- | :---- | :---- | :---- |
-| **Prompt Assembly** | env.prompt_template_version | String (SemVer) | Prompt Registry Tag.1 |
-|  | env.prompt_compiler_version | String (SemVer) | Git Commit SHA.1 |
-|  | env.context_assembler_version | String (SemVer) | Git Commit SHA.1 |
-|  | env.memory_policy_version | String (SemVer) | Policy Engine Registry.1 |
-|  | env.instruction_version | String (SemVer) | Git Tag.1 |
-| **Inference Runtime** | env.model_weights_snapshot | SHA-256 Hex | Model Registry.1 |
-|  | env.provider_route | String | Gateway Router Config.1 |
-|  | env.decoding_settings | JSON String | API Request Payload.1 |
-|  | env.safety_filter_version | String (SemVer) | Safety Gateway Registry.1 |
-| **Retrieval Engine** | env.retrieval_index_version | String (SemVer) | Vector Database Registry.1 |
-|  | env.embedding_model_version | String (SemVer) | Model Registry.1 |
-|  | env.chunking_strategy | String | Document Processor Config.1 |
-|  | env.reranker_model_version | String (SemVer) | Model Registry.1 |
-|  | env.source_document_version | String (SemVer) | Ingestion Registry.1 |
-| **Tool Integration** | env.tool_schema_version | String (SemVer) | Tool Registry.1 |
-|  | env.tool_server_version | String (SemVer) | Docker Image Digest.1 |
-| **System & UI** | env.policy_bundle_version | String (SemVer) | OPA / Policy Registry.1 |
-|  | env.ui_version | String (SemVer) | Web Client Package.1 |
-|  | env.approval_flow_version | String (SemVer) | Workflow Registry.1 |
-|  | env.feature_flags | JSON String | LaunchDarkly State Capture.1 |
-|  | env.deployment_hash | SHA-256 Hex | K8s Deployment Manifest.1 |
-|  | env.dependency_manifest | JSON String | lockfile (yarn.lock/poetry.lock).1 |
-|  | env.cache_state | Enum | cold | warm | bypass.1 |
-|  | env.degraded_mode_state | Enum | nominal | degraded_retrieval.1 |
-
-This envelope guarantees that an external auditor does not simply evaluate a model in isolation, but can re-compile and inspect the exact environmental parameters that governed the runtime execution.30
+This envelope does not guarantee bit-exact reproduction in every environment. It defines what must be pinned, captured, or declared unknown so auditors can distinguish exact replay, constrained replay, semantic replay, counterfactual replay, forensic replay, and audit-only verification.30
 
 ## **Specialized Evidence Records**
 
 ### **The Prompt Lineage Record**
 
-To evaluate whether a behavioral regression was caused by template modifications or dynamic variable injection, the system preserves the Prompt Lineage Record:
+To determine whether behavior changed because of template edits, context assembly, memory inclusion, or dynamic variable injection, the system preserves a Prompt Lineage Record.
 
-| Field Name | Physical Data Type | Validation Rule / Range | Operational Purpose |
+| Field Name | Physical Data Type | Capture Rule | Operational Purpose |
 | :---- | :---- | :---- | :---- |
-| prompt.template_source | String | ASCII Template Code | Captures the raw prompt structure before variable compilation.1 |
-| prompt.template_version | String | SemVer format | Matches the active tag in the prompt registry.1 |
-| prompt.template_author | String | User principal string | Tracks ownership and accountability for template changes.1 |
-| prompt.approval_state | Enum | draft | approved | Prevents un-vetted templates from reaching production.1 |
-| prompt.variables_injected | JSON String | JSON key-value map | Records dynamic variables (user inputs, dates, names).1 |
-| prompt.memory_included | Array | String Array (hashes) | Captures historical conversation elements injected into prompt.1 |
-| prompt.chunks_included | Array | String Array (hashes) | Captures RAG text blocks injected into active context.1 |
-| prompt.schemas_included | Array | String Array (hashes) | Records API definitions available to the generator.1 |
-| prompt.policies_inserted | Array | String Array (hashes) | Records system safety instructions injected dynamically.1 |
-| prompt.message_boundaries | Array | XML block offsets | Maps system/developer/user message scopes.1 |
-| prompt.compiled_hash | String | SHA-256 Hex | Unique cryptographic digest of the finalized prompt string.1 |
-| prompt.token_count | Integer | Positive Integer | The exact input token size evaluated by the model.1 |
-| prompt.redacted_reference | String | Secure URI string | Secure storage location for GDPR PII-masked inputs.1 |
-| prompt.version_diff | String | Unified character diff | Visualizes changes relative to the prior template commit.1 |
+| `prompt.template_id` | String | Metadata. | Identifies the registered template. |
+| `prompt.template_version` | SemVer / release ID | Metadata. | Matches the active template registry version. |
+| `prompt.template_hash` | SHA-256 hash | Hash. | Verifies template integrity without exposing text. |
+| `prompt.template_ref` | Secure reference | Restricted. | Points to raw template in controlled registry if access is allowed. |
+| `prompt.compiler_version` | Version / commit SHA | Metadata. | Identifies prompt compiler behavior. |
+| `prompt.context_assembler_version` | Version / commit SHA | Metadata. | Identifies context assembly logic. |
+| `prompt.variable_manifest` | JSON object / hash | Redacted or secure reference. | Records which variables were injected and their capture classes. |
+| `prompt.memory_refs` | Array of hashes/refs | Hash/reference. | Identifies memory items included in context. |
+| `prompt.evidence_refs` | Array of chunk/source refs | Hash/reference. | Identifies retrieval chunks inserted into context. |
+| `prompt.tool_schema_refs` | Array of schema hashes | Metadata/hash. | Records tool definitions available to the model. |
+| `prompt.policy_refs` | Array of policy hashes | Metadata/hash. | Records dynamic safety/governance instructions. |
+| `prompt.message_boundaries` | Structured offsets / roles | Metadata. | Maps system, developer, user, tool, and context scopes. |
+| `prompt.compiled_hash` | SHA-256 hash | Hash. | Verifies exact compiled prompt. |
+| `prompt.compiled_ref` | Secure reference | Restricted. | Allows controlled replay of compiled prompt when permitted. |
+| `prompt.token_count` | Integer | Metadata. | Records input size for cost and replay. |
+| `prompt.version_diff_ref` | Secure diff reference | Restricted. | Links to template diff without dumping sensitive prompt text into logs. |
 
-In high-dimensional environments, compiled prompts are highly volatile; saving the raw templates alone is insufficient.1 The compiled prompt hash allows developers to verify that the prompt actually dispatched to the inference engine matches the planned template, blocking prompt injection or silent template drift.1
+Saving only raw templates is insufficient because compiled prompts include dynamic variables, memories, retrieved evidence, tool schemas, policies, and message boundaries. The lineage record proves what was assembled without requiring every observer to see the full prompt text.
 
 ### **The Model and Route Manifest**
 
@@ -252,7 +230,7 @@ GRC verification requires proving the exact context available to the system befo
 | retrieval.inaccessible | Boolean | True | False | Flags if source was deleted but remained in vector index.1 |
 | retrieval.claim_links | Array | Object Array | Maps specific model-generated assertions to chunk hashes.1 |
 
-This snapshot provides absolute verifiability: if a model generates a factual error, the snapshot proves whether the error was caused by retrieval failure or model hallucination.1
+This snapshot provides bounded verifiability when capture coverage, source versioning, and permission metadata are complete: if a model generates a factual error, the snapshot proves whether the error was caused by retrieval failure or model hallucination.1
 
 ### **The Tool Execution Record**
 

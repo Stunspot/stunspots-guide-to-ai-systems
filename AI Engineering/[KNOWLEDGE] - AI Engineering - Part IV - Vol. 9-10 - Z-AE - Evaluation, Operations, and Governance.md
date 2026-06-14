@@ -1,9 +1,13 @@
-# [KNOWLEDGE] - AI Engineering - Volume 9. Z-AB Observability, Evaluation, and Verification
+# [KNOWLEDGE] - AI Engineering - Part IV - Vol. 9-10 - Z-AE - Evaluation, Operations, and Governance
 
-[Volume 9. Z-AB Observability, Evaluation, and Verification]
+[Volume 9. Z-AB Observability, Evaluation, and Verification](#volume-9-z-ab-observability-evaluation-and-verification)
   - [AI-ENG-Z — Strategic Telemetry - Traces, Tokens, Latency & Semantic Drift](#ai-eng-z--strategic-telemetry---traces-tokens-latency--semantic-drift)
   - [AI-ENG-AA — Evals Architecture: Ground Truth, Golden Sets & Regression Tests](#ai-eng-aa--evals-architecture-ground-truth-golden-sets--regression-tests)
   - [AI-ENG-AB — Verification Artifacts - Auditability, Reproducibility & Evidence Trails](#ai-eng-ab--verification-artifacts---auditability-reproducibility--evidence-trails)
+
+---
+
+# [Volume 9. Z-AB Observability, Evaluation, and Verification]
 
 ---
 

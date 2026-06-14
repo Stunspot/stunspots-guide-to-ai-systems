@@ -14,68 +14,122 @@ Strategic telemetry is the first-class observability discipline designed to reso
 
 | Term | Technical Definition | Primary Operational Metric | Standard Production Target |
 | :---- | :---- | :---- | :---- |
-| **Strategic Telemetry** | The systematic capture and correlation of semantic, economic, and behavioral signals across an AI system's execution path.1 | Behavioral Observability Coverage (COV_beh) | 100% of automated transaction steps |
-| **AI Trace** | A directed acyclic graph representing the complete execution path of a probabilistic user interaction.1 | Trace Completion Rate (R_trace) | 100% of completed session interactions |
-| **Span** | The atomic unit of work within an AI trace, representing a discrete model call, retrieval, or tool execution.1 | Span Duration Latency (t_span) | Under domain-specific execution limits |
-| **GenAI Semantic Convention** | Standardized metadata attributes mapping model types, providers, and token counts to OpenTelemetry schemas.3 | Convention Compliance Score | 100% alignment with v1.41 standards |
-| **Token Telemetry** | The granular tracking of inputs, completions, cached states, and computational tokens across models.1 | Token Cost Variance | 0.00% unattributed token consumption |
-| **Time to First Token (TTFT)** | The duration from request dispatch until the first streamed token is delivered, representing prefill latency.7 | Prefill Duration (t_prefill) | <= 200 ms average streaming target |
-| **Prefill Latency** | The compute-bound latency required to process prompt tokens and build the initial key-value (KV) cache.7 | Prefill P99 Tail Latency | Scales linearly with prompt length |
-| **Decode Latency** | The memory-bandwidth-bound latency required to generate completion tokens sequentially.7 | Tokens Per Second (TPS) | >= 50 TPS per concurrent user session |
-| **Routing Decision** | The runtime selection of a model, provider, or fallback path based on cost, quality, and capability bounds.2 | Routing Match Accuracy | >= 95.0% optimal pathway mapping |
-| **Retrieval Event** | The execution of a vector, lexical, or hybrid query to extract relevant document chunks for context.1 | Mean Reciprocal Rank (MRR@k) | >= 0.85 over production queries |
-| **Tool Trace** | The logged arguments, execution state, and output validation of external function calls.1 | Tool Schema Violation Rate | 0.00% unmapped argument mutations |
-| **Cost Attribution** | The precise tracing of financial expenses to specific tenants, users, sessions, models, and workflows.1 | Unattributed Spend Ratio | 0.00% unattributed operational spend |
-| **Semantic Drift** | The gradual or sudden shift in meaning, style, or policy compliance of model outputs over time.10 | Embedding Centroid Distance | Cosine deviation <= 0.15 from baseline |
-| **Behavioral Health** | The state where model outputs, citations, tool executions, and planning remain within expected operational envelopes.1 | Systemic Incident Rate (R_inc) | 0.00% automated transaction failures |
-| **Green Dashboard Fallacy** | The diagnostic error of assuming an AI system is healthy based solely on infrastructure availability.1 | False Positive Health Rate | 0 uncontained semantic failures |
-| **Trace Redaction** | The automated masking of PII, secrets, and sensitive documents prior to telemetry storage.1 | Redaction Leak Frequency | 0 exposed sensitive credentials |
-| **Observability SLO** | Service Level Objectives defined over behavioral metrics (e.g., groundedness, citation support).1 | SLO Compliance Margin | >= 99.9% adherence over monthly runs |
-
-## **The High-Dimensional AI Trace Model**
+| **Strategic Telemetry** | The systematic capture, correlation, protection, and interpretation of semantic, economic, behavioral, security, and operational signals across an AI system’s execution path. | Behavioral Observability Coverage | Coverage is sufficient to debug, replay, evaluate, and govern high-impact workflows. |
+| **AI Trace** | A structured graph representing the execution path of a probabilistic interaction across model calls, retrieval, tools, routing, policy checks, user actions, and state transitions. | Trace Completion Rate | Critical execution paths emit complete enough traces for replay and incident analysis. |
+| **Span** | The atomic unit of observable work inside a trace, such as model inference, retrieval, reranking, tool execution, parsing, moderation, or human review. | Span Duration / Status Coverage | Required spans include status, timing, error class, and correlation identifiers. |
+| **GenAI Semantic Convention** | A configured OpenTelemetry/OpenInference-compatible attribute vocabulary for model, provider, token, tool, retrieval, and agent telemetry. | Convention Compliance Score | Required attributes are present for the configured convention version. |
+| **Token Telemetry** | Tracking of input, output, cached, embedding, reasoning, retry, repair, and wasted tokens where exposed by providers or runtime gateways. | Token Attribution Completeness | High-impact and billable usage is attributed to tenant, user/session, workflow, route, and model where applicable. |
+| **Time to First Token (TTFT)** | Duration from request dispatch until the first streamed token or first response chunk is available. | TTFT by Workload Profile | TTFT remains within workload-specific SLOs. |
+| **Prefill Latency** | Compute-bound latency required to process prompt/context tokens and initialize model state before generation. | Prefill P95 / P99 | Prefill latency scales within expected envelope for prompt length and model route. |
+| **Decode Latency** | Memory-bandwidth-sensitive latency required to generate completion tokens sequentially. | Inter-Token Latency / TPS | Decode performance remains within model and hardware profile expectations. |
+| **Routing Decision** | Runtime selection of model, provider, fallback path, cache, human review, or fail-closed route based on capability, cost, latency, safety, and availability. | Routing Decision Validity | Route satisfies task capability floor and policy constraints. |
+| **Retrieval Event** | A vector, lexical, relational, hybrid, or document-expansion query performed to gather evidence for context or citation. | Retrieval Sufficiency / Fan-Out | Retrieval remains authorized, bounded, freshness-aware, and evidence-adequate. |
+| **Tool Trace** | The structured record of tool selection, arguments, authorization, execution status, cost, side effects, and verification state. | Tool Verification Coverage | High-impact tool calls include pre-action authorization and post-action verification status. |
+| **Cost Attribution** | Mapping of resource consumption to tenant, user, session, workflow, model, tool, retrieval, parser, batch job, or incident. | Attributed Spend Ratio | Material spend is attributable or explicitly marked unknown/pending reconciliation. |
+| **Semantic Drift** | Shift in model behavior, grounding, style, refusal behavior, citation behavior, schema adherence, or policy compliance over time. | Drift Signal Ensemble | Drift is evaluated against calibrated baselines, not universal magic thresholds. |
+| **Behavioral Health** | State where outputs, citations, actions, costs, safety checks, retries, routing, and user-visible behavior remain within expected envelopes. | Behavioral Incident Rate | High-impact behavioral failures trigger containment, review, or release gates. |
+| **Green Dashboard Fallacy** | The diagnostic error of treating infrastructure health as sufficient evidence of AI-system health. | Hidden Failure Detection Rate | Behavioral and semantic checks supplement infrastructure metrics. |
+| **Trace Redaction** | Removal, masking, hashing, or reference-only storage of sensitive payloads before telemetry reaches general observability systems. | Sensitive Payload Exposure Rate | Sensitive data exposure is blocked, minimized, or isolated through controlled references. |
+| **Observability SLO** | A service objective defined over behavioral, semantic, economic, or governance metrics. | SLO Compliance by Risk Class | SLOs are calibrated per workload, risk tier, and operational route. |## **The High-Dimensional AI Trace Model**
 
 An AI interaction must not be represented as a single, flat request-response event. It functions as an asymmetrical, stateful, multi-agent execution graph where a single user prompt can trigger parallel retrieval queries, recursive formatting repairs, multi-step tool executions, and progressive model fallbacks.1 The system must trace the entire journey as a tree of nested spans connected by parent-child relationships, preserving execution state and variables across the entire lifecycle.4
 
 ### **Artifact 2: AI Trace Model**
 
+```text
+AI TRACE MODEL
+
+Root Span
+  span.kind = AGENT
+  name = "Legal Review Orchestrator"
+  trace_id = "8f92a10c7d3a4e9f9a1b6c5d4e3f2010"
+  span_id  = "00f067aa0ba902b7"
+  parent_id = null
+
+  attributes:
+    session.hash = "sha256:session_hash"
+    tenant.hash = "sha256:tenant_hash"
+    workflow.id = "wf_contract_review_2026_001"
+    risk_tier = "high"
+
+  Child Span
+    span.kind = CHAIN
+    name = "Compile Context"
+    span_id = "1a2b3c4d5e6f7081"
+    parent_id = "00f067aa0ba902b7"
+
+    Child Span
+      span.kind = RETRIEVER
+      name = "Authorized Document Retrieval"
+      span_id = "5e6f708192a3b4c5"
+      parent_id = "1a2b3c4d5e6f7081"
+
+      attributes:
+        retriever.name = "policy_document_search"
+        data_source.id = "policy_corpus"
+        retrieval.query_hash = "sha256:query_hash"
+        retrieval.candidate_count = 12
+        retrieval.authorized_candidate_count = 8
+
+      Span Event
+        name = "Document Chunk Retrieved"
+        event.parent_span_id = "5e6f708192a3b4c5"
+        attributes:
+          document.id = "doc_xyz"
+          chunk.id = "chunk_014"
+          document.score = 0.98
+          document.version_hash = "sha256:doc_version_hash"
+          document.permission_version = "perm_v17"
+
+    Child Span
+      span.kind = LLM
+      name = "Generate Audit Draft"
+      span_id = "3d4e5f60718293a4"
+      parent_id = "1a2b3c4d5e6f7081"
+
+      attributes:
+        gen_ai.provider.name = "provider_name"
+        gen_ai.request.model = "primary_reasoning_route"
+        gen_ai.response.model = "primary_reasoning_route"
+        gen_ai.usage.input_tokens = 4120
+        gen_ai.usage.output_tokens = 780
+        gen_ai.response.finish_reasons = ["tool_calls"]
+
+    Child Span
+      span.kind = TOOL
+      name = "Draft Ledger Action"
+      span_id = "7a8b9c0d1e2f3041"
+      parent_id = "1a2b3c4d5e6f7081"
+
+      attributes:
+        tool.name = "ledger_write"
+        tool.action_class = "high_risk_mutation"
+        tool.payload_hash = "sha256:payload_hash"
+        tool.idempotency_key_hash = "sha256:idempotency_key_hash"
+        approval.status = "PENDING"
+
+      Span Event
+        name = "Maker-Checker Initiated"
+        event.parent_span_id = "7a8b9c0d1e2f3041"
+        attributes:
+          approval.request_id = "approval_123"
+          approval.risk_tier = "HIGH"
+          approval.payload_hash = "sha256:payload_hash"
+
+  Child Span
+    span.kind = GUARDRAIL
+    name = "PII Leak Check"
+    span_id = "9c0d1e2f30415263"
+    parent_id = "00f067aa0ba902b7"
+
+    attributes:
+      guardrail.name = "output_redaction"
+      guardrail.result = "pass"
+      redaction.count = 0
+      user_disclosure_shown = false
 ```
-Root Span (openinference.span.kind="AGENT"): "Legal Review Orchestrator"  
-│   ├── Context: trace_id=8f92a10c..., span_id=00f067aa..., parent_id=None  
-│   ├── Attributes: session.id="sess_2026_X", tenant_id="tenant_omega"  
-│  
-├─── Child Span (openinference.span.kind="CHAIN"): "Compile Context"  
-│   ├── Context: trace_id=8f92a10c..., span_id=1a2b3c4d..., parent_id=00f067aa...  
-│   ├── Attributes: gen_ai.agent.name="Contract Auditor", gen_ai.agent.version="2.1.0"  
-│   │  
-│   ├─── Child Span (openinference.span.kind="RETRIEVER"): "Query vector_db"  
-│   │   ├── Context: trace_id=8f92a10c..., span_id=5e6f7g8h..., parent_id=1a2b3c4d...  
-│   │   ├── Attributes: gen_ai.tool.name="vector_search", db.system="postgresql"  
-│   │   │  
-│   │   └─── Child Event (Span Event): "Document Chunk Retrieved"  
-│   │       ├── Context: trace_id=8f92a10c..., span_id=5e6f7g8h..., parent_id=None  
-│   │       └── Attributes: document.id="doc_xyz", document.score=0.98, query.value="..."  
-│   │  
-│   ├─── Child Span (openinference.span.kind="LLM"): "Generate Audit Draft"  
-│   │   ├── Context: trace_id=8f92a10c..., span_id=3m4n5o6p..., parent_id=1a2b3c4d...  
-│   │   ├── Attributes: gen_ai.provider.name="anthropic", gen_ai.request.model="claude-3-5-sonnet"  
-│   │   └── Events: model.response.finish_reasons=["tool_calls"]  
-│   │  
-│   ├─── Child Span (openinference.span.kind="TOOL"): "Disburse Funds"  
-│   │   ├── Context: trace_id=8f92a10c..., span_id=7q8r9s0t..., parent_id=1a2b3c4d...  
-│   │   ├── Attributes: gen_ai.tool.name="ledger_write", mcp.session.id="mcp_sess_42"  
-│   │   │  
-│   │   └─── Child Event (Span Event): "Maker-Checker Initiated"  
-│   │       ├── Context: trace_id=8f92a10c..., span_id=7q8r9s0t..., parent_id=None  
-│   │       └── Attributes: approval_status_type="PENDING", risk_tier="HIGH"  
-│   │  
-│   └─── Child Span (openinference.span.kind="LLM"): "Re-run Format Correction"  
-│       ├── Context: trace_id=8f92a10c..., span_id=5y6z7a8b..., parent_id=1a2b3c4d...  
-│       └── Attributes: gen_ai.usage.input_tokens=1420, repair_attempt_count=1  
-│  
-└─── Child Span (openinference.span.kind="GUARDRAIL"): "PII Leak Check"  
-    ├── Context: trace_id=8f92a10c..., span_id=9c0d1e2f..., parent_id=00f067aa...  
-    └── Attributes: user_disclosure_shown=true, citation_click_through_rate=0.25
-```
+
+Trace examples should use opaque or hashed identifiers for tenants, users, sessions, prompts, payloads, and idempotency keys. Raw user IDs, tenant names, prompt text, credentials, and tool payloads should not be propagated as general-purpose telemetry attributes.
 
 ### **Context Propagation across Distributed Transport Channels**
 
@@ -85,25 +139,27 @@ The system utilizes the W3C Trace Context specification as its baseline.3 The tr
 
 For example, a compliant JSON-RPC payload propagating a W3C Trace Context and associated baggage is structured as follows 3:
 
-```JSON  
-{  
-  "jsonrpc": "2.0",  
-  "method": "tools/call",  
-  "params": {  
-    "name": "calculate_disbursement",  
-    "arguments": {  
-      "base_amount": 500.00,  
-      "is_promotional": false  
-    },  
-    "_meta": {  
-      "traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",  
-      "tracestate": "omega_tenant=00f067aa0ba902b7,region=us-east-1",  
-      "baggage": "userId=usr_SRE_99,tenantId=tenant_omega,isProduction=true"  
-    }  
-  },  
-  "id": 42  
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "tools/call",
+  "params": {
+    "name": "calculate_disbursement",
+    "arguments": {
+      "base_amount": 500.0,
+      "is_promotional": false
+    },
+    "_meta": {
+      "traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+      "tracestate": "vendor_key=opaque-routing-state",
+      "baggage": "subject.hash=sha256_subject_hash,tenant.hash=sha256_tenant_hash,environment=prod"
+    }
+  },
+  "id": "req_42"
 }
 ```
+
+Baggage should be treated as a propagation surface, not a private vault with a lanyard. Do not place raw user IDs, raw tenant IDs, credentials, policy details, or sensitive authorization state in baggage. Use opaque correlation IDs or hashes, and keep high-sensitivity authorization context inside the trusted gateway or policy engine.
 
 The receiving server extracts the traceparent from the _meta block to establish parent-child relationships, ensuring that local tool execution spans are bound to the parent trace initiated by the client orchestrator.3
 
@@ -115,14 +171,19 @@ The OpenTelemetry conventions are currently in *Development* status.3 To manage 
 
 ### **Artifact 3: GenAI Span Taxonomy**
 
-| Span Name Format | Span Kind | Required Attributes | Optional / Opt-In Attributes | Sensitive Fields / Redaction Strategy |
+OpenTelemetry GenAI semantic conventions and OpenInference conventions evolve. Production systems should pin a configured convention version, translate provider-specific fields at the collector/gateway layer, and preserve compatibility mappings during upgrades.
+
+| Span Name Format | Span Kind | Required Attributes | Optional / Provider-Specific Attributes | Sensitive Fields / Redaction Strategy |
 | :---- | :---- | :---- | :---- | :---- |
-| create_agent | INTERNAL | gen_ai.agent.id, gen_ai.agent.name, gen_ai.agent.version 6 | gen_ai.agent.description 13 | Configuration fields; redact API credentials and system prompts.1 |
-| invoke_agent {gen_ai.agent.name} | CLIENT or INTERNAL 6 | gen_ai.agent.id, gen_ai.conversation.id 13 | agent.trust_score, agent.drift_score 14 | User identity metadata; hash user identifiers before serialization.1 |
-| invoke_workflow {workflow_name} | INTERNAL 6 | workflow.id, workflow.name, workflow.run_id 15 | workflow.step_count, workflow.status | State parameters; redact payload data in unauthenticated environments.1 |
-| execute_tool {gen_ai.tool.name} | INTERNAL 6 | gen_ai.tool.name, gen_ai.operation.name="execute_tool" 3 | gen_ai.tool.call.arguments, gen_ai.tool.call.result 3 | API keys, passwords, PHI; strip tool arguments using regex rules.1 |
-| chat / inference | CLIENT | gen_ai.provider.name, gen_ai.request.model, gen_ai.response.model 6 | gen_ai.input.messages, gen_ai.output.messages 6 | Conversational text; store prompts in S3, pass reference-only URLs.6 |
-| retrieval | INTERNAL | gen_ai.data_source.id, query.value | document.id, document.score, document.content 16 | Raw document text; store content externally, log metadata only.6 |
+| `create_agent` | INTERNAL | `agent.id`, `agent.name`, `agent.version`, `service.name` | agent description, owner, deployment profile | Redact credentials, hidden prompts, internal policy text. |
+| `invoke_agent {agent.name}` | INTERNAL / CLIENT | `trace_id`, `session.hash`, `agent.id`, `workflow.id` | agent drift score, routing profile, tool manifest hash | Hash subject identifiers; avoid raw user or tenant IDs. |
+| `invoke_workflow {workflow.name}` | INTERNAL | `workflow.id`, `workflow.name`, `workflow.run_id`, `workflow.status` | step count, retry count, budget state | Log state hashes and summaries, not raw payloads by default. |
+| `llm.inference {model.route}` | CLIENT | provider name, request model/route, response model/route, request id, status | input/output/cached/reasoning tokens where exposed | Prompt/completion text should be redacted or stored by secure reference. |
+| `retrieval {data_source.id}` | INTERNAL | data source ID, query hash, tenant/scope hash, candidate count, authorization filter version | document IDs, scores, chunk IDs, source version hashes | Do not log raw document text in general traces. |
+| `rerank {reranker.route}` | INTERNAL / CLIENT | reranker route, candidate count, latency, status | top-k IDs, score distribution | Use document IDs and hashes; avoid raw snippets unless securely referenced. |
+| `execute_tool {tool.name}` | INTERNAL / CLIENT | tool name, tool version, action class, payload hash, authorization decision, status | tool result hash, quota consumed, idempotency hash | Redact tool args/results; store secure reference for sensitive payloads. |
+| `guardrail {policy.name}` | INTERNAL | policy id, policy version, decision, risk class | redaction count, refusal reason class, detector score | Do not log raw violating text unless policy allows secure evidence capture. |
+| `human_review {queue.name}` | INTERNAL | review request id, risk tier, status, reviewer role class | review duration, outcome, override reason class | Redact reviewer/user identity or store under audit controls. |
 
 ### **Model Context Protocol Tracing Integration**
 
@@ -142,33 +203,46 @@ If a tool call returns with isError: true inside the CallToolResult object, the 
 
 To construct a comprehensive representation of an AI application's behavior, telemetry must be gathered across multiple, distinct planes. These planes are not isolated; they represent correlated dimensions of a single computational system. For example, a latency spike observed on the Infrastructure Plane is diagnostic only when correlated with a route change on the Inference Plane or a cache miss on the Retrieval Plane.1
 
-### **Artifact 4: Telemetry Plane Map**
+```text
+TELEMETRY PLANES MAP
 
-```
-  +---------------------------------------------------------------------------------+  
-  |                             TELEMETRY PLANES MAP                                |  
-  +---------------------------------------------------------------------------------+  
-                                         │  
-        ┌────────────────────────────────┼────────────────────────────────┐  
-        ▼                                ▼                                ▼  
-[ Infrastructure Plane ]         [ Inference Plane ]              
-├── CPU/GPU utilization          ├── Model ID & provider          ├── Query rewrites  
-├── GPU memory cache %           ├── Input/Output tokens          ├── Candidate scores  
-└── Queue waiting states         └── TTFT & Decode latency        └── Citation coords  
-        │                                │                                │  
-        ├────────────────────────────────┼────────────────────────────────┤  
-        ▼                                ▼                                ▼  
-                   [ Agent Plane ]                  
-├── Tool name & schema           ├── Plan step arrays             ├── User corrections  
-├── Idempotency keys             ├── Repair loop counters         ├── Warning dismissals  
-└── State validations            └── Task handoff metrics         └── Citation clicks  
-        │                                │                                │  
-        ├────────────────────────────────┼────────────────────────────────┤  
-        ▼                                ▼                                ▼  
-  [ Governance Plane ]             [ Cost Plane ]                   
-├── Maker-Checker states         ├── Direct API spend             ├── Embedding shifts  
-├── Overrides & comments         ├── Computed hardware cost       ├── Entailment drift  
-└── Audit signatures             └── Tenant spend ledger          └── Refusal distributions
++--------------------------+     +--------------------------+
+| Infrastructure Plane     |     | Inference Plane          |
+| CPU/GPU utilization      |     | model route/provider     |
+| memory/cache pressure    |     | input/output tokens      |
+| queues and workers       |     | TTFT / ITL / finish      |
++-------------+------------+     +-------------+------------+
+              |                                |
+              v                                v
++--------------------------+     +--------------------------+
+| Retrieval Plane          |     | Tool / Action Plane      |
+| query hashes             |     | tool name/version        |
+| candidate counts         |     | payload hash             |
+| source/version IDs       |     | idempotency / status     |
+| citation verification    |     | post-action verification |
++-------------+------------+     +-------------+------------+
+              |                                |
+              v                                v
++--------------------------+     +--------------------------+
+| Agent / Workflow Plane   |     | UX / Trust Plane         |
+| plan steps               |     | user corrections         |
+| repair loops             |     | retry/cancel behavior    |
+| no-progress states       |     | disclosures shown        |
+| escalation triggers      |     | citation interactions    |
++-------------+------------+     +-------------+------------+
+              |                                |
+              v                                v
++--------------------------+     +--------------------------+
+| Governance Plane         |     | Cost / Semantic Plane    |
+| maker-checker state      |     | spend and cost velocity  |
+| approvals / overrides    |     | drift/canary signals     |
+| SARC constraints         |     | refusal distributions    |
+| audit chain events       |     | grounding/entailment     |
++--------------------------+     +--------------------------+
+
+Correlation spine:
+  trace_id -> span_id -> workflow_id -> session.hash -> tenant.hash
+  plus artifact IDs: document_id, tool_call_id, approval_request_id, route_id
 ```
 
 The table below outlines the specific attributes, metrics, and correlation keys required to bind these planes into a unified analytical graph:
@@ -212,15 +286,18 @@ Total Token Footprint
 
 The table below maps specific token metrics to their operational diagnostic value:
 
-| Token Metric Attribute | Telemetry Standard Source | Systemic Pathology Detected | Diagnostic Signature / Behavioral Pattern |
+| Token Metric Attribute | Telemetry Source | Systemic Pathology Detected | Diagnostic Signature / Behavioral Pattern |
 | :---- | :---- | :---- | :---- |
-| gen_ai.usage.input_tokens | OTel GenAI v1.41 6 | **Context Flooding** 1 | Monotonically growing input sizes that saturate the context window, causing a drop in system instruction adherence.1 |
-| usage.cache_read.input_tokens | OpenAI Provider Convention 6 | **Cache Starvation** | Persistent drops in cached input token ratios, indicating highly variable prompts or misconfigured prefix caching rules.19 |
-| usage.cache_creation.input_tokens | Anthropic Provider Convention 6 | **Thrashing Cache** | High cache creation rates paired with low cache read rates, indicating frequent cache invalidation loops. |
-| usage.reasoning.output_tokens | OTel GenAI v1.41 6 | **Deliberation Runaway** | Rapid accumulation of internal planning tokens (e.g., o1/o3 models) that inflate costs without generating user-visible text. |
-| llm.token_count.completion | OpenInference Standard 16 | **Semantic Verbosity** | Sudden increases in completion token counts for standard, low-complexity queries, signaling model style drift.10 |
-| wasted_tokens_count | Custom Gateway Metric | **Barge-In Abandonment** | High ratios of generated output tokens that are discarded due to user interruptions or stream cancellations.1 |
-| repair_loop_tokens | Custom Orchestrator Metric | **Format Repair Loop** 1 | Exponentially growing token counts over short intervals, indicating recursive schema correction attempts.1 |
+| `gen_ai.usage.input_tokens` | OTel/OpenInference or gateway-normalized provider field | **Context Flooding** | Monotonically growing input size, high prefill latency, falling evidence density. |
+| `gen_ai.usage.output_tokens` | OTel/OpenInference or gateway-normalized provider field | **Verbosity Drift** | Output length rises for stable task profiles without quality gain. |
+| `gen_ai.usage.cached_input_tokens` | Provider-specific / gateway-normalized | **Cache Starvation or Cache Regression** | Cached-token ratio drops after prompt/template/router changes. |
+| `gen_ai.usage.cache_creation_tokens` | Provider-specific / gateway-normalized | **Cache Thrash** | High cache creation paired with low reuse. |
+| `gen_ai.usage.reasoning_tokens` | Optional/provider-specific | **Deliberation Runaway** | Hidden/reasoning token budget rises without improved answer quality. Do not log hidden reasoning text. |
+| `embedding.input_tokens` | Embedding gateway / provider metadata | **Embedding Cost Spike** | Corpus or query expansion increases embedding spend unexpectedly. |
+| `rerank.input_tokens` | Reranker gateway / model metadata | **Reranker Overload** | Too many low-signal candidates passed to expensive scoring. |
+| `wasted_tokens_count` | Custom gateway metric | **Cancelled / Abandoned Generation** | Tokens generated after user cancellation, timeout, or route failure. |
+| `repair_loop_tokens` | Orchestrator metric | **Format Repair Loop** | Repeated schema repair consumes increasing token budget. |
+| `retry_tokens` | Gateway retry ledger | **Retry Storm** | Repeated attempts inflate spend and latency after transient errors. |
 
 ### **Mathematical Modeling of Loop Token Accumulation**
 
@@ -245,17 +322,40 @@ Large Language Model inference executes across two distinct stages with fundamen
 1. **Prefill Stage (Prompt Ingestion):** The model processes the entire prompt (including system instructions, retrieved document chunks, and chat history) in parallel, building the key-value (KV) cache.7 This stage is compute-bound, heavily utilizing the GPU's Tensor Cores.7 Prefill speed defines the Time to First Token (TTFT).7  
 2. **Decode Stage (Autoregressive Generation):** The model generates subsequent completion tokens sequentially, one by one.7 Each step executes a forward pass that reads the existing KV cache from GPU High Bandwidth Memory (HBM) to generate the next token.7 This stage is memory-bandwidth-bound, leaving GPU compute cores underutilized.7 Decode speed defines the Inter-Token Latency (ITL).7
 
-```
-  Prompt (Input) ───► [ Prefill Phase ] (Compute-Bound, Parallel)  
-                             │  
-                             ▼ Generates KV Cache  
-                             │  
-  ◄── ◄─────┘  
-  │ (Memory-Bandwidth-Bound, Sequential)  
-  │  
-  ├─► Output Token 1 ─┐  
-  ├─► Output Token 2 ─┼─► Loops Autoregressively  
-  └─► Output Token N ─┘
+```text
+PREFILL VS DECODE
+
+Prompt / Context Tokens
+  system instructions
+  user message
+  retrieved chunks
+  tool schemas
+        |
+        v
++-----------------------------+
+| Prefill Phase               |
+| compute-bound               |
+| processes prompt in bulk    |
+| builds KV cache             |
+| drives TTFT                 |
++-------------+---------------+
+              |
+              v
+        KV Cache Ready
+              |
+              v
++-----------------------------+
+| Decode Phase                |
+| autoregressive              |
+| memory-bandwidth sensitive  |
+| generates one token step    |
+| drives inter-token latency  |
++-------------+---------------+
+              |
+              +--> Output Token 1
+              +--> Output Token 2
+              +--> ...
+              +--> Output Token N
 ```
 
 ### **Artifact 6: Latency Decomposition Model**
@@ -296,51 +396,36 @@ In high-dimensional AI applications, standard HTTP status codes (such as 4xx and
 
 ### **Artifact 7: AI Error and Retry Taxonomy**
 
-This taxonomy maps semantic system failures to target diagnostic attributes and mitigation playbooks:
-
-| Failure Classification | Operational Trigger Scenario | Telemetry Error Code (error.type) | Logged Context Payload | Mitigation / Fallback Playbook |
+| Failure Classification | Operational Trigger Scenario | Telemetry Error Code (`error.type`) | Logged Context Payload | Mitigation / Fallback Playbook |
 | :---- | :---- | :---- | :---- | :---- |
-| **Syntax Violation** | Model outputs malformed JSON that fails parser compilation.1 | json_decode_error | Raw response text, parser exception stack.1 | Trigger format repair loop with schema feedback.1 |
-| **Schema Violation** | Model generates valid JSON that omits required Pydantic keys.1 | schema_validation_error | Missing key names, Pydantic error array.1 | Halt execution; populate default fields.1 |
-| **Semantic Violation** | Model outputs technically valid JSON containing impossible business values.1 | business_rule_error | Violation parameters (e.g., Amount_discount >= Amount_base).1 | Block execution; escalate session to human review.1 |
-| **Provider Refusal** | Upstream provider blocks generation due to local safety filters.1 | provider_refusal | Refusal message, model safety metadata.1 | Fall back to local, quarantined model.1 |
-| **Citation Hallucination** | Model cites a document missing from retrieval context.1 | invalid_citation | Cited document ID, context inventory map.1 | Suppress claim or remove ungrounded citations.1 |
-| **Tool Execution Loop** | Agent repeatedly calls a tool with identical arguments.1 | infinite_loop_detected | Repetitive state hash, execution count (C_rep > 2).1 | Halt agent; route session to priority operator.1 |
-| **No-Progress State** | Agent updates its plans without executing tool actions.1 | no_progress_error | Plan diff array, loop step counter | Pause execution; prompt user for clarification.1 |
-
-#### **Retry Telemetry Schema**
-
-When a fallback retry is triggered, the gateway must log the retry event to prevent thundering-herd storms and trace budget inflation.1 The retry log entry must record:
-
-```JSON  
-{  
-  "retry_id": "ret_99102-X",  
-  "trigger_error_type": "timeout",  
-  "attempt_number": 2,  
-  "idempotency_status": "IDEMP-MUT-tenant_omega-102",  
-  "wait_time_ms": 450,  
-  "prompt_variance_detected": false,  
-  "cumulative_retry_cost_usd": 0.00142,  
-  "retry_outcome": "success"  
-}
-```
-
-This logging ensures that SREs can track the exact cost and latency overhead added by retries, preventing expensive "retry storms" from overloading backend services.1
-
-### **Artifact 8: Routing Decision Log Schema**
-
-To maintain complete accountability over the model selection process, every routing decision must be logged by the budget-aware gateway 2:
+| **Syntax Violation** | Model output cannot be parsed as required JSON/XML/tool format. | `syntax_decode_error` | Response hash, redacted excerpt if allowed, parser error class. | Enter bounded repair path or return structured failure. |
+| **Schema Violation** | Output parses but omits required fields or violates schema. | `schema_validation_error` | Missing/invalid field names, schema version, validation summary. | Halt execution or repair; do not invent missing required fields. |
+| **Semantic Violation** | Structurally valid output violates business logic or domain constraints. | `business_rule_error` | Rule ID, field hashes/values if safe, diagnostic summary. | Block action; route to correction or human review. |
+| **Provider Refusal** | Provider refuses generation due to safety/policy. | `provider_refusal` | Refusal category, provider route, policy class. | Return refusal or use approved policy-equivalent fallback only when allowed. |
+| **Citation Hallucination** | Output cites source not present or not authorized in retrieval context. | `invalid_citation` | Cited source ID, context inventory hash, retrieval ID. | Remove/suppress claim or regenerate with verified evidence. |
+| **Unsupported Claim** | Claim lacks entailment or source support. | `unsupported_claim` | Claim hash, evidence IDs, entailment score/class. | Mark as unverified, request evidence, or suppress. |
+| **Tool Argument Violation** | Tool payload fails schema, authorization, or semantic checks. | `tool_argument_error` | Tool name, schema version, payload hash, validation summary. | Block tool call; ask clarification or route to approval. |
+| **Tool Execution Loop** | Agent repeats identical or equivalent tool calls. | `tool_loop_detected` | Payload hash, repetition count, workflow ID. | Halt loop, preserve state, return managed no-progress status. |
+| **Unknown Action State** | Tool timeout or partial commit leaves state unclear. | `unknown_action_state` | Tool call ID, idempotency hash, pre/post verification status. | Hold, reconcile, compensate where possible, escalate. |
+| **No-Progress State** | Agent revises plans or retries without material state change. | `no_progress_error` | State hash, plan diff summary, loop step count. | Replan once, ask user, or halt based on policy. |
+| **Cross-Tenant Boundary Event** | Resource, retrieval result, cache, or tool request crosses tenant scope. | `tenant_scope_violation` | Tenant hash, resource hash, policy ID, boundary class. | Block, isolate affected route, create security incident. |
 
 | Field Name | Type | Value Range / Pattern | Operational Security Purpose |
 | :---- | :---- | :---- | :---- |
-| routing_id | String | rt_audit_v1_[uuid] 2 | Primary key for correlating the route trace. |
-| tenant_tier | String | enterprise, standard, free 2 | Ensures priority scheduling and SLA isolation.1 |
-| requested_model | String | claude-3-5-sonnet-20241022 2 | Documents the client's intended capability floor. |
-| selected_model | String | claude-3-5-haiku-20241022 2 | Logs the model actually executed for inference.2 |
-| routing_reason | Enum | quota_throttled, failover, cost_optimization | Documents why the gateway diverted from the requested model.2 |
-| quality_floor | String | strict_syntax_compliance 2 | Enforces that fallback models meet capability limits. |
-| budget_state | Double | Remaining budget in USD, e.g., 12.42 2 | Verified before model call to prevent over-spend.1 |
-| user_disclosure_shown | Boolean | true, false 2 | Verifies that model downgrades were disclosed to the UI.2 |
+| `routing_id` | String | `rt_[route_profile]_[uuid]` | Primary key for route decision trace. |
+| `trace_id` | String | W3C trace ID | Correlates route with full execution trace. |
+| `tenant_hash` | String | `sha256:...` | Supports tenant-level analysis without exposing raw tenant ID. |
+| `session_hash` | String | `sha256:...` | Correlates session-level route behavior. |
+| `requested_route` | String | Route/profile name | Captures user/app requested capability floor. |
+| `selected_route` | String | Approved route/profile name | Captures actual executed route. |
+| `routing_reason` | Enum | `normal`, `failover`, `quota_throttled`, `latency_slo`, `cost_policy`, `quality_floor`, `safety_policy`, `cache_hit` | Explains why route changed. |
+| `quality_floor` | String | Profile ID | Ensures selected route meets task requirements. |
+| `capability_delta` | Array | Lost/preserved capability labels | Identifies degraded-mode impact. |
+| `budget_state` | Object | remaining spend/tokens/quota | Prevents unbounded consumption and explains throttling. |
+| `policy_version` | String | Policy manifest version | Makes route decision replayable. |
+| `user_disclosure_required` | Boolean | true/false | Records whether user-visible disclosure was required. |
+| `user_disclosure_shown` | Boolean | true/false | Verifies UI disclosure occurred when required. |
+| `route_status` | Enum | `selected`, `blocked`, `degraded`, `failed_closed` | Records route outcome. |
 
 ## **Retrieval and Tool Observability Models**
 
@@ -350,40 +435,87 @@ In Retrieval-Augmented Generation (RAG) and tool-driven agent environments, stra
 
 To guarantee the structural integrity of RAG setups, the system logs the complete retrieval context. This model enforces the **Doctrine of "Provenance Before Relevance"**: no document chunk is admitted to the model-facing context unless the system can prove where it came from, what authority it carries, and what transformations it has undergone.1
 
-```JSON  
-{  
-  "$schema": "https://ai-engineering.canon/schemas/retrieval-observability-v1.json",  
-  "retrieval_id": "ret_2026_06_11_1201",  
-  "query_parameters": {  
-    "original_query": "What are our operating margins for the machinery segment?",  
-    "rewritten_queries": [  
-      "machinery segment operating margins 2026",  
-      "industrial machinery financial performance margins"  
-    ],  
-    "tenant_scope": "tenant_omega",  
-    "permission_filters": ["finance_auditor", "executive"]  
-  },  
-  "retrieved_documents": [  
-    {  
-      "document_id": "doc_xyz",  
-      "source_file": "s3://tenant-omega-knowledge/Q2_2026_report.pdf",  
-      "relevance_score": 0.98,  
-      "page_number": 12,  
-      "bounding_box": ,  
-      "transformation_pipeline":,  
-      "claims_supported": {  
-        "text_segment": "Operating margins for the Industrial Machinery segment rose to 14.2% in Q2 2026.",  
-        "bounding_box_coordinates":   
-      }  
-    }  
-  ],  
-  "verification_signals": {  
-    "nli_grounding_score": 0.98,  
-    "source_conflict_detected": false,  
-    "stale_cache_served": false  
-  }  
+```json
+{
+  "$schema": "https://ai-engineering.canon/schemas/retrieval-observability-v1.json",
+  "retrieval_id": "ret_2026_06_11_1201",
+  "trace_id": "8f92a10c7d3a4e9f9a1b6c5d4e3f2010",
+  "query_parameters": {
+    "original_query_hash": "sha256:original_query_hash",
+    "original_query_redacted": "What are our operating margins for the machinery segment?",
+    "rewritten_query_hashes": [
+      "sha256:rewrite_1_hash",
+      "sha256:rewrite_2_hash"
+    ],
+    "tenant_hash": "sha256:tenant_hash",
+    "permission_filter_ids": [
+      "finance_auditor",
+      "executive"
+    ],
+    "policy_version": "retrieval_policy_v12"
+  },
+  "retrieved_documents": [
+    {
+      "document_id": "doc_xyz",
+      "source_ref": "secure_payload_ref:source_doc_xyz",
+      "source_version_hash": "sha256:source_version_hash",
+      "chunk_id": "chunk_014",
+      "relevance_score": 0.98,
+      "page_number": 12,
+      "bounding_box": {
+        "x": 0.12,
+        "y": 0.34,
+        "width": 0.42,
+        "height": 0.08,
+        "coordinate_system": "normalized_page"
+      },
+      "transformation_pipeline": [
+        {
+          "step": "pdf_text_extract",
+          "version": "parser_v3.2"
+        },
+        {
+          "step": "chunking",
+          "version": "chunker_v5",
+          "chunk_hash": "sha256:chunk_hash"
+        },
+        {
+          "step": "embedding",
+          "version": "embedding_model_v2",
+          "embedding_hash": "sha256:embedding_hash"
+        }
+      ],
+      "claims_supported": [
+        {
+          "claim_id": "claim_001",
+          "claim_hash": "sha256:claim_hash",
+          "redacted_text_segment": "Operating margins for the Industrial Machinery segment rose to 14.2% in Q2 2026.",
+          "support_status": "supported",
+          "evidence_region": {
+            "page_number": 12,
+            "bounding_box": {
+              "x": 0.12,
+              "y": 0.34,
+              "width": 0.42,
+              "height": 0.08,
+              "coordinate_system": "normalized_page"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "verification_signals": {
+    "nli_grounding_score": 0.98,
+    "source_conflict_detected": false,
+    "stale_cache_served": false,
+    "authorization_checked": true,
+    "citation_verification_status": "verified"
+  }
 }
 ```
+
+This artifact should prove evidence lineage without dumping raw documents into general telemetry. Auditors need source IDs, secure references, hashes, coordinates, parser/chunking versions, and verification status. They do not need your observability database cosplaying as a data breach.
 
 This schema guarantees that if an auditor inspects an answer, they can trace the exact bounding box and page number on the original document that supported the model's output.2
 
@@ -391,42 +523,53 @@ This schema guarantees that if an auditor inspects an answer, they can trace the
 
 Tool call telemetry must enforce strict segregation of duties and verify system states. When an agent executes a tool, the system utilizes the Saga Pattern, decomposing multi-step operations into compensatable, pivot, and retriable transactions to ensure eventual consistency across distributed services.2
 
-```JSON  
-{  
-  "$schema": "https://ai-engineering.canon/schemas/tool-trace-v1.json",  
-  "tool_call_id": "tool_99201-A",  
-  "tool_specification": {  
-    "name": "calculate_disbursement",  
-    "schema_version": "1.4.0",  
-    "action_class": "non_idempotent_mutation"  
-  },  
-  "authorization": {  
-    "user_jwt_hash": "sha256_b3f0...",  
-    "scoped_credential_lifetime_seconds": 900,  
-    "permission_gate": "maker_checker_approval_required"  
-  },  
-  "execution_payload": {  
-    "arguments": {  
-      "transaction_id": "TXN-2026-0812",  
-      "base_amount": 500.00  
-    },  
-    "idempotency_key": "TXN-2026-0812-99ab"  
-  },  
-  "state_verification": {  
-    "pre_action_state_hash": "sha256_f02c...",  
-    "post_action_state_hash": "sha256_a91b...",  
-    "system_of_record_commit_verified": true  
-  },  
-  "reversibility": {  
-    "transaction_step": "PIVOT_TRANSACTION",  
-    "compensation_endpoint": "/api/v1/ledger/reverse",  
-    "compensation_payload": {  
-      "original_tx_id": "TXN-2026-0812",  
-      "reversal_reason": "system_initiated_compensate"  
-    }  
-  }  
+```json
+{
+  "$schema": "https://ai-engineering.canon/schemas/tool-trace-v1.json",
+  "tool_call_id": "tool_99201_A",
+  "trace_id": "8f92a10c7d3a4e9f9a1b6c5d4e3f2010",
+  "tool_specification": {
+    "name": "calculate_disbursement",
+    "schema_version": "1.4.0",
+    "action_class": "non_idempotent_mutation",
+    "tool_manifest_hash": "sha256:tool_manifest_hash"
+  },
+  "authorization": {
+    "subject_hash": "sha256:subject_hash",
+    "tenant_hash": "sha256:tenant_hash",
+    "scoped_credential_lifetime_seconds": 900,
+    "permission_gate": "maker_checker_approval_required",
+    "approval_request_id": "approval_123"
+  },
+  "execution_payload": {
+    "payload_hash": "sha256:payload_hash",
+    "redacted_argument_summary": {
+      "transaction_id": "TXN-2026-0812",
+      "base_amount_class": "under_1000_usd"
+    },
+    "idempotency_key_hash": "sha256:idempotency_key_hash"
+  },
+  "state_verification": {
+    "pre_action_state_hash": "sha256:f02c...",
+    "post_action_state_hash": "sha256:a91b...",
+    "system_of_record_commit_verified": true,
+    "verification_status": "verified"
+  },
+  "reversibility": {
+    "transaction_step": "PIVOT_TRANSACTION",
+    "compensation_supported": true,
+    "compensation_reference": "secure_ref:compensation_plan_456",
+    "compensation_status": "not_required"
+  },
+  "result": {
+    "status": "success",
+    "error_class": null,
+    "completed_at": "2026-06-11T12:04:30Z"
+  }
 }
 ```
+
+Tool telemetry should log hashes, statuses, authorization decisions, and secure references. It should not spray raw compensation endpoints, secrets, or high-impact payloads into general observability.
 
 This structure guarantees **Eventual Consistency Gating**: the conversational interface is blocked from speaking or displaying a completion confirmation (e.g., "Your payment has been sent") until the Post-Action Auditor verifies that the database commit successfully updated the system of record.2
 
@@ -473,12 +616,13 @@ The table below outlines the implementation details and metrics for each validat
 
 | Validation Layer | Underlying Core Algorithm | Telemetry Metrics Captured | Regression Warning Threshold |
 | :---- | :---- | :---- | :---- |
-| **Embedding Space** | Principal Component Analysis (PCA) + Wasserstein Distance comparison.24 | semantic_distance_metric | Cosine distance shift > 0.15 compared to baseline.21 |
-| **Reconstruction Loss** | Autoencoder trained on baseline output embeddings.10 | reconstruction_error 24 | Error >= 3 standard deviations above reference mean.24 |
-| **Domain Classifier** | Binary classification network trained on baseline vs. current data.24 | classifier_auc_score 24 | Area Under the Curve (AUC) >= 0.75.24 |
-| **Canary Prompts** | Periodic execution of 100 curated reference prompts.24 | canary_similarity_score 24 | Cosine similarity drop >= 15% on identical seed.24 |
-| **NLI Entailment** | Deployed cross-encoder scoring claim support against source text.1 | nli_entailment_ratio 1 | Support ratio drops below <= 95.0% globally.1 |
-| **Refusal Distribution** | Semantic clustering of refusal labels in output logs.1 | refusal_cluster_entropy | Refusal rate shift > 5% in a 24-hour window. |
+| **Embedding Space** | PCA/UMAP projection, centroid shift, Wasserstein or cosine-distance comparison. | `semantic_distance_metric`, `centroid_shift`, `distribution_distance` | Threshold calibrated against baseline window and task domain. |
+| **Reconstruction Loss** | Autoencoder or density model trained on baseline output embeddings. | `reconstruction_error`, `outlier_score` | Alert when sustained error exceeds calibrated baseline band. |
+| **Domain Classifier** | Classifier distinguishing baseline vs. current outputs. | `classifier_auc_score`, `domain_shift_probability` | High separability indicates distribution shift requiring review. |
+| **Canary Prompts** | Scheduled execution of curated prompts with fixed route/profile controls. | `canary_similarity_score`, `schema_pass_rate`, `policy_pass_rate` | Alert on sustained degradation against canary baseline. |
+| **NLI / Evidence Support** | Cross-encoder or verifier scoring claim support against evidence. | `nli_entailment_ratio`, `unsupported_claim_rate` | Threshold set by task risk; high-impact domains use stricter floors. |
+| **Refusal Distribution** | Clustering/classification of refusal and safety outcomes. | `refusal_rate`, `refusal_cluster_entropy`, `policy_category_shift` | Alert when refusal behavior shifts materially for stable task mix. |
+| **User Correction Signals** | Analysis of edits, corrections, thumbs-downs, retries, and abandonments. | `user_correction_count`, `edit_distance`, `retry_after_answer_rate` | Treat as UX/behavior signal, not standalone truth label. |
 
 ## **The Green Dashboard Fallacy Diagnostic**
 
@@ -501,63 +645,113 @@ This diagnostic maps silent behavioral failures to their corresponding detection
 
 To make behavioral health visible to operators, the system organizes telemetry across six specialized, correlated dashboard views:
 
-```                 
-  ├── Queue Depth & Latency Breakdowns    ├── Groundedness & Claim-Support Ratios  
-  └── GPU Cache Utilization Metrics       └── Schema Validation Exception Rates  
-                 │                                       │  
-                 ▼                                       ▼  
-              
-  ├── Embedding Drift Centroids           ├── Citation Click-Through Rates  
-  └── Canary Perplexity Anomalies         └── User Correction & Edit Diffs  
-                 │                                       │  
-                 ▼                                       ▼  
-                  
-  ├── Maker-Checker Approval Timelines    ├── Tenant Token Spend & Cost Velocity  
-  └── SARC Constraint Enforcement Flags   └── Wasted Token Runaway Cost Ratios
+```text
+AI OBSERVABILITY DASHBOARD TAXONOMY
+
++--------------------------+     +--------------------------+
+| Serving Health           |     | Behavioral Health        |
+| queue depth              |     | groundedness ratio       |
+| TTFT / ITL               |     | schema pass rate         |
+| GPU/KV cache pressure    |     | unsupported claims       |
+| provider errors          |     | refusal distribution     |
++--------------------------+     +--------------------------+
+
++--------------------------+     +--------------------------+
+| Retrieval & Evidence     |     | Agent & Tool Behavior    |
+| retrieval fan-out        |     | tool retries             |
+| citation verification    |     | no-progress loops        |
+| stale cache use          |     | action verification      |
+| source conflicts         |     | idempotency failures     |
++--------------------------+     +--------------------------+
+
++--------------------------+     +--------------------------+
+| Governance & Review      |     | Cost & Drift             |
+| maker-checker state      |     | tenant spend             |
+| approval latency         |     | cost velocity            |
+| override rate            |     | embedding drift          |
+| break-glass events       |     | canary regressions       |
++--------------------------+     +--------------------------+
 ```
 
 ## **Telemetry Privacy, Redaction, and Compliance**
 
-Strategic telemetry captures raw prompts, context-injected documents, tool arguments, and model responses.1 These payloads frequently contain personally identifiable information (PII), payment details, system credentials, or proprietary business logic.1 Observability must not become the security vulnerability it was designed to monitor.2
+Strategic telemetry can capture prompts, retrieved documents, tool arguments, model responses, reviewer decisions, and action traces. These payloads may contain PII, PHI, payment data, credentials, secrets, proprietary code, internal policies, or regulated business records. Observability must not become the vulnerability it was designed to diagnose.
 
-### **The ARGUS Output-Scanning Firewall**
+The default posture should be:
 
-To protect sensitive datasets, the platform deploys the ARGUS output-scanning gateway.1 ARGUS runs as an inline security filter on every model response before the token stream is written to logs or displayed on the client interface.1 It utilizes high-performance regular expressions and Named Entity Recognition (NER) models to identify and mask sensitive variables (such as credit card numbers, SSNs, and passwords) in real time, replacing them with standard placeholder strings.1
+* capture metadata by default;
+* capture raw payloads only when explicitly allowed;
+* redact before general telemetry storage;
+* store sensitive payloads behind controlled references;
+* log access to sensitive telemetry;
+* retain sensitive payloads for the shortest policy-compatible period;
+* keep audit evidence sufficient for replay without dumping raw secrets everywhere.
+
+### **Redaction and Payload Handling**
+
+Regex and NER filters are useful but incomplete. They can miss secrets, over-redact important evidence, or fail on unfamiliar formats. Redaction should therefore be layered:
+
+| Layer | Purpose |
+| :--- | :--- |
+| **Structured Field Policy** | Never log known secret fields, credentials, tokens, private keys, or raw auth headers. |
+| **Classifier / Regex / NER Scan** | Detect common PII, payment data, credentials, and regulated entities. |
+| **Source-Aware Redaction** | Apply stricter rules to medical, legal, financial, HR, tenant-private, and security-sensitive payloads. |
+| **Secure Reference Storage** | Store sensitive payloads outside general trace stores with purpose-bound access. |
+| **Access Auditing** | Log who accessed sensitive payload references and why. |
+| **Retention Control** | Expire sensitive payloads separately from lower-risk metadata. |
 
 ### **External Payload Reference-Only Tracing**
 
-For production deployments with strict data compliance requirements (such as GDPR or HIPAA), storing raw conversational text directly on trace attributes is prohibited.6 Instead, the system implements a reference-only tracing architecture 6:
+```text
+REFERENCE-ONLY TELEMETRY FLOW
 
-```
-  User App ───► [ Ingestion Parser ]  
-                                  │  
-                                  ├──► Raw Payload ──►  
-                                  │                     (High Security, Short TTL)  
-                                  │                                │  
-                                  ▼                                ▼  
-  OTel Collector ◄─────────────── Reference Link URL ──────────────┘  
-  (Metadata Only,  
-   No PII)
+[ Application / Gateway ]
+  receives prompt, tool payload, retrieved text, or model output
+        |
+        v
+[ Redaction and Classification Gate ]
+  classify sensitivity
+  redact safe fields
+  decide metadata-only vs secure-reference capture
+        |
+        +--> low-risk metadata
+        |       write directly to trace span
+        |
+        v
+[ Secure Payload Vault ]
+  encrypted storage
+  short TTL
+  purpose-bound access
+  access logging
+  tenant/user scope controls
+        |
+        v
+[ Trace Collector ]
+  stores metadata only:
+    payload_ref
+    payload_hash
+    sensitivity class
+    retention class
+    access policy id
 ```
 
-1. The raw prompt and completion payloads are extracted at the ingestion parser.6  
-2. These payloads are written directly to a secure, encrypted database or S3 bucket under an isolated IAM policy and short-lived retention constraints.6  
-3. The trace spans generated by the application capture only metadata attributes (e.g., token counts, model names, latency) and store an external reference link URL pointing back to the secure payload vault.6  
-4. This architecture allows platform engineers to debug system failures while ensuring that trace logs remain entirely free of PII and proprietary content.6
+Reference-only tracing minimizes sensitive payload exposure. It does not make telemetry “PII-free” by magic wand; metadata can still be sensitive, and payload references require access control, retention policy, and audit logs.
+
 
 ### **Artifact 15: Telemetry Privacy and Redaction Model**
 
 The table below defines the content capture and redaction policies enforced by the platform:
 
-| Content Class | Captured Data Format | Storage Location / Substrate | Access Control Rules (RBAC) | Retention Period (TTL) | Compliance Enforcement |
+| Content Class | Captured Data Format | Storage Location / Substrate | Access Control Rules | Retention Period | Compliance Enforcement |
 | :---- | :---- | :---- | :---- | :---- | :---- |
-| **User Prompts** | Redacted text or external reference link.6 | Secure encrypted payload S3 vault.6 | Developer role required; access logs audited.1 | 14 Days (Compliance auto-purge).1 | GDPR "Right to be Forgotten" programmatic API hook.2 |
-| **API Credentials** | Full programmatic block; never capture.1 | None; stripped at gateway before serialization.1 | None; blocked globally.1 | Immediate destruction at gateway.1 | Security compliance scanners audit log streams.1 |
-| **Tool Arguments** | Hashed parameters or masked JSON strings.1 | Relational database transaction logs.2 | Auditor role required; read-only access. | 30 Days (Billing verification).2 | Cryptographic validation of transaction signatures.2 |
-| **System Prompts** | Exact template string; no variable values.2 | Model registry; versioned Git repository.1 | Read-only access for DevOps and security roles.1 | Permanent (Linked to model release).1 | SOC2 Type II compliance audit trails.1 |
-| **Model Completions** | Masked token stream; PII redacted.1 | Secure encrypted payload S3 vault.6 | Developer role required; access logs audited.1 | 14 Days (Compliance auto-purge).1 | HIPAA privacy compliance validation audits. |
-| **Citation Crops** | Coordinate bounding box arrays only.23 | pgvector document registry index.2 | Scoped to active tenant space permissions.1 | Locked to document lifecycle.1 | Database-enforced Row-Level Security policies.1 |
-| **Trace Metadata** | Normalized strings and integers.5 | Centralized OpenTelemetry database | General developer and SRE role access. | 90 Days (Long-term SRE analysis). | Standard SOC2 operational audit mapping. |
+| **User Prompts** | Metadata, hash, redacted excerpt, or secure payload reference. | Secure payload vault if retained; metadata in trace store. | Purpose-bound access; audited retrieval. | Short TTL by default; policy-defined extension for incidents. | Deletion/export hooks where legally required. |
+| **API Credentials / Secrets** | Never intentionally captured; block or hash only for detection event. | None for raw secret; detection event in security log. | Security team only for detection metadata. | Minimal retention for incident evidence. | Secret scanners and log egress controls. |
+| **Tool Arguments** | Payload hash, redacted summary, schema version, secure reference when needed. | Action ledger / secure payload vault. | Auditor/security access by purpose and role. | Based on audit and transaction requirements. | Signed ledger and access logs. |
+| **System Prompts / Templates** | Version ID, template hash, release reference; exact text only in controlled registry. | Prompt/model registry, not general traces. | Dev/security/governance access. | Release lifecycle retention. | Change-control and approval logs. |
+| **Model Completions** | Metadata, hash, redacted excerpt, or secure payload reference. | Secure payload vault if retained. | Purpose-bound access with audit. | Short TTL by default; longer only for incidents/evals. | Privacy review and retention policy. |
+| **Citation Evidence** | Source ID, page/section/coordinates, source version hash, secure evidence reference. | Document registry / evidence store. | Same or stricter scope as source document. | Bound to source lifecycle and audit policy. | RLS/ACL checks and citation verification. |
+| **Trace Metadata** | Normalized numeric/string attributes, status, hashes, IDs. | Central telemetry store. | SRE/developer access depending on sensitivity. | Operational retention window. | Redaction checks before ingestion. |
+| **Human Review Data** | Review request ID, outcome, role class, redacted comments, evidence refs. | Review/audit system. | Reviewer, governance, audit roles. | Governance/audit retention policy. | Access audit and policy review. |
 
 ## **Alerting and SRE SLO Design**
 
@@ -567,42 +761,46 @@ In strategic telemetry, Service Level Objectives (SLOs) must be defined over beh
 
 The SRE team configures and monitors the following behavioral SLOs and alerting thresholds:
 
-| SLO Category | Target SLI Metric | SLO Target Threshold | Warning Alert Threshold (Ticket) | Critical Alert Threshold (Page) | Runbook / Automated Containment Action |
+| SLO Category | Target SLI Metric | SLO Target Threshold | Warning Alert Threshold | Critical Alert Threshold | Runbook / Automated Containment Action |
 | :---- | :---- | :---- | :---- | :---- | :---- |
-| **Semantic Health** | entailment_drift_score 1 | >= 98.0% claim support.1 | Support drops below <= 95.0% over 1 hr.1 | Support drops below <= 90.0% over 15 mins.1 | Freeze model deployment rollout; roll back to last stable adapter.1 |
-| **Action Integrity** | tool.schema_violation_rate 1 | 0.00% validation failures.1 | Any violation on low-risk tools.1 | Any violation on high-risk tools.1 | Synchronously block the tool gateway; revoke temporary API credentials.1 |
-| **Cost Control** | cost_velocity_usd 1 | <= $10.00 spend per session.1 | Spend exceeds $8.00 in active session.1 | Spend exceeds $10.00 (Budget breach).1 | Invalidate user session; trigger gateway circuit breaker; freeze form state.1 |
-| **Loop Containment** | state_repetition_count 1 | 0 instances where C_rep >= 2.1 | Count reaches C_rep = 2 in active run.1 | Count reaches C_rep >= 3.1 | Terminate active thread; roll back database commits; alert operator.1 |
-| **Trust Calibration** | citation_click_rate 2 | >= 15.0% task engagement.2 | Engagement drops below <= 10.0%.2 | Engagement drops below <= 5.0%.2 | Enable cognitive forcing functions; introduce manual checkbox gates.2 |
-| **Tenant Safety** | cross_tenant_leak_count 1 | 0 instances.1 | N/A | Any detected mismatch.1 | Synchronously isolate tenant namespace; rotate KMS keys; terminate connections.1 |
+| **Semantic Health** | Claim support / entailment by task profile. | Calibrated per domain and risk tier. | Sustained support drop outside baseline band. | High-impact route falls below required evidence floor. | Freeze rollout, route to safer profile, require evidence refresh. |
+| **Action Integrity** | Tool schema and post-action verification status. | High-impact actions require verified state. | Repeated validation failures on any tool route. | High-impact mutation has unknown or failed verification. | Block affected route; hold/reconcile/compensate where possible. |
+| **Cost Control** | Cost velocity and budget consumption. | Spend remains within tenant/workflow budget. | Burn rate exceeds forecast. | Budget breach or denial-of-wallet pattern. | Trip circuit breaker, throttle, or require approval. |
+| **Loop Containment** | No-progress count and repeated state hash. | Loops halt within workflow profile. | Repeated state detected. | Repeated state plus rising cost/tool calls. | Halt agent, preserve state, request clarification or escalate. |
+| **Trust Calibration** | User corrections, abandonment, disclosure acknowledgement, review overrides. | Stable within task baseline. | Correction/abandonment spike. | High-risk workflow shows systematic reviewer/user miscalibration. | Add targeted cognitive forcing, review UI, or route audit. |
+| **Tenant Safety** | Cross-tenant access/cache/retrieval mismatch events. | No accepted cross-tenant boundary violation. | Blocked mismatch event detected. | Confirmed exposure or repeated attempted boundary crossing. | Isolate affected scope, revoke implicated credentials, create incident. |
+| **Privacy / Redaction** | Sensitive payload exposure events. | No raw secrets in general telemetry. | Redaction detector catches sensitive field before storage. | Sensitive payload reaches unauthorized telemetry sink. | Quarantine trace, revoke exposed secret, investigate access. |
+| **Fallback Integrity** | Route downgrade with disclosure and quality-floor preservation. | All degradations are policy-preserving and observable. | Fallback spike or missing disclosure. | Unsafe fallback or silent downgrade on high-impact task. | Disable route, fail closed, or require user/reviewer choice. |
 
 ## **Systemic Cross-Canon Handoff Map**
 
-The Strategic Telemetry architecture serves as the behavioral foundation, providing the structured evidence substrate utilized by all downstream operational, security, and governance disciplines.
+Strategic telemetry provides the evidence substrate used across the canon. It connects behavioral health, cost, retrieval, tool execution, governance, privacy, evaluation, audit, and incident response.
 
-### **Artifact 17: Cross-Canon Handoff Map**
-
-```   
-  ├── Standardized W3C contexts, span attributes, and token metrics.  
-  └── Granular latency decompositions and semantic drift centroids.  
-                           │  
-       ┌───────────────────┼───────────────────┐  
-       ▼                   ▼                   ▼  
-  [ AI-ENG-AA ]             [ AI-ENG-AC ]  
-  Evaluations         Audit & Replay      Incident Response  
-  ├── Golden traces   ├── Signed manifests├── Sandbox escapes  
-  └── Drift benchmarks└── Variable maps   └── Poisoning alerts
-```
-
-The table below defines the technical parameter handoffs and operational integration rules between this report and downstream disciplines in the Canon:
-
-| Target Canon Report | Functional Domain | Core Technical Telemetry Parameter | Operational Integration Rule | Fallback / Degraded Protocol |
+| Target Canon Report | Functional Domain | Core Telemetry Handoff | Operational Integration Rule | Fallback / Degraded Protocol |
 | :---- | :---- | :---- | :---- | :---- |
-| **AI-ENG-AA** | Reliability & Adversarial Evaluations | canary_similarity_score 1, nli_grounding_score 2 | Export recorded golden traces to CI/CD pipeline to evaluate prompt injections.1 | Revert code build branch to last stable container image.2 |
-| **AI-ENG-AB** | Forensic Audit & Replay Debugging | idempotency_key 1, request_payload 2 | Store cryptographically signed C2PA manifests alongside database transaction hashes.2 | Log unhashed transaction details in local syslog volumes.2 |
-| **AI-ENG-AC** | Active Incident Response & Remediation | state_repetition_count 1, robust_z_score 1 | Quarantine compromised tool hosts, flush caches, and rebuild HNSW vector indexes.1 | Terminate active vector search; fall back to relational keyword query.2 |
-| **AI-ENG-AD** | Operational Governance & Compliance | maker_id, checker_id, reviewed_at 2 | Enforce centralized maker-checker queue approvals on high-risk mutations.2 | Block automated write executions; freeze form state.2 |
-| **AI-ENG-AJ** | Enterprise Reference Blueprints | tenant_id 20, traceparent 3 | Enforce database-enforced Row-Level Security on pgvector queries.2 | Separate active customer data into physically isolated database partitions.2 |
+| **AI-ENG-B** | Context and State Governance | Context object IDs, memory inclusion events, compaction traces. | State changes must be traceable across route switches and summaries. | Preserve state hashes and continuity checkpoints. |
+| **AI-ENG-D** | Corpus Engineering | Source IDs, source version hashes, provenance, lifecycle state. | Corpus-derived evidence must retain lineage in traces. | Exclude or quarantine unknown-provenance sources. |
+| **AI-ENG-E** | Retrieval Pipeline | Retrieval IDs, query hashes, candidate counts, citation verification. | Retrieval traces must show authorization, source version, and evidence sufficiency. | Use managed no-evidence response if retrieval cannot be trusted. |
+| **AI-ENG-F** | Freshness and Conflict Detection | Source age, cache age, conflict flags, freshness status. | Telemetry must expose stale/conflicting evidence. | Block stale high-impact answers or require refresh. |
+| **AI-ENG-L** | Serving Architecture | TTFT, ITL, queue wait, route, cache, model/provider status. | Serving decisions must correlate with user-visible behavior and cost. | Shift to approved fallback route only if quality floor holds. |
+| **AI-ENG-M** | Agentic Orchestration | Workflow run IDs, loop counts, no-progress state hashes. | Agents must emit enough telemetry to halt and replay loops. | Halt, replan, clarify, or escalate on repeated no-progress. |
+| **AI-ENG-N** | Tool Contracts | Tool call IDs, schema versions, payload hashes, error classes. | Tool traces must prove schema, authorization, and idempotency status. | Block or hold unknown/high-impact tool states. |
+| **AI-ENG-O** | Action Verification | Pre/post state hashes, verification status, action ledger. | Completion claims require verified state telemetry. | Hold, reconcile, compensate, or escalate unknown state. |
+| **AI-ENG-P** | Multimodal Understanding | Parser versions, OCR confidence, evidence coordinates, media refs. | Visual/document evidence must be inspectable without leaking raw payloads. | Use secure evidence references or manual verification. |
+| **AI-ENG-Q** | Voice Interaction | STT/TTS latency, transcript confidence, turn/endpointing events. | Voice degradation and confirmation states must be traceable. | Switch to text/card confirmation for high-impact actions. |
+| **AI-ENG-R** | UI Agents | Browser session IDs, DOM snapshots hashes, action verification. | UI actions must be observable from observation to post-action state. | Pause automation on drift or uncertainty. |
+| **AI-ENG-S** | Production Pathologies | Error classes, malformed outputs, repair loops, false success signals. | Behavioral pathologies require typed telemetry and replay traces. | Contain, repair, or route to degraded mode. |
+| **AI-ENG-T** | Boundary Defense | Tenant scope, authorization decisions, cache scope, redaction events. | Boundary violations must emit security telemetry without leaking payloads. | Fail closed and create incident record when scope cannot be trusted. |
+| **AI-ENG-U** | Supply Chain Security | Artifact hashes, model signatures, parser/tool versions, sandbox events. | Loaded artifacts must be traceable to approved supply-chain records. | Quarantine unsigned or anomalous artifacts. |
+| **AI-ENG-V** | Resource Abuse | Token burn, cost velocity, quota burn, retry storms, queue depth. | Resource anomalies must be observable by tenant/session/workflow. | Throttle, circuit-break, or require approval. |
+| **AI-ENG-W** | UX Resilience | Fallback route, disclosure shown, preserved state, degraded status. | Degraded mode must be traceable as a product state. | Use approved degraded mode, partial answer, review, or fail closed. |
+| **AI-ENG-X** | User Trust and Transparency | User corrections, disclosures, citation interactions, contestability events. | Trust signals must be interpreted as behavioral telemetry, not truth proof. | Surface clearer status/evidence or route to review. |
+| **AI-ENG-Y** | High-Impact Workflow Design | Approval request IDs, maker/checker state, review outcomes, break-glass events. | Governance actions require audit-grade telemetry. | Hold execution until approval/reconciliation is traceable. |
+| **AI-ENG-AA** | Evaluations | Golden traces, canary outputs, drift signals, adversarial cases. | Evaluation harnesses consume production-shaped telemetry. | Block release on telemetry-backed regression. |
+| **AI-ENG-AB** | Audit and Replay | Trace IDs, payload hashes, secure references, policy versions, action ledgers. | Replay must reconstruct the decision path without raw uncontrolled logs. | Preserve redacted, hash-bound evidence in audit store. |
+| **AI-ENG-AC** | Incident Response | Incident IDs, containment events, route/corpus/tool/cache quarantine. | Incidents require structured telemetry for scope and timeline reconstruction. | Quarantine affected route/artifact/cache/tool and notify owners. |
+| **AI-ENG-AD** | Governance and Compliance | Policy version, review status, retention class, access logs. | Governance defines what telemetry is mandatory, restricted, or deleted. | Route telemetry exceptions to accountable owner. |
+| **AI-ENG-AJ** | Reference Architecture | Trace collector, policy-aware gateway, secure payload vault, audit store. | Reference systems should implement strategic telemetry by default. | Use metadata-first, reference-only tracing for sensitive payloads. |
 
 ## **Strategic Conclusions and Architectural Recommendations**
 
@@ -612,6 +810,44 @@ To transition from ad-hoc monitoring to high-assurance behavioral governance, en
 2. **Enforce Strict Gating Before Verifications:** Never allow conversational interfaces to generate verbal or text-based confirmation claims until the Post-Action Auditor verifies that the database transaction has been successfully committed in the system of record.2 Spoken or generated claims must never outrun physical reality.2  
 3. **Secure Caches against Timing Side-Channels:** Formulated semantic cache keys must be cryptographically bound to the tenant ID and user permissions.1 Serving runtimes must deploy selective prefix isolation (such as the CacheSolidarity framework) to prevent timing side-channel probes from exfiltrating private context.1  
 4. **Isolate High-Risk Content and Payloads:** Enforce a zero-trust payload logging policy.1 Strip credentials at the gateway, run ARGUS output filters to redact PII, and utilize reference-only tracing to store sensitive inputs in secure, short-TTL external storage rather than writing them to centralized, persistent trace collectors.1
+
+## **Durable Principles of Strategic Telemetry**
+
+1. **Green Infrastructure Does Not Prove Behavioral Health**  
+   HTTP 200, low latency, and normal GPU utilization can coexist with hallucinations, tenant leaks, false success, stale cache, and unsafe actions.
+
+2. **Trace the Workflow, Not Just the Request**  
+   AI interactions span model calls, retrieval, tools, policy gates, human review, retries, routing, and state verification. A single request log is not enough.
+
+3. **Telemetry Must Preserve Meaning-Level Evidence**  
+   Strategic telemetry should capture claims, citations, evidence IDs, tool states, route decisions, and verification outcomes—not just duration and status.
+
+4. **Sensitive Payloads Need Controlled References**  
+   Raw prompts, completions, documents, and tool arguments should not be sprayed into trace stores. Use hashes, redacted summaries, and secure payload references.
+
+5. **Token Metrics Are Economic and Behavioral Signals**  
+   Token growth, cache misses, repair loops, reasoning-token spikes, and wasted tokens reveal cost bombs and behavioral pathologies.
+
+6. **Latency Must Be Decomposed by Stage**  
+   End-to-end latency hides parser, retrieval, queue, prefill, decode, tool, voice, and human-review bottlenecks.
+
+7. **Tool Success Is Not Action Truth**  
+   Tool traces must record authorization, idempotency, execution status, and post-action verification. A returned response is not proof of a committed state.
+
+8. **Drift Requires Multiple Signals**  
+   Embedding movement, canary prompts, NLI support, refusal shifts, schema pass rates, and user corrections should be triangulated. No single drift metric is oracle-grade. Obviously. The oracle budget was denied by finance.
+
+9. **Telemetry Is a Security Boundary**  
+   Observability systems hold sensitive operational evidence. They need redaction, access control, retention policy, and audit trails.
+
+10. **Fallbacks and Degraded Modes Must Be Observable**  
+   Model downgrades, cache responses, partial answers, review handoffs, and fail-closed states must emit structured events.
+
+11. **Audit and Replay Depend on Telemetry Discipline**  
+   Reproducibility requires trace IDs, payload hashes, policy versions, route decisions, evidence references, and action ledgers.
+
+12. **Telemetry Without Action Is Decorative Plumbing**  
+   Alerts must connect to runbooks, release gates, containment actions, governance review, and incident response.
 
 #### **Works cited**
 
