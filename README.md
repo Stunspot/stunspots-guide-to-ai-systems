@@ -3,9 +3,9 @@
 ![Status](https://img.shields.io/badge/status-first_pass_complete-darkgreen)
 ![Reports](https://img.shields.io/badge/reports-37-blue)
 ![Volumes](https://img.shields.io/badge/volumes-12-blueviolet)
-![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/license-CC_BY--NC--SA_4.0-lightgrey)
+![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/license-CC_BY--NC--SA_4.0-darkgrey)
 
-*A doctrinal knowledge base for high-dimensional AI system architecture.*
+*A comprehensive field manual for practical AI systems design.*
 
 The **AI Engineering Systems Canon** is a Markdown-native knowledge repository built primarily to support AI-assisted design, engineering, analysis, evaluation, and decision-making across modern AI systems.
 
