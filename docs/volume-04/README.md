@@ -4,8 +4,7 @@
 
 ## Reports
 
-- ### [AI-ENG-J — Throughput Mechanics: Memory Pressure, KV Cache & Hardware Realities](./ai-eng-j-throughput-mechanics.md)
-
+- ### [AI-ENG-J — Throughput Mechanics: Memory Pressure, KV Cache & Hardware Realities](./ai-eng-j-throughput-mechanics.md) 
     Covers the brutal physics of scaling inference. Includes prefill vs. decode latency, KV cache management, eviction policies, prompt caching, semantic caching, continuous batching, paged attention, GPU memory pressure, CPU/GPU tradeoffs, and capacity planning under real workloads.
 
 - ### [AI-ENG-K — Weight Dynamics: Quantization, Compression & Decoding Strategy](./ai-eng-k-weight-dynamics.md)
