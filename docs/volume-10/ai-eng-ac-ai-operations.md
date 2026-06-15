@@ -36,32 +36,55 @@ The following glossary defines the core operational metrics and terms governing 
 
 Probabilistic failure modes are highly distributed and cross-cut multiple system layers.1 To facilitate rapid categorization and triage, the platform establishes a multi-dimensional AI Incident Taxonomy.4 Incidents are classified not by their infrastructure symptoms, but by their failing semantic layer and downstream consequences.2 A successful HTTP 200 response code can still be categorized as a critical SEV-1 failure if it delivered unauthorized, harmful, or ungrounded action guidance to the execution environment.1
 
-```
-                                 
-                                       │  
-         ┌─────────────────────────────┼────────────────────────────┐  
-         ▼                             ▼                            ▼  
-  [Corpus Poisoning]            [Metadata Filters]            
-  - Attacker injected files     - Filter logic bypass        - Shared namespace leak  
-  - Hubness vector exploits     - Version control drift      - Context cache bleed  
-                                       │  
-                                       ▼  
-                               
-                                       │  
-         ┌─────────────────────────────┼────────────────────────────┐  
-         ▼                             ▼                            ▼  
-  [Cognitive & Prompt]                  [Guardrail & Policy]  
-  - Direct jailbreaks           - Schema argument drift      - Overblocking benign  
-  - Context window rot          - Repetitive plan loops      - Underblocking injects  
-                                       │  
-                                       ▼  
-                             [User & Interface]  
-                                       │  
-         ┌─────────────────────────────┼────────────────────────────┐  
-         ▼                             ▼                            ▼  
-  [Citation Failures]           [User Overreliance]           
-  - Missing page coordinates    - Invisible warnings         - Outdated data active  
-  - Hallucinated text quote     - False success claims       - Cross-tenant hits
+```text
+AI INCIDENT TAXONOMY MAP
+
+[ External / User / Scheduled Input ]
+        |
+        v
++-------------------------------+
+|  Intake and Boundary Layer    |
+|  auth | tenant | policy | file |
++---------------+---------------+
+                |
+                v
++-------------------------------+
+|  Data and Evidence Layer      |
+|  corpus | retrieval | cache   |
+|  freshness | citation support |
++---------------+---------------+
+                |
+                v
++-------------------------------+
+|  Model and Reasoning Layer    |
+|  semantic | grounding | prompt |
+|  refusal | schema | drift     |
++---------------+---------------+
+                |
+                v
++-------------------------------+
+|  Agent and Action Layer       |
+|  tool calls | workflows       |
+|  idempotency | verification   |
++---------------+---------------+
+                |
+                v
++-------------------------------+
+|  User / Governance Layer      |
+|  disclosure | review | trust  |
+|  compliance | communications  |
++---------------+---------------+
+                |
+                v
++-------------------------------+
+|  Operations Response Layer    |
+|  detect | contain | recover   |
+|  notify | evaluate | prevent  |
++-------------------------------+
+
+Incident classes are assigned by failing layer, consequence, active
+propagation, reversibility, and evidence confidence. A green HTTP response
+does not imply a healthy AI transaction.
 ```
 
 The taxonomy maps sixteen distinct classes of system failure across the data ingestion, runtime processing, and interface delivery layers:
@@ -87,17 +110,31 @@ The taxonomy maps sixteen distinct classes of system failure across the data ing
 
 ## **AI Severity Model**
 
-To eliminate subjective prioritization during outages, the platform enforces a consequence-based AI Severity Model.13 Severity classifications are determined by combining the system's active business impact (impact scope) with the speed of ongoing damage (urgency tier) 15:  
-Severity = f(Impact Scope, Urgency Tier)  
-This model explicitly escalates severity levels when failures target high-impact workflows, external enterprise users, vulnerable populations, security boundaries, or irreversible tool surfaces.3
+AI severity must be consequence-driven, not symptom-driven. The same failure class can be harmless in staging, severe in a regulated production workflow, or catastrophic when it reaches an autonomous tool surface. Severity is therefore assigned by combining harm type, exposure, reversibility, active propagation, regulatory sensitivity, and confidence in detection.
 
-| Severity Level | Defining Consequence Envelope | Maximum Target Blast Radius | Expected Reversibility | Immediate Escalation Trigger | First Action Timeline |
-| :---- | :---- | :---- | :---- | :---- | :---- |
-| **SEV-0** | Irreversible physical, financial, or regulatory harm; active uncontrolled autonomous behavior violating rights.3 | Global multi-tenant or critical infrastructure systems.14 | Zero; impacts cannot be programmatically compensated.3 | Prompt injection bypasses system prompt, executing destructive mutations.2 | Immediate execution of global kill switch; page SRE Crisis team.2 |
-| **SEV-1** | Active monetary loss, regulated data exposure (PII, HIPAA), or uncontained prompt injection exfiltrating data.2 | Single B2B tenant or high-value transaction pool.2 | High; compensatable via Saga distributed transactions.3 | Model outputs ungrounded financial or medical advice to active users.2 | Mobilize Incident Commander; programmatically isolate tenant namespaces.2 |
-| **SEV-2** | Contained semantic failure; wrong, unsafe, or unauthorized advice in low-risk bounded workflows.2 | Specific model route, adapter, or document index partition.3 | Complete; local undo or form state resets are available.3 | Model fails schema validation checks, triggering formatting retry storms.2 | Toggle feature flags to disable write tools; route to efficient models.2 |
-| **SEV-3** | Measurable quality degradation; latency spikes, or elevated token consumption.1 | Limited user cohort or non-critical secondary features.3 | Absolute; no external state changed. | Semantic drift centroid distance exceeds target thresholds (> 0.15).1 | Activate semantic caches; reduce maximum reasoning turns.3 |
-| **SEV-4** | Internal anomaly; telemetry drift, evaluation regressions, or suspicious cost velocities.1 | No active user impact; contained inside development pools.2 | Absolute; no external state changed. | Daily background evaluation sweeps flag minor accuracy regressions.1 | Log incident inside secure tracker; schedule prompt registry review.2 |
+```text
+severity = f(
+  harm_type,
+  affected_population,
+  exposure_count,
+  active_propagation,
+  reversibility,
+  security_or_regulatory_sensitivity,
+  confidence_of_detection
+)
+```
+
+Severity assignment should be reviewed when new evidence changes the blast radius or reversibility estimate. Operators should prefer temporary over-classification during uncertainty and downgrade only after containment and scope validation.
+
+| Severity Level | Consequence Envelope | Typical AI Failure Examples | Immediate Response | Recovery / Closure Criteria |
+| :---- | :---- | :---- | :---- | :---- |
+| **SEV-0** | Active or imminent irreversible harm, uncontrolled high-impact autonomous action, confirmed cross-tenant exposure at broad scope, or severe security compromise with ongoing propagation. | Unauthorized destructive tool execution, confirmed regulated-data leak across tenants, fail-open bypass of core authorization, uncontrolled agentic action against critical systems. | Activate global or scoped kill switch; freeze affected capability; page incident commander, security, privacy, operations, and executive sponsor as applicable. | Harm is contained, affected scope is verified, exposed credentials/artifacts are revoked or quarantined, and recovery route passes high-risk validation. |
+| **SEV-1** | Active high-impact harm or high-confidence risk affecting a tenant, workflow, regulated domain, or state-changing tool surface. Harm is serious but containable. | Ungrounded high-impact advice delivered to active users, unauthorized mutation attempt blocked late, tenant-scoped data exposure, poisoned retrieval route influencing production answers. | Isolate affected tenant/route/tool/index; revoke scoped credentials; preserve evidence; switch to safe degraded mode or fail closed. | Blast radius is known, active harm has stopped, affected users/workflows are identified, and compensating or corrective actions are underway. |
+| **SEV-2** | Contained semantic, retrieval, model, policy, or tool failure with limited blast radius and no confirmed irreversible external harm. | Citation failures in production, schema drift causing blocked actions, model regression on bounded workflow, repeated tool argument rejection, contained prompt-injection success without side effect. | Disable or downgrade affected route; apply feature flag; route to verified cache, manual review, or bounded degraded mode. | Regression test covers the failure; telemetry confirms no recurrence over the required observation window. |
+| **SEV-3** | Quality, latency, cost, or trust degradation visible to limited users but without safety, privacy, or high-impact action exposure. | Model route downgrade disclosed to users, elevated unsupported-claim rate in low-risk domain, parser degradation, stale cache served with proper labeling. | Communicate limitation; preserve state; reduce capability if needed; monitor for escalation. | Service returns to expected behavioral envelope and user-visible degradation is resolved or accepted by policy. |
+| **SEV-4** | Internal anomaly, evaluation regression, telemetry drift, suspicious signal, or staging failure with no confirmed user impact. | Canary drift, golden-set failure, evaluation drop, prompt-template compile warning, non-production index anomaly. | Open tracked operations issue; assign owner; block release if policy requires. | Root cause is documented or accepted, and release gates or monitoring are updated if needed. |
+
+Severity should never be determined by a single metric alone. A low grounding score, citation score, cost spike, or routing mismatch is a signal. It becomes an incident severity level only after operators estimate consequence, exposure, active propagation, reversibility, and confidence.
 
 ## **Detection and Intake Model**
 
@@ -119,258 +156,197 @@ The intake schema enforces immediate field mapping to preserve the semantic stat
 * **Retrieval Snapshot Path:** Secure reference link pointing to S3-archived document vectors.1  
 * **Containment Status Flag:** Boolean tracking whether automated circuit breakers have triggered.2
 
+### **Evidence Preservation During Intake**
+
+Containment actions must not destroy evidence required for scope analysis, replay, attribution, legal review, or regulatory reporting. Before clearing caches, wiping sessions, redeploying containers, rotating credentials, rebuilding indexes, or mutating prompt routes, the intake controller should preserve a minimal tamper-evident incident manifest containing trace identifiers, artifact hashes, active configuration versions, relevant secure payload references, policy decisions, and containment actions. Raw sensitive payloads should not be copied into general incident tickets; they should be stored only through controlled forensic references with access logs and retention policy.
+
 Upon ingestion of a serious or catastrophic incident (SEV-0 or SEV-1), the intake controller issues an automated command to lock the active session, seal related model adapters, snapshot the active index state, and write a tamper-evident reference manifest to the compliance-audit database, preventing operators from clearing caches or redeploying code before forensics are complete.2
 
 ## **Semantic Triage Tree**
 
-To speed up diagnostic workflows under pressure, responders utilize a structured Semantic Triage Tree.20 The tree guides operators through the system's technical layers, mapping visible symptoms to the exact failing layer, diagnostic artifacts, immediate containment options, and targeted rollback surfaces 2:
+Semantic triage identifies the failing operational layer before responders choose a containment or rollback surface. The goal is to avoid the two classic incident sins: rolling back the wrong component because it was visible, and destroying forensic evidence because someone panic-clicked “clear cache.” Charming hobbies, both. Not operations.
 
+```text
+SEMANTIC TRIAGE TREE
+
+[ Incident Intake ]
+        |
+        v
+[ 1. Is there active safety, privacy, financial, legal, or security harm? ]
+        |
+        +-- yes --> [ Contain first ]
+        |             isolate route/tool/tenant/index/cache
+        |             revoke scoped credentials if needed
+        |             preserve evidence manifest
+        |
+        +-- no  --> continue triage
+        |
+        v
+[ 2. Did a state-changing tool or external action execute or possibly execute? ]
+        |
+        +-- yes --> [ Tool / Action Branch ]
+        |             hold unknown state
+        |             reconcile source of record
+        |             compensate only committed reversible effects
+        |
+        +-- no  --> continue triage
+        |
+        v
+[ 3. Is retrieved evidence, citation, corpus, or cache state implicated? ]
+        |
+        +-- yes --> [ Retrieval / Corpus Branch ]
+        |             freeze ingestion
+        |             quarantine suspect sources
+        |             bypass unsafe cache
+        |             rebuild or re-rank from verified manifest
+        |
+        +-- no  --> continue triage
+        |
+        v
+[ 4. Is the model route, adapter, decoding policy, or provider behavior implicated? ]
+        |
+        +-- yes --> [ Model / Routing Branch ]
+        |             pin known-good route
+        |             disable suspect adapter
+        |             run canary and regression profile
+        |
+        +-- no  --> continue triage
+        |
+        v
+[ 5. Is prompt, policy, schema, or tool-description behavior implicated? ]
+        |
+        +-- yes --> [ Prompt / Policy / Contract Branch ]
+        |             revert template or policy bundle
+        |             apply bounded prompt hotfix if needed
+        |             validate against targeted incident evals
+        |
+        +-- no  --> continue triage
+        |
+        v
+[ 6. Is the failure primarily user-facing disclosure, review, or trust calibration? ]
+        |
+        +-- yes --> [ UX / Review / Governance Branch ]
+        |             disclose limitation
+        |             pause high-impact automation
+        |             route to review or approval queue
+        |
+        +-- no  --> [ Unknown / Multi-Layer Branch ]
+                      preserve full evidence manifest
+                      keep containment active
+                      assign cross-functional incident review
 ```
-  [User-Visible Failure]  
-         │  
-         ▼  
-     ──(Yes)──► Contain: Freeze Index / Lexical Fallback  
-         │ (No)  
-         ▼  
-  [2. Prompt Layer Fail?] ──(Yes)──► Contain: Reassign Production Git Label  
-         │ (No)  
-         ▼  
-     ──(Yes)──► Contain: Revoke API Credentials / Saga Rollback  
-         │ (No)  
-         ▼  
-      ──(Yes)──► Contain: Model Switch / Safe Degraded Mode
-```
 
-The operational execution branches are organized as follows:
+| Branch | Diagnostic Artifacts | Immediate Containment | Likely Rollback / Recovery Surface |
+| :---- | :---- | :---- | :---- |
+| **Tool / Action** | Tool trace, authorization decision, idempotency key hash, pre/post state hash, source-of-record status. | Disable affected tool, hold workflow, block blind retry, revoke scoped credentials if compromised. | Tool contract, tool route, credential scope, compensation workflow, idempotency ledger. |
+| **Retrieval / Corpus** | Retrieval trace, source IDs, source version hashes, chunk IDs, cache scope, citation verification state. | Freeze ingestion, quarantine suspect documents, bypass unsafe cache, block suspect source lifecycle states. | Corpus lifecycle state, index manifest, chunking policy, retrieval filter, cache key version. |
+| **Model / Routing** | Model route, provider profile, model/version hash where available, adapter manifest, decoding config, canary deltas. | Pin known-good route, disable suspect adapter, reduce autonomy, enter disclosed degraded mode. | Model route manifest, adapter binding, decoding profile, provider fallback policy. |
+| **Prompt / Policy / Contract** | Rendered prompt reference, prompt version, policy bundle version, schema version, validation errors. | Revert prompt/policy/schema exposure, disable risky prompt path, apply bounded hotfix. | Prompt template, policy bundle, tool description, schema registry, validator. |
+| **UX / Review / Governance** | Disclosure event, approval record, reviewer dwell time, escalation packet, user correction signal. | Show status, pause high-impact automation, route to review, block auto-approval. | Review rules, disclosure policy, approval thresholds, UI trust calibration. |
+| **Unknown / Multi-Layer** | Full trace graph, incident manifest, secure payload refs, configuration versions, containment actions. | Maintain containment until narrowed; avoid destructive cleanup. | Determined after forensics. |
 
-### **Model Failure Branch**
-
-* *Visible Symptom:* Model generates hallucinated facts, illogical conclusions, or displays refusal drift.2  
-* *Diagnostic Artifact:* Log-likelihood token entropy records; NLI grounding score matrices.1  
-* *Containment Action:* Disable high-risk inference routes; redirect to static, verified cached responses.3  
-* *Rollback Surface:* Model provider route configuration; active LoRA adapters.2  
-* *Target Runbook:* Model Drift Runbook.
-
-### **Prompt Failure Branch**
-
-* *Visible Symptom:* Model output ignores system guidelines, leaks internal notes, or fails safety compliance.2  
-* *Diagnostic Artifact:* Prompt registry compilation logs; system template XML tags diff files.1  
-* *Containment Action:* Route the session to the quarantined fallback model instance.2  
-* *Rollback Surface:* Prompt template Git release tag.3  
-* *Target Runbook:* Prompt Injection Runbook.
-
-### **Retrieval/Corpus Failure Branch**
-
-* *Visible Symptom:* Citations are missing or ungrounded; cross-tenant document chunks are retrieved.1  
-* *Diagnostic Artifact:* pgvector query logs; document page bounding box coordinate coordinates.1  
-* *Containment Action:* Apply immediate row-level security filters; freeze document indexing pipelines.2  
-* *Rollback Surface:* Vector database HNSW graph; document ingestion directory.2  
-* *Target Runbook:* Corpus Poisoning Runbook.
-
-### **Tool/Action Failure Branch**
-
-* *Visible Symptom:* Agent calls tools with incorrect arguments, retries indefinitely, or claims false success.2  
-* *Diagnostic Artifact:* JSON-RPC execution traces; database transaction commit verification records.1  
-* *Containment Action:* Invalidate the tool's ephemeral OAuth access token inside Secrets Manager.2  
-* *Rollback Surface:* Saga transaction ledger; tool JSON schema definition.1  
-* *Target Runbook:* Tool Misfire Runbook.
-
-### **Routing Failure Branch**
-
-* *Visible Symptom:* High-complexity tasks are silently downgraded to smaller, incapable models.3  
-* *Diagnostic Artifact:* Gateway proxy routing logs; cost-to-capability distance metrics.1  
-* *Containment Action:* Adjust routing weights inside the centralized gateway proxy.3  
-* *Rollback Surface:* Model router configuration manifest.3  
-* *Target Runbook:* Model Drift Runbook.
-
-### **Policy/Governance Failure Branch**
-
-* *Visible Symptom:* System executes actions without valid cryptographic signature certificates.2  
-* *Diagnostic Artifact:* Sigstore Fulcio cert chains; Rekor public log verification files.2  
-* *Containment Action:* Block code promotion; revert CI/CD pipeline to last stable release.1  
-* *Rollback Surface:* Release gate authorization registry.1  
-* *Target Runbook:* Human Review Failure Runbook.
-
-### **UI/Trust Failure Branch**
-
-* *Visible Symptom:* Interface highlights incorrect evidence or displays uncalibrated confidence indicators.3  
-* *Diagnostic Artifact:* Browser console logs; click-through engagement telemetry.1  
-* *Containment Action:* Set the active trust-calibration interface to Level 4 (Approval Gate).3  
-* *Rollback Surface:* Browser automation locators; UI element CSS templates.3  
-* *Target Runbook:* Degraded-Mode Failure Runbook.
-
-### **Human-Review Failure Branch**
-
-* *Visible Symptom:* Operators approve high-risk payments in under 350 ms, bypassing verification.1  
-* *Diagnostic Artifact:* Review queue dwell times; sentinel alert logs.1  
-* *Containment Action:* Pause the active queue; raise the cognitive forcing gate threshold.1  
-* *Rollback Surface:* Approval workflow rules.3  
-* *Target Runbook:* Human Review Failure Runbook.
-
-### **Cost/Resource Failure Branch**
-
-* *Visible Symptom:* Rapid token depletion or billing spikes during background batch operations.2  
-* *Diagnostic Artifact:* Spend ledger tracking logs; token velocity meters.1  
-* *Containment Action:* Trigger gateway circuit breakers to reject subsequent requests with HTTP 429.2  
-* *Rollback Surface:* Batch job execution manifests.2  
-* *Target Runbook:* Cost Bomb Runbook.
-
-### **Security/Privacy Failure Branch**
-
-* *Visible Symptom:* Attacker exfiltrates session data or exploits SSRF via connected tools.2  
-* *Diagnostic Artifact:* Egress proxy logs; container system-call traces.2  
-* *Containment Action:* Terminate host processes; wipe ephemeral MicroVM workspaces.2  
-* *Rollback Surface:* Network firewall policies; secrets vault keys.2  
-* *Target Runbook:* Privacy or Cross-Tenant Leak Runbook.
 
 ## **Incident Evidence Package**
 
-The Incident Evidence Package serves as the primary forensic resource during post-incident reviews.1 Raw syslog files are insufficient for auditing probabilistic systems; instead, the platform captures and links all intermediate states that shaped the model's behavior.1
+The Incident Evidence Package is the forensic bundle used to scope, replay, audit, and repair an AI incident. Raw syslogs are not enough for probabilistic systems, but unrestricted raw prompt dumps are also not acceptable. The package must preserve enough evidence to reconstruct decisions without turning the incident tracker into a second data breach wearing a little lanyard.
 
+```text
+INCIDENT EVIDENCE PACKAGE
+
+[ Incident ID ]
+      |
+      +--> Trace and Span References
+      |      trace_id, span_ids, workflow_id, session_hash, tenant_hash
+      |
+      +--> Runtime Configuration
+      |      model route, provider profile, prompt version, policy version,
+      |      schema version, tool manifest hash, gateway route manifest
+      |
+      +--> Evidence and Retrieval State
+      |      source IDs, source version hashes, chunk IDs, retrieval IDs,
+      |      cache scope, citation coordinates where applicable
+      |
+      +--> Action and Tool State
+      |      tool call ID, payload hash, idempotency key hash,
+      |      authorization decision, pre/post state hashes, verification status
+      |
+      +--> Supply-Chain and Deployment State
+      |      artifact hashes, image digest, model/adaptor signatures,
+      |      dependency manifest, sandbox profile
+      |
+      +--> Secure Payload References
+      |      access-controlled references to raw prompts, outputs, files,
+      |      tool payloads, and sensitive evidence when retention is allowed
+      |
+      +--> Containment and Recovery Record
+             feature flags, kill switches, credential revocations,
+             quarantines, rollbacks, compensations, notifications
 ```
-  ┌────────────────────────────────────────────────────────┐  
-  │               INCIDENT EVIDENCE PACKAGE                │  
-  ├────────────────────────────────────────────────────────┤  
-  │  - W3C traceparent Context Headers                     │  
-  │  - OpenInference gen_ai Span Attributes                 │  
-  │  - S3 Payload Reference URLs (Masked via ARGUS)        │  
-  │  - Active Model Tensor & Adapter Hashes                │  
-  │  - pgvector Retrieval Bounding Box Coordinates         │  
-  │  - Saga Distributed Transaction ledger                 │  
-  │  - C2PA Cryptographic Provenance Manifests             │  
-  └────────────────────────────────────────────────────────┘
+
+| Evidence Dimension | Preserve By Default | Sensitive Payload Handling | Operational Purpose |
+| :---- | :---- | :---- | :---- |
+| **Trace Context** | W3C `traceparent`, span IDs, workflow ID, route ID, incident ID. | Safe as metadata if tenant/user identifiers are hashed or opaque. | Reconstruct execution chronology. |
+| **Model and Prompt State** | Model route, provider profile, adapter manifest, decoding config, prompt template ID, rendered prompt hash. | Rendered prompt text stored only as secure reference when needed. | Identify model, prompt, or routing regression. |
+| **Retrieval State** | Retrieval ID, query hash, source IDs, chunk IDs, source version hashes, citation regions, authorization filter version. | Raw retrieved text stored as secure evidence reference, not in general tickets. | Diagnose grounding, citation, stale-source, or leakage failures. |
+| **Tool / Action State** | Tool name/version, schema version, payload hash, idempotency key hash, approval status, pre/post state hashes. | Raw arguments and results stored only in action ledger or forensic vault. | Determine whether action executed, failed, partially committed, or remains unknown. |
+| **Policy and Authorization** | Policy bundle version, decision ID, denial/allow class, scoped credential lifetime, approval requirement. | Do not log raw credentials, auth headers, bearer tokens, or private policy secrets. | Prove whether the action was authorized. |
+| **Supply-Chain Artifacts** | Container image digest, dependency manifest, model/adaptor hash, signature status, sandbox profile. | Store signature bundles and manifests; avoid copying private keys or secrets. | Prove what artifact executed. |
+| **User-Facing State** | Disclosure shown, status message ID, user confirmation state, escalation package ID. | Store user-visible text by secure reference when sensitive. | Determine whether users were properly informed. |
+| **Containment Actions** | Flag toggles, kill-switch activation, index quarantine, cache bypass, route rollback, credential revocation. | No secret values; store action IDs and affected scopes. | Prove containment timing and scope. |
+
+### **Evidence Handling Rule**
+
+```text
+General incident record:
+  hashes, IDs, versions, policy decisions, redacted summaries, secure refs.
+
+Controlled forensic vault:
+  raw prompts, raw outputs, source excerpts, uploaded files, tool payloads,
+  transaction details, and other sensitive incident evidence.
+
+Never store raw credentials, bearer tokens, private keys, or unrestricted
+tenant data in ordinary tickets, logs, or postmortem documents.
 ```
-
-The package compiles seven core evidence dimensions:
-
-1. **Distributed Tracing context:** Standardized W3C tracecontext headers (traceparent and tracestate) injected into params._meta blocks.1  
-2. **Semantic Span Attributes:** OTel GenAI v1.41 compliant attributes tracking gen_ai.request.model, gen_ai.system, and token usage.1  
-3. **Encrypted Payload References:** Secure S3 links pointing to the raw text prompts, stripped of PII via the ARGUS scanning gateway.1  
-4. **Configuration Manifests:** Git commit SHAs, prompt template version IDs, and environment variable states.2  
-5. **Retrieval snapshots:** exact vector query strings, retrieved chunk text, metadata scores, and document page coordinate coordinates.1  
-6. **Tool Execution ledgers:** JSON arguments, API return codes, pre-action state hashes, and compensating execution logs.1  
-7. **Cryptographic verification artifacts:** Sigstore Fulcio certificates and C2PA JUMBF containers proving data origin and model signature status.2
 
 ## **AI Incident Command Role Model**
 
-To coordinate complex semantic triage, the platform defines distinct AI Incident Command Roles.17 Each role carries specific responsibilities, authorities, and audit parameters, separating technical investigation from compliance decision-making during crises 17:
+AI incidents cross model behavior, retrieval, tools, user trust, privacy, security, governance, and infrastructure. Incident response therefore requires role separation. The incident commander owns coordination and severity. Domain owners diagnose and execute bounded changes. Governance, privacy, legal, and communications roles control regulated obligations and external messaging.
 
+```text
+AI INCIDENT COMMAND STRUCTURE
+
+                     [ Incident Commander ]
+                              |
+       +----------------------+----------------------+
+       |                      |                      |
+[ Technical Response ] [ Risk / Governance ] [ User / Business Response ]
+       |                      |                      |
+AI Ops Lead            Security Lead          Customer Comms Lead
+Model Owner            Privacy Lead           Support Lead
+Prompt Owner           Governance Lead        Executive Sponsor
+Retrieval Owner        Legal Liaison
+Tool/Action Owner
+SRE/Platform Lead
+Evaluation Lead
 ```
-                    ┌───────────────────────────┐  
-                    │     INCIDENT COMMANDER    │  
-                    └─────────────┬─────────────┘  
-                                  │  
-         ┌────────────────────────┼────────────────────────┐  
-         ▼                        ▼                        ▼  
-  [AI Operations]          [Model Owner]            [Compliance Lead]  
-  - Gateways & Proxies     - Checkpoints & LoRAs    - Regulatory / SLA Risk  
-  - Telemetry & Paths      - Hyperparameters        - EU AI Act Triggering
-```
 
-### **Incident Commander (IC)**
-
-* *Responsibility:* Directs the overall incident response; establishes communication channels and assigns severity.17  
-* *Authority:* Authorizes the deployment of global kill switches and declares final behavioral resolution.17  
-* *Escalation Path:* Paged automatically on SEV-0 and SEV-1 anomalies.17  
-* *Audit Target:* Cross-functional coordination timelines; post-incident review files.17
-
-### **AI Operations Lead**
-
-* *Responsibility:* Monitors gateway performance, model routing behaviors, and server load.2  
-* *Authority:* Executes route rollbacks and adjusts concurrency queue allocations.2  
-* *Escalation Path:* Paged on latency SLO breaches or provider status code errors.1  
-* *Audit Target:* Gateway proxy trace logs.1
-
-### **Model Owner**
-
-* *Responsibility:* Manages base model weights, quantization configs, and active LoRA adapters.2  
-* *Authority:* Executes weight rollbacks and modifies decoding parameters (temperature, top-p).1  
-* *Escalation Path:* Alerted when canary Perplexity scores regress below baselines.1  
-* *Audit Target:* Model registry manifests.2
-
-### **Prompt Owner**
-
-* *Responsibility:* Drafts and versions system instructions, safety guidelines, and tool descriptions.2  
-* *Authority:* Deploys emergency prompt hotfixes.7  
-* *Escalation Path:* Alerted when Prompt Shield monitors flag injection successes.2  
-* *Audit Target:* Prompt template repository diffs.2
-
-### **Retrieval/Corpus Owner**
-
-* *Responsibility:* Manages vector indexing pipelines, chunking policies, and metadata filters.2  
-* *Authority:* Executes corpus quarantine and initiates HNSW index rebuilds.2  
-* *Escalation Path:* Alerted when HubScan robust z-score exceeds normal baselines.2  
-* *Audit Target:* Document ingestion databases.2
-
-### **Tool/Action Owner**
-
-* *Responsibility:* Governs connected MCP servers, write APIs, and Saga orchestration logic.2  
-* *Authority:* Revokes tool credentials and executes compensating database actions.2  
-* *Escalation Path:* Alerted on tool schema validation errors or API execution timeouts.2  
-* *Audit Target:* API transaction ledgers.2
-
-### **Security Lead**
-
-* *Responsibility:* Hardens system boundaries against jailbreaks, SSRF, and data exfiltration.2  
-* *Authority:* Executes process sandboxing restrictions and blocks unauthorized egress traffic.2  
-* *Escalation Path:* Alerted on unredacted secrets leaking inside model logs.2  
-* *Audit Target:* Host container seccomp logs.2
-
-### **Privacy Lead**
-
-* *Responsibility:* Prevents PII exposure and cross-tenant memory leakage.2  
-* *Authority:* Synchronously freezes multi-tenant shared caches.2  
-* *Escalation Path:* Alerted on cross-tenant cache hit detections.2  
-* *Audit Target:* REDIS cache key registries.2
-
-### **Governance/Compliance Lead**
-
-* *Responsibility:* Aligns platform operations with regulatory mandates (e.g., EU AI Act, SOC2).2  
-* *Authority:* Initiates serious incident reporting workflows to national authorities.4  
-* *Escalation Path:* Alerted on any SEV-0 catastrophic safety breach.2  
-* *Audit Target:* Cryptographic signature registries.2
-
-### **Customer Communications Lead**
-
-* *Responsibility:* Drafts and distributes status-page updates and support scripts.3  
-* *Authority:* Approves public customer notifications.3  
-* *Escalation Path:* Alerted when any customer-facing service degrades.3  
-* *Audit Target:* Status-page update histories.3
-
-### **Support Lead**
-
-* *Responsibility:* Manages client-facing support portals and operator training.3  
-* *Authority:* Escalates unresolved tickets directly to the Incident Commander queue.2  
-* *Escalation Path:* Alerted on spikes in user-initiated "Undo" or feedback corrections.3  
-* *Audit Target:* Zendesk incident tickets.18
-
-### **Legal Liaison**
-
-* *Responsibility:* Advises on liability risk during financial, medical, or contractual failures.3  
-* *Authority:* Approves settlement guidelines for algorithmic misinformation cases.4  
-* *Escalation Path:* Alerted when a high-risk transaction fails validation.3  
-* *Audit Target:* Compliance registries.2
-
-### **SRE/Platform Lead**
-
-* *Responsibility:* Maintains cloud container performance, Gpu drivers, and scaling rules.2  
-* *Authority:* Scales GPU serving pools or triggers cluster restarts.1  
-* *Escalation Path:* Alerted on GPU Out-of-Memory (OOM) crashes or queue starvation.2  
-* *Audit Target:* Kubernetes deployment configurations.24
-
-### **Evaluation Lead**
-
-* *Responsibility:* Maintains the golden testing dataset and regression testing harness.1  
-* *Authority:* Certifies whether code updates pass release gates.1  
-* *Escalation Path:* Alerted on daily canary evaluation test regressions.1  
-* *Audit Target:* CI/CD test results.2
-
-### **Executive Sponsor**
-
-* *Responsibility:* Represents the organization during systemic public or financial crises.3  
-* *Authority:* Confirms complete system shutdown during catastrophic LOC events.9  
-* *Escalation Path:* Alerted on SEV-0 incidents impacting enterprise revenues.2  
-* *Audit Target:* Board compliance reports.2
+| Role | Primary Responsibility | Authorized Actions | Escalates When |
+| :---- | :---- | :---- | :---- |
+| **Incident Commander** | Owns coordination, severity, response cadence, decision log, and closure criteria. | Activates kill switches, assigns owners, approves containment scope, declares behavioral recovery. | SEV-0/SEV-1, unclear ownership, public/regulatory exposure, prolonged containment. |
+| **AI Operations Lead** | Owns gateway routing, fallback, model/provider route health, and degraded-mode operation. | Pins routes, changes traffic splits, disables unsafe model paths, coordinates with SRE. | Routing changes affect quality floor, safety, privacy, or broad user cohorts. |
+| **SRE / Platform Lead** | Owns serving infrastructure, queues, GPU capacity, deployment health, and runtime stability. | Scales serving pools, isolates pods/nodes, rolls back deployment images, enforces circuit breakers. | Infrastructure failure contributes to semantic or user-visible incident. |
+| **Model Owner** | Owns model snapshots, provider profiles, adapters, quantization configs, and decoding profiles. | Disables adapters, pins model snapshot, changes approved decoding profile, initiates model regression evaluation. | Model behavior drift, provider update, adapter failure, or route quality regression is suspected. |
+| **Prompt Owner** | Owns system prompts, tool descriptions, safety wrappers, and prompt registry changes. | Reverts prompt versions, proposes emergency hotfix, validates placeholder and policy invariants. | Prompt injection, instruction loss, schema drift, or template regression is implicated. |
+| **Retrieval / Corpus Owner** | Owns corpus lifecycle, chunking, embeddings, vector indexes, source authority, and cache eligibility. | Freezes ingestion, quarantines sources, rebuilds index from manifest, updates retrieval eligibility state. | Poisoning, stale evidence, citation failure, or cross-tenant retrieval is suspected. |
+| **Tool / Action Owner** | Owns tool contracts, scoped credentials, idempotency, action ledgers, and post-action verification. | Revokes tool credentials, disables tool route, blocks blind retry, initiates reconciliation or compensation. | State-changing action is executed, unknown, duplicated, unauthorized, or misreported. |
+| **Security Lead** | Owns prompt-injection compromise, SSRF, RCE, egress, sandbox, secret leakage, and adversarial activity. | Blocks egress, isolates runtimes, rotates exposed credentials, directs forensic capture. | Boundary violation, malicious artifact, unauthorized tool use, or active exploit is detected. |
+| **Privacy Lead** | Owns PII/PHI exposure, tenant leakage, cache contamination, and privacy-impact assessment. | Freezes affected data scopes, requires secure evidence handling, coordinates affected-scope analysis. | Personal, regulated, or tenant-private data may have been exposed. |
+| **Governance / Compliance Lead** | Owns policy obligations, regulated incident thresholds, audit artifacts, and required reporting workflows. | Determines governance review path, coordinates regulatory reporting where legally required. | Incident may trigger contractual, regulatory, audit, or internal governance obligations. |
+| **Legal Liaison** | Advises on liability, privilege, preservation duties, notification risk, and external legal exposure. | Recommends legal hold, reviews communications, coordinates with counsel. | Potential harm, regulated disclosure, litigation risk, or contractual breach is present. |
+| **Customer Communications Lead** | Owns status page, customer-facing language, support scripts, and disclosure consistency. | Publishes approved updates, coordinates user notices, avoids unverified claims. | User-visible degradation, breach notification, SLA issue, or public-facing incident occurs. |
+| **Support Lead** | Owns ticket routing, user reports, support scripts, and frontline escalation. | Escalates patterns to IC, updates support guidance, coordinates user-level remediation. | Support tickets spike, users report false success, or manual recovery is needed. |
+| **Evaluation Lead** | Owns incident-to-eval promotion, regression reproduction, golden cases, and release gates. | Converts sanitized incident traces into test cases, blocks release on unresolved regression. | Incident class lacks adequate eval coverage or repair needs release verification. |
+| **Executive Sponsor** | Owns executive decision-making for catastrophic public, regulatory, financial, or safety incidents. | Approves major public posture, business-continuity actions, and broad shutdown decisions. | Incident materially affects customers, regulators, revenue, safety, or public trust. |
 
 ## **Containment Strategy**
 
@@ -431,167 +407,303 @@ The Feature Flag and Kill Switch Matrix outlines the technical implementation, o
 
 ## **Rollback Surface Map**
 
-Reverting a probabilistic system requires coordinated rollbacks across multiple interconnected surfaces.26 Reverting only model weights without aligning prompts or retrieval states can introduce new failure modes.26
+Rollback in AI systems is multi-surface. Reverting the model while leaving a poisoned index, stale cache, incompatible prompt, or drifted tool schema active can create a new incident. Operators must identify the smallest effective rollback surface and validate all coupled artifacts before restoring traffic.
 
+```text
+ROLLBACK SURFACE MAP
+
+[ User-visible or telemetry-detected failure ]
+        |
+        v
+[ Identify failing surface ]
+        |
+        +--> prompt template / tool description
+        +--> model route / provider profile / adapter
+        +--> retrieval index / corpus lifecycle state
+        +--> policy bundle / authorization rule
+        +--> tool contract / action gateway
+        +--> cache key scope / semantic cache
+        +--> UI control / disclosure / automation locator
+        +--> deployment image / dependency / sandbox profile
+        |
+        v
+[ Preserve evidence manifest ]
+        |
+        v
+[ Apply smallest safe rollback or containment ]
+        |
+        v
+[ Run surface-specific validation ]
+        |
+        v
+[ Restore traffic gradually or remain degraded/fail-closed ]
 ```
-                 ROLLBACK SURFACE MAP                     
-  ────────────────────────────────────────────────────────  
-  │  [Ingress] Prompt Templates ──► Versioned Git Commits    
-  │  Model Weights    ──► PIN Endpoint / LoRAs     
-  │  [Context] Retrieval Index  ──► Rebuild HNSW Backup     
-  │  [API]     Tool Schemas     ──► Lock OpenInference API   
-  │   Policy Bundles   ──► OPA Policy-as-Code       
-  
-```
 
-The platform's Rollback Surface Map defines how each layer is reverted during regressions:
-
-| Rollback Surface | Underlying Mechanical Trigger | Required Pre-Evidence Capture | Expected Blast Radius | Dynamic Validation Protocol | Failure Mode |
-| :---- | :---- | :---- | :---- | :---- | :---- |
-| **Prompt Template** | Reassign the active production tag inside the versioned Git repository.3 | Capture the failing rendered prompt string and parameters.2 | Scoped to requests matching the prompt template.3 | Run a 50-case automated unit test suite inside CI/CD.1 | Template compilation failure or missing placeholders.10 |
-| **Model Weight** | Pin the model endpoint route to the preceding stable snapshot version.2 | Record the exact tensor hash and provider metadata.2 | Global; affects all non-cached model evaluations.3 | Compare generated output embeddings to the reference centroid.1 | Serving container timeout or memory footprint crash.25 |
-| **Retrieval Index** | Restore the pgvector database HNSW graph from the daily backup directory.2 | Snapshot the current index vector distribution and metadata.2 | Scoped to search queries targeting that index.3 | Run a 20-query MRR evaluation suite; verify ranking.1 | Index reconstruction timeout or missing vector IDs. |
-| **Tool Schema** | Revert the tool definition file to the preceding OpenInference JSON schema.1 | Record the failing argument dictionary and exception trace.1 | Scoped to agent tasks invoking that tool.3 | Execute schema validation checks using dry-run API calls.2 | Parameter mismatch against the downstream API server.2 |
-| **Policy Bundle** | Revert active Open Policy Agent (OPA) rules inside the gateway proxy.7 | Export the blocked prompt logs and matching rule IDs.2 | Global safety filtering layer.2 | Run the purple-team jailbreak evaluation suite.1 | Policy compile exception or over-refusal loops. |
-| **Semantic Cache** | Clear Redis cache keys; re-initialize standard cache lookup tables.1 | Snapshot the cached prompt-response embedding coordinates.1 | Scoped to repeat query traffic cohorts.3 | Validate that the subsequent search executes a live database query.3 | Cache thundering-herd storm or high prefill latency.2 |
-| **UI Control** | Revert the browser automation locator and verification playbooks.21 | Capture the viewport screenshot and DOM tree hierarchy.21 | Scoped to browser automation sessions.21 | Run a test automation run verifying element focus.21 | Selector race conditions or React re-render crashes.21 |
+| Rollback Surface | Mechanical Trigger | Evidence to Capture Before Change | Validation Before Restoration | Common Failure Mode |
+| :---- | :---- | :---- | :---- | :---- |
+| **Prompt Template / Tool Description** | Reassign active prompt/template tag to previous approved version. | Prompt ID, rendered prompt hash, template version, variables, failing output hash. | Prompt compile check, safety/policy invariants, targeted incident evals. | Placeholder mismatch, instruction regression, hidden tool-description drift. |
+| **Model Route / Provider Profile** | Pin gateway route to previous approved model/provider snapshot or serving profile. | Route ID, provider response metadata, model snapshot/hash where available, decoding config. | Canary suite, schema pass rate, grounding checks, latency/cost profile. | Capability loss, context-window mismatch, provider SDK incompatibility. |
+| **Adapter / LoRA / Fine-Tune** | Disable suspect adapter or revert to previous adapter manifest. | Adapter hash, parent model ID, tenant binding, training dataset lineage. | Tenant-scoped regression suite and behavior comparison against base route. | Adapter dimension mismatch, cross-tenant adapter exposure, quality regression. |
+| **Retrieval Index** | Restore index from verified manifest or rebuild from authorized source records. | Source IDs, chunk IDs, embedding model version, index manifest, query traces. | Retrieval MRR/recall checks, authorization checks, citation verification. | Missing vectors, stale source lifecycle state, HNSW rebuild delay. |
+| **Corpus Lifecycle State** | Mark suspect source/chunk/vector as quarantined, revoked, stale, or inactive. | Source version hash, ingestion batch ID, parser version, transformation history. | Retrieval eligibility tests and source-authority checks. | Quarantine bypass through cache or derived summary. |
+| **Policy Bundle** | Revert OPA/policy-as-code bundle or authorization rules. | Policy version, decision logs, rule IDs, affected scopes. | Policy compile check, adversarial tests, false-positive/false-negative smoke tests. | Overblocking, underblocking, mismatch between UI disclosure and policy. |
+| **Tool Contract / Action Gateway** | Revert tool schema, MCP manifest, OpenAPI contract, or wrapper logic. | Tool manifest hash, payload hash, validation errors, authorization decision. | Dry-run validation, idempotency test, post-action verification test. | Downstream API changed; old schema no longer matches target service. |
+| **Semantic / Prefix Cache** | Bypass, invalidate, or version cache key scope. | Cache key hashes, tenant/session scope, source/policy/model versions. | Scope-isolation test, freshness test, live retrieval confirmation. | Thundering-herd load, stale cache re-entry, cross-scope key reuse. |
+| **UI / Trust Control** | Revert disclosure labels, approval gate behavior, browser locators, or citation rendering. | Screenshot hash, DOM snapshot hash, disclosure state, click/action logs. | UI regression test, disclosure check, automation re-observation test. | Silent downgrade, incorrect confidence, blind-click automation. |
+| **Deployment Image / Runtime** | Revert container image, dependency lockfile, parser sandbox, or serving image. | Image digest, SBOM/AI-BOM refs, sandbox profile, CVE/signature status. | Vulnerability scan, smoke test, sandbox policy test, health + behavior canary. | Reintroducing vulnerable dependency or breaking model-loader compatibility. |
 
 ## **Prompt Hotfix Protocol**
 
-Emergency prompt overrides are critical tools for mitigating active safety breaches, jailbreaks, or formatting regressions.7 However, prompts must be managed with software engineering rigor to prevent ad-hoc templates from introducing latent behavior regressions.2
+Prompt hotfixes are emergency mitigations, not magic patches. They may reduce active harm while a durable fix is prepared, but they must be versioned, reviewed, tested, and retired or promoted through the normal release process. A prompt hotfix that cannot be audited is just production improv with a YAML costume.
 
+```text
+PROMPT HOTFIX FLOW
+
+[ Active prompt-related incident ]
+        |
+        v
+[ Create incident-bound hotfix branch ]
+        |
+        v
+[ Preserve failing trace + rendered prompt reference ]
+        |
+        v
+[ Apply minimal prompt/template/tool-description change ]
+        |
+        v
+[ Pre-flight validation ]
+  placeholders | token budget | schema references | policy invariants
+        |
+        v
+[ Risk-tiered eval gate ]
+  targeted incident cases | safety probes | schema checks | grounding checks
+        |
+        v
+[ Controlled exposure ]
+  canary, tenant-scoped route, or internal-only validation
+        |
+        v
+[ Promote, revise, or revert ]
+        |
+        v
+[ Add incident case to permanent evals ]
 ```
-  [Active Prompt Failure]  
-             │  
-             ▼  
-  ──► Generate Hotfix Git Branch   
-             │  
-             ▼  
-  ──► Pre-flight validation inside CI   
-             │  
-             ▼  
-  ──► 1% Traffic Pool / Monitor Drift   
-             │  
-             ▼  
-  ──► Merge to Main; update Golden Sets 
-```
 
-The platform's Prompt Hotfix Protocol mandates five strict gates:
+| Gate | Required Check | Failure Handling |
+| :---- | :---- | :---- |
+| **Incident Binding** | Hotfix branch, prompt version, and deployment record reference the incident ID. | Block deployment if change is not traceable to incident. |
+| **Minimality Review** | Change addresses the active failure without broad unrelated behavior changes. | Split unrelated improvements into normal release path. |
+| **Template Integrity** | Variables, tool names, delimiters, schemas, and context-budget assumptions remain valid. | Reject hotfix until compiler and schema checks pass. |
+| **Policy Invariants** | Safety, privacy, authority hierarchy, and tool-boundary instructions are not weakened. | Fail closed; route to policy owner or security lead. |
+| **Targeted Regression** | Incident-triggering case and related variants pass. | Keep containment active; revise or roll back. |
+| **Canary / Exposure Control** | Exposure is bounded by risk tier, tenant scope, and rollback readiness. | Disable route if metrics degrade or unexpected behavior appears. |
+| **Promotion / Retirement** | Hotfix is either promoted into a normal release with tests or retired after durable fix. | Emergency-only prompt changes cannot remain unowned indefinitely. |
 
-1. **Branch Isolation:** The Prompt Owner forks the failing template, generating a hotfix branch bound to the active incident ID.7  
-2. **Pre-flight syntax Validation:** The prompt compiler parses the template, verifying that all variable placeholders are preserved and that the total token footprint falls within the model's context-window constraints.2  
-3. **Harness evaluation Gate:** The hotfix is evaluated against a 50-case subset of the golden testing dataset inside the CI/CD pipeline.1 The gate enforces a zero-tolerance policy for safety regressions and schema formatting errors.1  
-4. **Canary Traffic Split:** The gateway proxy routes 1% of live production traffic to the hotfix template, pinning the routing to specific user IDs to preserve session consistency.3 Telemetry monitors track prefill latency and semantic drift compared to the production baseline.1  
-5. **Post-Incident review:** After a 2-hour window of stable canary metrics, the hotfix is merged back into the main branch.10 The incident-triggering query is permanently added to the system's regression evaluation suite, and the emergency template is assigned a permanent, immutable release tag.1
+Specific thresholds such as number of eval cases, canary percentage, and observation window should be set by risk tier and deployment profile. High-impact workflows require stricter approval and lower exposure than low-risk conversational formatting fixes.
 
 ## **Model Rollback Model**
 
-Model rollback must be executed at the central gateway proxy layer to insulate downstream microservices from provider anomalies.3 When rolling back, the platform evaluates provider compatibility, adapter (LoRA) dimensions, and decoding parameters to ensure a stable state:
+Model rollback restores a prior approved serving behavior by changing the model route, provider profile, adapter binding, decoding profile, or serving image. It should be executed at the gateway or serving-control layer so downstream applications do not hardcode emergency model logic.
 
-  claude-3-5-sonnet-v2 (Failed)  ──► Re-route to claude-3-5-sonnet-v1 (Stable)  
-  [Hyperparams: temp=1.0, top_p=0.9] ──► [Hyperparams: temp=0.5, top_p=1.0]
+```text
+MODEL ROLLBACK MODEL
 
-* **Rollback Triggers:** System metrics flag a sudden drop in the nli_grounding_score, a spike in schema validation errors, or a 15% drop in user task completion rates.1  
-* **Weight & Adapter Unloading:** The gateway reroutes traffic from the failing model endpoint to the preceding stable snapshot version (e.g., reverting from Claude 3.5 Sonnet v2 to Sonnet v1).3 If a specialized LoRA adapter is flagged, the gateway unloads the adapter weights, defaulting requests back to the base model weights with conservative system prompt wrappers.2  
-* **Decoding parameter Alignment:** Following rollback, the gateway proxy forces conservative decoding hyperparameters, lowering temperature values (from 0.7 to 0.2) and locking top-p to stabilize JSON output formatting.1  
-* **Canary Validation Testing:** The rollback route is validated using a parallel 10-run canary test suite, asserting that prefill latency remains below 150 ms and that the generated outputs conform strictly to the specified Pydantic schemas.1
+[ Drift / regression / provider incident detected ]
+        |
+        v
+[ Freeze route manifest and preserve evidence ]
+        |
+        v
+[ Identify rollback target ]
+  previous provider profile
+  approved model snapshot
+  prior adapter manifest
+  conservative decoding profile
+  last stable serving image
+        |
+        v
+[ Route traffic to rollback target ]
+        |
+        v
+[ Run validation suite ]
+  schema | grounding | policy | tool compatibility | latency | cost
+        |
+        v
+[ Restore gradually or remain degraded/fail-closed ]
+```
+
+| Rollback Dimension | What Changes | Validation Required | Common Risk |
+| :---- | :---- | :---- | :---- |
+| **Provider Route** | Gateway selects previous approved provider/model profile. | Capability floor, safety profile, context window, schema support. | Silent downgrade below task requirements. |
+| **Model Snapshot** | Self-hosted or registry-managed model reverts to prior signed snapshot. | Signature/hash check, canary behavior, latency, memory footprint. | Snapshot incompatible with current tokenizer, adapter, or prompt. |
+| **Adapter / LoRA** | Suspect adapter is disabled or reverted to prior manifest. | Parent-model compatibility, tenant binding, targeted task eval. | Quality drop or accidental cross-tenant adapter exposure. |
+| **Decoding Profile** | Temperature, top-p, max tokens, constrained decoding, or structured-output mode changes. | Schema pass rate, semantic quality, refusal behavior, output length. | Overcorrection causing refusals, truncation, or loss of usefulness. |
+| **Serving Image** | Runtime container, model loader, dependency set, or quantization profile changes. | Smoke test, model-load verification, CVE/signature check, performance envelope. | Reintroducing vulnerable loaders or incompatible kernels. |
+| **Prompt Coupling** | Prompt route is pinned to a compatible version for rollback route. | Prompt-template compile, tool description compatibility, context budget. | Old model receives prompt format it cannot follow. |
+
+Rollback closure requires behavioral validation, not merely successful deployment. A route is recovered only when task-level outputs return to the approved envelope for grounding, schema, policy, latency, tool compatibility, and user-facing disclosure.
+
 
 ## **Corpus Quarantine and Retrieval Rollback Model**
 
-When retrieval pipelines ingest poisoned data, stale files, or cross-tenant leakage pathways, the platform must isolate the vectors and restore index integrity without taking the application offline.2
+Retrieval incidents are contained by changing source eligibility, not by trusting the model to ignore bad evidence. Poisoned, stale, unauthorized, or anomalous documents must be removed from the retrieval candidate set through database-enforced lifecycle state, tenant scope, source authority, and cache invalidation.
 
-```
-  Corpus Poison Alert Ingested (z_i > 5.0)  
-               │  
-               ▼  
-  ──► Scan logs for metadata anomalies   
-               │  
-               ▼  
-  ──► Set dynamic Row-Level Security predicate filter:  
-      `where doc_id!= 'quarantined_uuid'`   
-               │  
-               ▼  
-  ──► Isolate affected tenant index segment   
-               │  
-               ▼  
-  ──► Rebuild HNSW graph; serve cached references only 
+```text
+CORPUS QUARANTINE FLOW
+
+[ Retrieval anomaly detected ]
+  hubness | stale source | cross-tenant hit | citation mismatch | user report
+        |
+        v
+[ Preserve retrieval evidence ]
+  retrieval_id, query_hash, source IDs, chunk IDs, cache scope, index manifest
+        |
+        v
+[ Mark affected artifacts ]
+  source_lifecycle_state = quarantined / revoked / stale / pending_review
+        |
+        v
+[ Enforce retrieval eligibility ]
+  tenant scope + ACL + source state + policy version + cache scope
+        |
+        v
+[ Freeze affected ingestion path ]
+        |
+        v
+[ Serve safe fallback ]
+  lexical search | verified cache | partial answer | review | fail closed
+        |
+        v
+[ Rebuild or repair index from verified manifest ]
 ```
 
-* **Poisoning Detection (HubScan):** The index validator runs HubScan at fixed intervals, calculating the robust z-score of document vectors across a representative query sample space Q 2:  
-  MAD = median(|x_i - x_tilde|)  
-  z_i = (0.6745 * (x_i - x_tilde)) / (MAD + epsilon)  
-  Where x_i is the neighbor hit frequency of vector i, x_tilde is the median frequency, and epsilon is a small floating-point value to prevent division by zero.2 Any vector with z_i > 5.0 is flagged as an adversarial hub and isolated from the index.2  
-* **Row-Level Security (RLS) Filter Injection:** To contain poisoning instantly, the gateway injects a database-level security predicate into the active session variables.2 This immediately filters out poisoned document IDs from all similarity searches, resolving the issue without waiting for HNSW graph rebuilds.2  
-* **Segmented Index Rebuilding:** The database engine executes an isolated rebuild of the HNSW partition for the affected tenant workspace, utilizing a verified backup manifest to restore document vectors to their last clean state.2  
-* **BM25 and Cached Fallbacks:** While index reconstruction is in progress, the retrieval engine falls back to local database keyword searches (BM25) or serves static, verified cached responses.3 The UI displays a freshness warning, informing users that they are viewing cached data while live search is optimizing.3
+| Control | Purpose | Implementation Pattern |
+| :---- | :---- | :---- |
+| **Source Lifecycle State** | Blocks suspect sources and derived chunks from active retrieval. | Store lifecycle state such as `active`, `pending_review`, `quarantined`, `revoked`, or `stale`; retrieval queries admit only eligible states. |
+| **Tenant and ACL Enforcement** | Prevents cross-tenant or unauthorized retrieval during incident response. | Enforce DB-level RLS or equivalent authorization before candidate scoring. |
+| **Quarantine Registry** | Provides fast emergency exclusion without ad hoc SQL string injection. | Maintain tenant-scoped denylist/quarantine table joined by source ID, chunk ID, or vector ID. |
+| **Cache Invalidation / Bypass** | Prevents quarantined evidence from reappearing through stale cache. | Version cache keys by source, policy, tenant, and retrieval manifest; bypass or invalidate affected scopes. |
+| **Index Rebuild Manifest** | Restores index topology from known-good source/chunk/vector versions. | Rebuild affected partition from signed or approved manifest; validate embedding model and dimensions. |
+| **Fallback Retrieval** | Preserves limited usability during vector repair. | Use lexical/BM25 search, verified cache, partial answer, or manual review depending on risk. |
+
+Hubness, citation mismatch, and retrieval anomalies should be treated as triage signals. A high robust z-score or unusual hit frequency does not prove malicious poisoning by itself; it justifies quarantine, review, and replay against representative query sets.
+
 
 ## **Tool and Action Containment Model**
 
-State-changing tools (such as bank transfers or cloud deployments) require strict verification structures.2 The platform must prevent probabilistic models from directly executing destructive, irreversible actions.2
+Tool incidents are dangerous because probabilistic planning crosses into deterministic side effects. The operational rule is simple: never let conversational confidence outrun verified action state.
 
-  [Proposed Mutation] ──► Generate Idempotency Key ──► Pre-Action State Hash Saved  
-                                                            │  
-                                                            ▼  
-  ◄── Verified Success Ledger ◄── Commit Pivot Step 
+```text
+TOOL AND ACTION CONTAINMENT
 
-* **Distributed Saga Orchestration:** Long-running transactional agent workflows are decomposed into a sequence of local, atomic microservice transactions.3 Responders classify transactions across three strict boundaries:  
-  1. *Compensatable Transactions:* Actions occurring before the pivot step that can be semantically undone via backward rollback workflows (e.g., reserving inventory).3  
-  2. *Pivot Transaction:* The critical point of no return (e.g., executing a bank payment).3 If the pivot step succeeds, the workflow is committed; if it fails, the orchestrator triggers Saga compensations in reverse dependency order to restore system state.2  
-  3. *Retriable Transactions:* Asynchronous operations occurring after the pivot step that are guaranteed to eventually succeed via retry loops with exponential backoff.3  
-* **Idempotency Key Enforcement:** Every state-changing API invocation must carry a unique, client-signed idempotency key (IDEMP-MUT-[tenant_id]-[index]).3 The gateway rejects duplicate payloads, preventing network timeouts from committing duplicate transactions.2  
-* **State-Hash Pre-Verification:** Before a mutation executes, the tool gateway calculates a hash of the current record state inside the target database.3 The transaction proceeds only if the active hash matches the pre-action state, protecting against race conditions from concurrent sessions.3  
-* **Vocalized Claim Corrections:** If a tool call fails post-pivot, the dialogue coordinator is blocked from generating a success confirmation.2 The system issues a corrected notification to the user interface, prompting manual administrative verification.2
+[ Proposed Action ]
+        |
+        v
+[ Validate Payload ]
+  schema | semantic rules | policy | tenant/user scope
+        |
+        v
+[ Authorize Action ]
+  scoped credential | approval state | risk class
+        |
+        v
+[ Create Idempotency Record ]
+  request hash | action ID | actor | target | timestamp
+        |
+        v
+[ Capture Pre-Action State Hash ]
+        |
+        v
+[ Execute or Block ]
+        |
+        v
+[ Observe Tool Result ]
+        |
+        v
+[ Verify Source of Record ]
+        |
+        +--> verified success  -> report success
+        +--> verified failure  -> report failure / preserve draft
+        +--> unknown state     -> hold and reconcile
+        +--> partial commit    -> compensate or forward recover
+```
+
+| Incident State | Meaning | Correct Operational Response | User-Facing Status |
+| :---- | :---- | :---- | :---- |
+| **Blocked Before Execution** | Payload, policy, approval, or authorization check failed. | Do not call tool; preserve draft and validation error. | “Not submitted. This action was blocked before execution.” |
+| **Execution Failed Before Commit** | Tool rejected or failed before external state changed. | Preserve error and allow safe correction or retry if preconditions still hold. | “The action failed before completion.” |
+| **Unknown After Attempt** | Timeout, lost response, or ambiguous observation after a state-changing call. | Hold workflow; reconcile with source of record before retry. | “Status unknown. We are verifying before allowing another attempt.” |
+| **Partial Commit** | Some sub-actions committed while others failed. | Stop dependent actions; compensate reversible steps or forward recover if safer. | “Some steps completed; remaining steps are paused for verification.” |
+| **Committed Reversible Effect** | External state changed and compensation is supported. | Execute approved compensation workflow if reversal is required. | “The action completed and is being reversed through a tracked correction.” |
+| **Committed Irreversible Effect** | Pivot transaction succeeded and cannot be programmatically undone. | Stop further automation; notify responsible owners; begin remediation and communication. | “The action completed and requires manual review/remediation.” |
+| **False Success Claim** | UI/model claimed completion before verification. | Correct status, preserve claim evidence, open incident if user impact exists. | “Correction: the previous completion status was not verified.” |
+
+Rollback applies only inside a live transaction boundary. Once a side effect has committed, operators should use compensation, forward recovery, reconciliation, or manual remediation depending on the transaction state.
 
 ## **Cache, Cost, and Resource Incident Model**
 
-Recursive multi-agent loops can consume significant token budgets in minutes.2 The platform must implement external, run-level economic controls to prevent "denial-of-wallet" incidents.2
+Resource incidents occur when model calls, retries, cache behavior, retrieval fan-out, tool loops, or agentic planning consume capacity faster than the system can safely serve users. These incidents can cause denial-of-wallet, latency collapse, stale-cache exposure, and degraded user trust.
 
-```
-  Active Agent Turn ──► Calculate Token Burn ──► Exceed Budget Ceiling?  
-                                                        │  
-                 ┌──────────────────────────────────────┴───┐  
-              (Yes)                                        (No)  
-                 ▼                                          ▼  
-   Trigger Loop Termination & Fail-Closed                 Proceed
+```text
+RESOURCE INCIDENT CONTROL LOOP
+
+[ Active workflow ]
+        |
+        v
+[ Measure resource state ]
+  tokens | tool calls | retries | latency | queue depth | spend | cache scope
+        |
+        v
+[ Compare against profile budget ]
+  tenant | session | workflow | risk tier | route
+        |
+        +-- within budget --> continue
+        |
+        +-- warning band --> degrade, queue, prune, or ask user
+        |
+        +-- hard limit --> halt, preserve state, fail closed or escalate
 ```
 
-* **Mathematical Modeling of Token Loops:** In recursive planning or formatting repair loops, input context scales quadratically as history, observations, and validation errors accumulate over consecutive turns.1 The total input tokens T_input consumed across N execution turns is modeled as 1:  
-  T_input(N) = N * S + (u * N * (N + 1)) / 2 + (r * N * (N - 1)) / 2  
-  Where S is the fixed system prompt and tool schema definition size, u is the average size of new incoming tokens (user inputs, formatting exceptions, or tool outputs) injected per turn, and r is the model's generated output per step.1 If an agent enters an infinite loop, this quadratic context growth can rapidly deplete budgets.1  
-* **Gateway Budget Ceilings:** The budget gateway proxy tracks token accumulation in real time, enforcing hard constraints on every active session:  
-  1. *Step Count Cap:* Hard limit of <= 10 execution turns per session.2  
-  2. *Token Budget Cap:* Maximum 100k total input tokens.2  
-  3. *Financial Cost Cap:* Maximum 5.00 USD spend per workflow.2  
-  4. *Action Count Cap:* Maximum <= 5 database write attempts.2  
-* **Runaway Retry Mitigation:** During upstream model outages, the gateway desynchronizes retry attempts using exponential backoff with randomized jitter 2:  
-  T_wait = (2^attempt * base_delay) +/- jitter  
-  This desynchronization prevents "retry storms" from saturating serving engine queues.1  
-* **Cache Leakage Defense:** The semantic cache engine hashes keys using both the prompt embedding and the user's active session JWT hash.2 If timing probes or cache injection patterns are detected, prefix caching is instantly disabled for that tenant partition, forcing full model recomputation to prevent exfiltration.2
+| Resource Failure | Detection Signal | Containment | Recovery |
+| :---- | :---- | :---- | :---- |
+| **Runaway Agent Loop** | Repeated state hash, tool repetition, growing turn count, no-progress plan diffs. | Halt workflow, preserve state, block further tool calls. | Replan from verified state or escalate. |
+| **Repair Loop** | Repeated schema/format failures with similar payloads. | Stop bounded repair after profile limit. | Return structured failure or route to human review. |
+| **Retry Storm** | High retry count, queue depth spike, provider 429/5xx, synchronized backoff failure. | Circuit-break route; apply jitter/backoff; shed or queue traffic. | Restore gradually after provider/gateway health recovers. |
+| **Token / Spend Spike** | Cost velocity exceeds tenant/workflow budget band. | Freeze expensive route, reduce context, require approval, or fail closed. | Tune prompt/context, adjust budgets, add loop regression test. |
+| **Cache Scope Violation** | Cache hit with tenant/user/policy/source mismatch. | Disable affected cache scope; revoke exposed sessions if needed. | Rebuild cache namespace and add isolation test. |
+| **Stale Cache Overuse** | Cache served after source/policy/model version change. | Bypass or invalidate stale keys; disclose limitation if served safely. | Version cache by source, policy, model, prompt, and risk profile. |
+| **Prefill / Context Pressure** | Long prompt, rising TTFT, low evidence density, context overflow. | Prune low-priority context; summarize safely; block if evidence lost. | Improve retrieval selection and context compiler policy. |
+
+Budget values should be deployment-profile specific. A toy workflow, enterprise analysis route, and regulated high-impact action should not share the same hard-coded token, cost, turn, or tool-call ceiling.
 
 ## **User Communication Matrix**
 
-When semantic failures or model downgrades affect the user experience, communications must be transparent and direct.3 The system must explain active limitations clearly, avoiding vague rationalizations like "the AI hallucinated".2
+AI incident communication must be truthful about state, uncertainty, user impact, and safe next actions. Do not say “the AI hallucinated” as if the platform were a haunted toaster. Say what failed, what is saved, what is blocked, what is known, what remains unknown, and what the user can safely do.
 
+```text
+COMMUNICATION RULE
+
+Never claim:
+  - an action succeeded before verification,
+  - no data was exposed before scope analysis,
+  - a cache/index/model is clean before validation,
+  - a degraded route is equivalent when it is not.
+
+Communicate:
+  known status, preserved state, active limitation,
+  user action required, and next update path.
 ```
-  ┌─────────────────────────────────────────────────────────────────────────────┐  
-  │                           ENTERPRISE CONSOLE UX                             │  
-  ├─────────────────────────────────────────────────────────────────────────────┤  
-  │  Warning: Document collection index is rebuilding.                          │  
-  │  The system is operating in cached mode. Results may be temporarily stale.   │  
-  │                                                                             │  
-  │  [ View Verification Logs ]    │  
-  └─────────────────────────────────────────────────────────────────────────────┘
-```
 
-The User Communication Matrix defines the communication templates and guidelines for each incident class:
-
-| Incident Class | Blast Radius | Target Audience | Preserved State Status | Standard Communication Script | Required Action from User |
-| :---- | :---- | :---- | :---- | :---- | :---- |
-| **Active RAG Poisoning / Hubness Attack** | Specific Document Collection | Enterprise workspace users | Current chat history saved; index frozen.3 | *"We have detected a temporary indexing anomaly in your document vault. We have isolated the affected files. Search results may be incomplete while our security filters optimize your index."* | None; system is self-correcting. |
-| **Model Downgrade via Outage Failover** | Global Platform | All active sessions | Exact session variables and history active.3 | *"Our flagship reasoning engine is temporarily over capacity. We have transitioned your session to our high-speed efficient model. Detailed analysis and citation highlights may be restricted."* | Confirm to continue with efficient model.3 |
-| **Agent State-Changing Tool Timeout** | Individual Session | Specific transaction initiator | Populated tool parameters saved in active draft.3 | *"We could not verify your payment status because the bank's transaction ledger timed out. To prevent duplicate charges, we have saved your payment as a verified draft. Do not click buy again."* | Click *Review Draft* to verify payment status manually.3 |
-| **Cross-Tenant Cache Contamination** | Scoped Workspace | Security & Tenant Admins | Session keys revoked; database frozen.2 | *"During an operational audit, we identified a brief memory caching overlap between isolated user accounts in your workspace. We have revoked active session credentials and cleared cached variables. No unauthorized data modifications occurred."* | Re-authenticate session; rotate API keys. |
-| **Complete System Fail-Closed Block** | Global Platform | Public Status Page | In-memory session state written securely to DB.3 | *"Our platform is temporarily offline to address a core security policy violation. Your progress and documents have been saved securely. We will restore system availability shortly."* | None; wait for status page update. |
+| Incident Class | Audience | What to Say | What Not to Say | User / Customer Action |
+| :---- | :---- | :---- | :---- | :---- |
+| **RAG Poisoning / Retrieval Quarantine** | Affected workspace users or admins. | “We detected an anomaly in part of your document retrieval index and isolated the affected sources. Search may be incomplete while verification runs.” | “All results are safe” before validation completes. | None unless asked to review quarantined documents. |
+| **Model Route Degradation** | Active users on affected route. | “The primary reasoning route is temporarily unavailable. We can continue in a reduced mode with limitations, or wait for full capability.” | “Equivalent quality” if capability, citation depth, latency, or tools changed. | Choose reduced mode, wait, or save progress. |
+| **State-Changing Tool Timeout** | Specific initiator / admin. | “We could not verify the action status. To prevent duplicate effects, we paused retries and saved the request for verification.” | “It failed” or “It succeeded” before source-of-record reconciliation. | Review status or wait for verification. |
+| **Cross-Tenant / Privacy Investigation** | Security/admin contacts and affected users as policy requires. | “We identified a possible isolation issue and have contained the affected scope. Investigation and verification are ongoing.” | “No unauthorized access occurred” before confirmed. | Reauthenticate or rotate credentials if instructed. |
+| **Prompt Injection / Security Containment** | Affected session user/admin. | “This session was paused because a security boundary was triggered. Your progress is saved, and unsafe automation is disabled.” | Revealing detection logic, system prompts, or exploit details. | Resume after review or start a clean session. |
+| **Cost / Quota Halt** | User or tenant admin. | “This workflow reached its configured budget or loop limit. Progress is saved, and further automated execution is paused.” | “The system crashed” if the stop was intentional containment. | Approve more budget, simplify task, or resume manually. |
+| **Parser / Citation Degradation** | User relying on documents. | “We could not verify the document layout/citation coordinates. We can provide text-only or partial results with limitations.” | Pretending visual/table evidence was inspected when it was not. | Upload cleaner file, accept text-only mode, or request review. |
+| **Fail-Closed Security Block** | Affected users / status page if broad. | “We temporarily blocked this capability to preserve security and data integrity. Saved state is preserved where possible.” | “Scheduled maintenance” if the event is an active incident requiring transparency. | Wait for recovery path or contact support. |
 
 ## **Incident Review and Postmortem Model**
 
@@ -621,17 +733,41 @@ The postmortem process is structured to systematically catalog failure metrics, 
 
 ## **Runbook Library**
 
-The platform maintains a library of ten pre-built, executable runbooks, providing step-by-step procedures to contain, resolve, and audit AI-specific failure modes.10
+The platform maintains a runbook library for recurring AI incident classes. Each runbook must identify the trigger, severity assumptions, first actions, containment controls, evidence to preserve, owner roles, recovery path, validation steps, communication path, and incident-to-eval follow-through.
 
-```
-  ──► Open AI-ENG-AC Runbook Library  
-                                    │  
-    ┌───────────────────────────────┼───────────────────────────────┐  
-    ▼                               ▼                               ▼  
-           
-  - Check NLI Entailment      - Check Input Prompts          - Check HubScan z-score  
-  - Route to Cached Mode      - Revert System Prompt in Git  - Inject Database RLS Filter  
-  - Display UI Warning Banner - Revoke Scoped Tool Tokens    - Fallback to BM25 Search
+Runbooks should not instruct responders to paste raw prompts, secrets, transaction details, or tenant data into ordinary incident tickets. Sensitive payloads belong in controlled forensic storage with secure references, access logs, and retention policy.
+
+```text
+AI OPERATIONS RUNBOOK LIBRARY
+
+[ Incident Trigger ]
+        |
+        v
+[ Classify ]
+  semantic | retrieval | prompt | model | tool | cost | privacy | UX/review
+        |
+        v
+[ Preserve Evidence Manifest ]
+  trace IDs | hashes | secure refs | configs | state versions
+        |
+        v
+[ Contain ]
+  flag | kill switch | quarantine | route pin | credential revoke
+        |
+        v
+[ Recover ]
+  rollback | compensate | reconcile | rebuild | degrade | escalate
+        |
+        v
+[ Validate ]
+  canary | regression | policy | isolation | source-of-record check
+        |
+        v
+[ Communicate ]
+  known status | unknowns | saved state | user action | next update path
+        |
+        v
+[ Promote Incident to Eval / Runbook Update ]
 ```
 
 ### **Runbook 1: Ungrounded Answer Incident (Factual Hallucination)**
@@ -641,7 +777,7 @@ The platform maintains a library of ten pre-built, executable runbooks, providin
   1. Trace the session ID to locate the active retrieval spans and the model endpoint version.1  
   2. Capture the rendered prompt string, the retrieved context chunks, and the raw output tokens.20  
   3. Toggle the FF_CACHE_BYPASS flag for the affected workspace, forcing live database lookups and bypassing potentially corrupted caches.3  
-* **Containment Steps:** Force-disable advanced rag-generation routes for the tenant. Set the active trust-calibration interface to Level 3 (Inline Caveat), rendering sketchy outlines over ungrounded paragraphs to communicate uncertainty.3  
+* **Containment Steps:** Force-disable advanced rag-generation routes for the tenant. Set the active trust-calibration interface to Level 3 (Inline Caveat), rendering visible uncertainty indicators for unsupported or unverified claims to communicate uncertainty.3  
 * **Evidence to Preserve:** Snapshot the current vector index state, export the retrieved chunk text strings, and write the complete telemetry trace payload to the forensic directory.1  
 * **Owner Roles:** SRE/Platform Lead (Primary investigator); Retrieval Owner (Context validator); Prompt Owner (Hotfix engineer).17  
 * **Rollback Steps:** Revert the retrieval query rewriting template inside the prompt registry to the preceding stable commit.2  
@@ -662,7 +798,7 @@ The platform maintains a library of ten pre-built, executable runbooks, providin
 * **Rollback Steps:** Revert the document parsing Docker container to the preceding stable image version.2  
 * **Validation Steps:** Run an automated unit test suite, executing a coordinate-level IoU check over table extraction targets.1  
 * **Communication Path:** Display a subtle UI warning card: *"Complex page layout unreadable. Using text-only reference mode."*.3  
-* **Postmortem Actions:** Update the parser's configuration schema to enforce 300 DPI rasterization for scanned PDFs.21
+* **Postmortem Actions:** Update the parser's configuration schema to enforce profile-appropriate rasterization and layout-extraction settings for scanned PDFs.21
 
 ### **Runbook 3: Prompt Injection Incident (Safety Breach)**
 
@@ -672,12 +808,12 @@ The platform maintains a library of ten pre-built, executable runbooks, providin
   2. Terminate active WebSocket connections and close active runner processes.2  
   3. Scan execution logs to identify if the model attempted to leak system instructions or execute unauthorized tools.2  
 * **Containment Steps:** Revoke the session's active OAuth tokens. Route the tenant's queries to the quarantined fallback model instance.2  
-* **Evidence to Preserve:** Copy the raw input tokens, the system prompt template, the injected payload, and the tool trace history to the secure SIEM directory.1  
+* **Evidence to Preserve:** Preserve hashes and secure forensic references for the input, rendered prompt, injected payload, and tool trace history. Store raw sensitive payloads only in the controlled forensic vault.1  
 * **Owner Roles:** Security Lead (Primary investigator); Prompt Owner (Defensive engineer).17  
 * **Rollback Steps:** Revert the system prompt template to the last safe version in Git.3  
-* **Validation Steps:** Run the purple-team jailbreak evaluation suite inside the CI/CD pipeline, asserting 100% block rates on similar payloads.1  
+* **Validation Steps:** Run the purple-team jailbreak evaluation suite inside the CI/CD pipeline, verifying that the incident payload and representative variants are blocked or safely contained according to the applicable risk profile.1  
 * **Communication Path:** Render a full-screen red error overlay: *"Session locked due to a security policy violation. Your progress has been saved securely."*.3  
-* **Postmortem Actions:** Integrate the injection payload into the Prompt Guard model's training dataset.2
+* **Postmortem Actions:** promote the sanitized payload pattern into the adversarial evaluation suite and review whether detector training data should be updated.2
 
 ### **Runbook 4: Tool Misfire Incident (Unauthorized Action)**
 
@@ -732,7 +868,7 @@ The platform maintains a library of ten pre-built, executable runbooks, providin
   2. Suspend the indexing worker's document ingestion pipeline.2  
   3. Quarantine the poisoned files inside an offline S3 bucket.2  
 * **Containment Steps:** Disable vector search queries for the affected tenant workspace; fall back to BM25 keyword matching.3  
-* **Evidence to Preserve:** Snapshot the poisoned document's text, the calculated embedding coordinates, and the robust z-score logs.1  
+* **Evidence to Preserve:** Preserve source IDs, source version hashes, chunk/vector IDs, secure evidence references, embedding metadata, and robust z-score logs.1  
 * **Owner Roles:** Retrieval Owner (Primary investigator); Database Administrator (Index controller); Security Lead.17  
 * **Rollback Steps:** Rebuild the vector database HNSW graph from the last safe backup.2  
 * **Validation Steps:** Re-run vector query simulations, asserting that retrieval returns clean nearest neighbors.1  
@@ -780,7 +916,7 @@ The platform maintains a library of ten pre-built, executable runbooks, providin
 * **Evidence to Preserve:** Record the trace IDs, the mismatched user identities, the retrieved vector coordinates, and the cache keys.1  
 * **Owner Roles:** SRE/Platform Lead (Primary investigator); AI Operations Lead (Gateway controller); Privacy Lead; Security Lead.17  
 * **Rollback Steps:** Flush all cached prompt-response vectors and re-initialize isolated cache spaces.2  
-* **Validation Steps:** Execute 1,000 automated isolation probe queries inside staging, confirming zero cross-tenant hits.2  
+* **Validation Steps:** Execute 1,000 automated isolation probe queries inside staging, verifying that representative isolation probes cannot retrieve cross-tenant resources under the affected configurations.2  
 * **Communication Path:** Dedicated enterprise customer notification: *"We have isolated a brief namespace configuration overlap in your workspace. Active session credentials have been updated to preserve your privacy."*.3  
 * **Postmortem Actions:** Enforce database-level Row-Level Security (RLS) policies on every vector similarity query.2
 
@@ -824,29 +960,33 @@ The feedback loop is executed through a disciplined engineering pipeline:
 
 ## **Cross-Canon Handoff Map**
 
-This report establishes the baseline operational procedures for Volume 10 of *The AI Engineering Systems Canon*. These processes depend directly on upstream telemetry, evaluation, and verification substrates, and feed downstream governance, access control, and lifecycle workflows:
+AI-ENG-AC defines the operational response layer for the canon: detection, intake, triage, containment, rollback, communication, incident review, and incident-to-eval promotion. It consumes telemetry, evaluation, verification, security, degraded-mode, and governance artifacts, then feeds improvements back into the lifecycle.
 
-```
-  ┌────────────────────────────────────────────────────────┐  
-  │                 CROSS-CANON HANDOFF                    │  
-  ├────────────────────────────────────────────────────────┤  
-  │   AI-ENG-Z   ──► OpenTelemetry Spans & IDs             │  
-  │  [Evals]      AI-ENG-AA  ──► Golden Cases / Platt Scale│  
-  │  [Evidence]   AI-ENG-AB  ──► Signed C2PA Manifests     │  
-  │   Boundary    AI-ENG-T   ──► Row-Level Security / RLS  │  
-  └────────────────────────────────────────────────────────┘
-```
-
-The handoff contracts with other canon layers are defined as follows:
-
-| Origin Canon Report | Handoff Artifact / Technical Parameter | Downstream Target Lifecycle Step | Operational Integration Rule | Fallback & Degraded Protocol |
-| :---- | :---- | :---- | :---- | :---- |
-| **AI-ENG-Z** (Strategic Telemetry) 1 | Standardized GenAI semantic conventions; W3C traceparent headers.1 | Ingestion of live failures.1 | Gateways inject W3C trace context into params._meta on all outbound JSON-RPC stdio tool calls.1 | Fallback to local reference-only trace hashes if gateway queue is saturated.1 |
-| **AI-ENG-AA** (Evals Architecture) 1 | Versioned Golden Sets; Platt Scaling calibration parameters.1 | Post-incident evaluation promotion.1 | Any SEV-1 incident must automatically compile a sanitized trace into a new Golden Case inside CI/CD.1 | Revert release build branch to last verified container image.1 |
-| **AI-ENG-AB** (Verification Artifacts) 1 | Immutable C2PA JUMBF manifests; Sigstore Merkle inclusion proofs.2 | Forensic evidence package compile.1 | Responders must verify signature status of loaded models against Rekor public transparency logs before rollback.1 | Log unhashed transaction details in local syslog volumes.1 |
-| **AI-ENG-T** (Boundary Defense) 2 | PostgreSQL Row-Level Security parameters; tenant isolation variables.2 | Containment of RAG poisoning.1 | Enforce database-level RLS policies on pgvector nearest-neighbor searches during incident triage.1 | Separate customer data into physically isolated partitions.2 |
-| **AI-ENG-U** (Supply Chain Security) 2 | Safetensors weight registry; sandbox MicroVM configurations.2 | Model weight rollback execution.1 | Block serving container initialization if rollback target lacks Sigstore digital signatures.2 | Re-deploy previously verified model checkpoint.2 |
-| **AI-ENG-V** (Resource Abuse) 2 | Token ceilings; cost allocation quotas; loop turn bounds.2 | Runaway loop termination.1 | Gateways enforce step count caps and budget ceilings inside edge proxy filters.1 | Shift traffic to smaller local model adapters.2 |
+| Canon Report | Handoff Into AC | AC Operational Use | Feedback Returned |
+| :---- | :---- | :---- | :---- |
+| **AI-ENG-B — Context Architecture** | Context object IDs, memory state, session scope, compaction records. | Diagnose context loss, stale memory, state corruption, or instruction decay. | Incident-derived context invariants and state-preservation tests. |
+| **AI-ENG-D — Corpus Engineering** | Source authority, corpus lifecycle state, provenance, ownership, document version. | Quarantine suspect sources and scope data/corpus incidents. | New corpus validation, lifecycle, and provenance requirements. |
+| **AI-ENG-E — Retrieval Pipeline** | Retrieval traces, candidate sets, filters, citation bundles, evidence packets. | Diagnose grounding, citation, and retrieval failure incidents. | New retrieval evals, filter checks, and evidence-sufficiency gates. |
+| **AI-ENG-F — Freshness and Conflict Detection** | Freshness status, conflict packets, source version drift, citation stability. | Determine whether stale or conflicting evidence caused user-visible harm. | Freshness alerts and conflict-resolution runbook updates. |
+| **AI-ENG-L — Serving Architecture** | Route manifests, latency, queue state, model endpoints, cache behavior. | Execute route rollback, failover, capacity containment, and serving recovery. | New route SLOs, rollback drills, and serving canaries. |
+| **AI-ENG-M — Agentic Orchestration** | Workflow state, loop counters, no-progress hashes, task graph. | Stop runaway agents, preserve plan state, and diagnose orchestration failures. | New loop limits, state checkpoints, and agent termination tests. |
+| **AI-ENG-N — Tool Contracts** | Tool schemas, manifests, argument validators, side-effect classes. | Disable unsafe tools and diagnose tool payload or schema failures. | Contract hardening, idempotency requirements, and new tool evals. |
+| **AI-ENG-O — Action Verification** | Action ledgers, pre/post state hashes, idempotency keys, verification state. | Reconcile unknown tool state, compensate committed effects, prevent false success. | New verification predicates and state-reconciliation tests. |
+| **AI-ENG-P — Multimodal Understanding** | Parser versions, evidence coordinates, OCR/layout confidence, media refs. | Diagnose parser, OCR, document, chart, image, and video evidence incidents. | Parser regression cases and evidence-adequacy thresholds. |
+| **AI-ENG-Q — Speech / Realtime** | Transcript state, endpointing, confirmation, interruption, voice degradation events. | Pause high-impact voice workflows and switch to safer confirmation modes. | New noisy-audio, confirmation, and barge-in game-day tests. |
+| **AI-ENG-R — UI Agents** | Browser traces, DOM/screenshot hashes, action verification, automation pause state. | Diagnose blind clicks, UI drift, false completion, and interface trust failures. | UI-agent recovery and action-verification tests. |
+| **AI-ENG-S — Production Pathologies** | Failure classes, malformed output, hallucination subtypes, brittle-chain patterns. | Classify semantic incidents and choose containment/recovery path. | New pathology-specific runbooks and regression gates. |
+| **AI-ENG-T — Boundary Defense** | Tenant scope, authority hierarchy, RLS state, cache isolation, injection events. | Contain prompt injection, cross-tenant leakage, and boundary violations. | New isolation probes and boundary-defense incident cases. |
+| **AI-ENG-U — Supply Chain Security** | Artifact signatures, dependency manifests, sandbox profiles, model/data provenance. | Quarantine unsafe artifacts and verify rollback targets. | New artifact-readiness and loader-hardening requirements. |
+| **AI-ENG-V — Resource Abuse** | Budget ceilings, token burn, tool-call limits, retry storms, abuse signals. | Halt cost bombs, throttle workflows, and enforce fail-closed budget controls. | New resource-abuse drills and budget-policy changes. |
+| **AI-ENG-W — UX Resilience** | Degraded-mode states, fallback contracts, continuity state, user disclosure events. | Communicate degraded states and preserve user progress during incidents. | New degraded-mode tests and disclosure templates. |
+| **AI-ENG-X — User Trust** | Trust calibration signals, citation interactions, user corrections, contestability events. | Detect user-facing trust failures and repair transparency patterns. | New disclosure, evidence, and contestability requirements. |
+| **AI-ENG-Y — Human Review** | Approval records, reviewer queue state, maker-checker outcomes, escalation packages. | Pause unsafe automation and route high-impact uncertainty to humans. | New reviewer sentinel cases and approval-flow thresholds. |
+| **AI-ENG-Z — Strategic Telemetry** | Trace IDs, spans, token/cost metrics, routing events, redaction metadata. | Intake, scope, replay, and correlate incidents. | New telemetry fields, alerts, dashboards, and SLOs. |
+| **AI-ENG-AA — Evaluations** | Golden sets, canaries, regression suites, calibrated scoring artifacts. | Validate rollback, hotfix, mitigation, and closure. | Incident traces promoted into permanent eval cases. |
+| **AI-ENG-AB — Verification Artifacts** | Audit trails, secure references, trace manifests, policy/model/tool versions. | Preserve forensic record and support reproducible postmortems. | New evidence-package requirements and replay constraints. |
+| **AI-ENG-AD — Governance** | Policy ownership, approval workflows, reporting obligations, accountability boundaries. | Determine reporting, escalation, exception, and lifecycle-governance requirements. | Postmortem action items, governance exceptions, and policy updates. |
+| **AI-ENG-AJ — Reference Architectures** | Deployment blueprints, gateway patterns, sandboxing, audit stores, runbook automation. | Implement operational controls as reference architecture components. | Architecture updates based on incidents and game days. |
 
 ## **Strategic Conclusions and Architectural Recommendations**
 
@@ -856,6 +996,38 @@ To transition from ad-hoc troubleshooting to systemic, high-assurance behavioral
 2. **Centralize Resilience at the Gateway Layer:** Avoid writing separate retry, fallback, and rate-limiting logic inside individual application services.3 Centralize these capabilities within a high-performance, budget-aware runtime gateway positioned entirely outside the model's cognitive boundary, ensuring consistent policy enforcement, cost tracking, and provider failovers across the entire organization.1  
 3. **Secure Caches against Timing Side-Channels:** Sharing semantic or prefix caches globally across mutually untrusted tenants introduces timing side-channel risks.3 All cache keys must be cryptographically bound to tenant identity and user permissions, and serving runtimes must deploy selective prefix isolation (such as the CacheSolidarity framework) to prevent timing side-channel probes from exfiltrating private context.2  
 4. **Enforce Strict Least-Privilege Tool Credentials:** Model-driven agents must never run with broad administrative service tokens or "god-mode" database accounts.2 Every tool execution must be mediated by a secure credential broker that validates user identity and mints short-lived, highly restricted OAuth tokens (validity less than 900 seconds) specifically for that single execution, protecting local file systems and egress routes from lateral compromise.2
+
+## **Durable Principles of AI Operations**
+
+1. **Service Recovery Is Not Behavioral Recovery**  
+   A system is not recovered because the endpoint is online. It is recovered when outputs, actions, evidence, routing, policy, and user-facing status are back inside the approved behavioral envelope.
+
+2. **Contain Harm Before Solving the Mystery**  
+   Incident response begins with stopping active damage. Root cause can wait; unauthorized tools, poisoned indexes, bad routes, and leaking caches cannot.
+
+3. **Preserve Evidence Before Destructive Cleanup**  
+   Cache flushes, redeploys, session wipes, and credential rotations can destroy forensic state. Preserve hashes, traces, manifests, and secure references first when safety allows.
+
+4. **Rollback the Smallest Effective Surface**  
+   Do not revert the whole platform when a prompt, adapter, cache namespace, corpus lifecycle state, or tool contract is the failing surface.
+
+5. **Unknown State Is a First-Class Incident State**  
+   Timeouts and partial commits are not success and not failure. They require hold, reconciliation, compensation, forward recovery, or escalation.
+
+6. **Prompt Hotfixes Are Temporary Operational Controls**  
+   Emergency prompt changes must be versioned, bounded, tested, owned, and either promoted through normal release gates or retired.
+
+7. **Runbooks Must Be Executable Under Stress**  
+   A runbook is not a philosophy pamphlet. It should say who acts, what they disable, what they preserve, what they validate, and how they communicate.
+
+8. **Communications Must Respect Evidence State**  
+   Never reassure users that no data was exposed, no action occurred, or no harm happened until verification supports it.
+
+9. **Every Significant Incident Becomes an Evaluation**  
+   Production failures should harden the system. Sanitized incident traces must become golden cases, adversarial tests, telemetry alerts, or governance controls.
+
+10. **Operations Belongs Outside the Model Boundary**  
+   Kill switches, feature flags, credential revocation, route control, policy enforcement, and rollback must be deterministic controls, not polite requests embedded in prompts.
 
 #### **Works cited**
 
