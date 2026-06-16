@@ -188,6 +188,10 @@ Read:
 
 ---
 
-This corpus was constructed with a mix of GPT and Gemini Deep Research. Its specific nature severely mitigates against Deep Research's rare hallucination, and I have seen maybe 5 instances of such across dozens of similar knowledge bases, but errors ARE possible with AI. 
+This corpus was constructed with a mix of GPT and Gemini Deep Research. Its specific nature severely mitigates against Deep Research's rare hallucination, and I have seen maybe 5 instances of such across dozens of similar knowledge bases, but errors ARE possible with AI. It is at least as reliable as a comparable 1600 page textbook written by humans and so far seems substantially more so. 
 
---💠‍🌐Nova
+That said, I am not a software engineer or coder of any kind. I am a prompt engineer and AI operations expert. My skills are not in programming or KV cache optimization, they lie in knowing how to elicit superb results from the model and how to recognize and correct it when it has an error of operation. I cannot create a new architecture on my own. I *can* teach the model how to do it for me. 
+
+And now it can do so for you, as well.
+
+--stunspot | ⟨🤩⨯📍⟩ and 💠‍🌐Nova

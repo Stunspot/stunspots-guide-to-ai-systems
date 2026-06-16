@@ -201,10 +201,22 @@ Read:
 ├── README.md
 ├── LICENSE.md
 ├── CITATION.cff
+├── knowledge-packs/
+│   ├── by-volume/
+│   ├── by-part/
+│   └── omnibus/
 └── docs/
     ├── index.md
     ├── canon-map.md
+    ├── knowledge-packs.md
     ├── how-to-use-this-canon.md
+    ├── _config.yml
+    ├── _layouts/
+    │   └── default.html
+    ├── assets/
+    │   ├── brand/
+    │   └── css/
+    │       └── style.css
     ├── volume-01/
     ├── volume-02/
     ├── volume-03/
@@ -219,7 +231,10 @@ Read:
     └── volume-12/
 ```
 
-Each volume folder contains a local `README.md` and its corresponding AI-ENG reports.
+The `/docs/` directory contains the canonical source reports and GitHub Pages site.
+
+The `/knowledge-packs/` directory contains bundled upload formats for AI Projects, RAG systems, NotebookLM-style tools, and long-context workspaces.
+
 
 ---
 
