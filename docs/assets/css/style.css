@@ -10,7 +10,7 @@
   --muted: #b6c9d6;
   --dim: #7893a4;
   --accent: #ff5a2f;
-  --max: 1120px;
+  --max: 1320px;
 }
 
 * {
@@ -117,14 +117,11 @@ body::before {
 
 .content-panel {
   position: relative;
+  overflow: hidden;
   padding: 30px;
   border: 1px solid var(--line);
   border-radius: 20px;
- var(--cyan);
-  box-shadow: 0 0 18px rgba(0, 210, 255, 0.18);
-}
-
-.content  background:
+  background:
     linear-gradient(180deg, rgba(3, 18, 30, 0.90), rgba(1, 8, 14, 0.96));
   box-shadow:
     0 24px 80px rgba(0, 0, 0, 0.46),
@@ -132,13 +129,26 @@ body::before {
     inset 0 0 42px rgba(0, 190, 255, 0.035);
 }
 
-.content-panel img[src*="hero"] {
+.content-panel img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Top Pages hero: docs/index.md wraps the hero in <p align="center">. */
+.content-panel > p[align="center"]:first-child {
+  margin: -30px -30px 34px;
+  padding: 0;
+  line-height: 0;
+}
+
+.content-panel > p[align="center"]:first-child img[src*="hero"] {
   display: block;
-  width: calc(100% + 60px);
-  max-width: none;
-  margin: -30px -30px 30px;
-  border-radius: 20px 20px 8px 8px;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  margin: 0;
   border-bottom: 1px solid var(--line);
+  border-radius: 20px 20px 8px 8px;
 }
 
 h1, h2, h3, h4 {
@@ -149,7 +159,7 @@ h1, h2, h3, h4 {
 
 h1 {
   margin-top: 0;
-  font-size: clamp(2rem, 5vw, 3.6rem);
+  font-size: clamp(2rem, 4.3vw, 3.25rem);
   color: #ffffff;
   text-shadow: 0 0 18px rgba(0, 210, 255, 0.25);
 }
