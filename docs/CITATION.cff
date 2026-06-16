@@ -1,0 +1,40 @@
+cff-version: 1.2.0
+message: "If you use or reference this Canon, please cite it as below."
+title: "Stunspot's Guide to AI Systems: The AI Engineering Systems Canon"
+abstract: >-
+  A Markdown-native knowledge repository built primarily to support
+  AI-assisted design, engineering, analysis, evaluation, and
+  decision-making across modern AI systems. Organized across 12 volumes
+  and 37 reports (AI-ENG-A through AI-ENG-AK), spanning model steering,
+  context architecture, corpus engineering, retrieval, model lifecycle,
+  runtime mechanics, agents, tools, multimodal interfaces, security,
+  resilience, evaluation, telemetry, governance, product architecture,
+  and system doctrine.
+type: software
+version: "1.0"
+date-released: "2026-06-16"
+license: CC-BY-NC-SA-4.0
+url: "https://stunspot.github.io/stunspots-guide-to-ai-systems/"
+repository-code: "https://github.com/Stunspot/stunspots-guide-to-ai-systems"
+authors:
+  - family-names: Walker
+    given-names: Sam
+    alias: stunspot
+    affiliation: "Collaborative Dynamics"
+keywords:
+  - ai-engineering
+  - agentic-systems
+  - ai-agents
+  - rag
+  - prompt-engineering
+  - ai-governance
+  - llmops
+  - ai-architecture
+  - knowledge-systems
+  - llm-systems
+  - ai-evals
+  - human-ai-interaction
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.20719470"
+    description: "Zenodo archive DOI"
