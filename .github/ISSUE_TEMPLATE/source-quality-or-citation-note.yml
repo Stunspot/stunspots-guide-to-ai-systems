@@ -1,0 +1,41 @@
+name: Source quality or citation note
+description: Flag a citation, provenance, source-quality, or corpus-hygiene issue.
+title: "Source/citation note: "
+labels: ["citation", "corpus-hygiene"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for citation mismatches, stale references, questionable sources, provenance problems, or model-facing corpus hygiene issues.
+  - type: input
+    id: file-path
+    attributes:
+      label: Affected file path
+      placeholder: docs/volume-01/example.md
+    validations:
+      required: true
+  - type: textarea
+    id: issue
+    attributes:
+      label: Issue summary
+      description: What appears wrong, stale, unsupported, unsafe, or poorly grounded?
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence or reference
+      description: Link or quote supporting the concern, if available.
+    validations:
+      required: false
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Minor citation polish
+        - Material citation/source issue
+        - Possible unsafe or poisoned corpus content
+        - Attribution/licensing concern
+    validations:
+      required: true
