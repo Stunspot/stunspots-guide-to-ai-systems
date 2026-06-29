@@ -14,6 +14,10 @@ type: software
 version: "1.0"
 date-released: "2026-06-16"
 license: CC-BY-NC-SA-4.0
+doi: "10.5281/zenodo.20719470"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.20719470"
 url: "https://stunspot.github.io/stunspots-guide-to-ai-systems/"
 repository-code: "https://github.com/Stunspot/stunspots-guide-to-ai-systems"
 authors:
@@ -34,7 +38,3 @@ keywords:
   - llm-systems
   - ai-evals
   - human-ai-interaction
-identifiers:
-  - type: doi
-    value: "10.5281/zenodo.20719470"
-    description: "Zenodo archive DOI"
