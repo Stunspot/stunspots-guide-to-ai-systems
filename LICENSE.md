@@ -2,38 +2,24 @@
 
 Copyright © Sam “stunspot” Walker / Collaborative Dynamics.
 
-Unless otherwise stated, the original written, editorial, structural, and visual materials in this repository are licensed under the **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License** (**CC BY-NC-SA 4.0**).
+Unless otherwise stated, the original written, editorial, structural, and visual materials in this repository are licensed under the **Creative Commons Attribution 4.0 International License** (**CC BY 4.0**).
+
+Full license text: <https://creativecommons.org/licenses/by/4.0/>
 
 ## What This Means
 
-You may share, copy, redistribute, remix, transform, and build upon these materials for **non-commercial purposes**, provided that you:
+You may share, copy, redistribute, remix, transform, build upon, publish, and use these materials for personal, educational, research, commercial, product, consulting, AI/RAG, enterprise, and other purposes, provided that you:
 
 1. give appropriate credit to Sam “stunspot” Walker / Collaborative Dynamics;
-2. include a link or reference to the CC BY-NC-SA 4.0 license;
-3. indicate whether changes were made; and
-4. distribute adaptations under the same license.
+2. include a link or reference to the Creative Commons Attribution 4.0 International License;
+3. indicate whether meaningful changes were made; and
+4. do not imply that Sam “stunspot” Walker or Collaborative Dynamics endorses your use, product, service, organization, or derivative work.
 
-The full license text is available from Creative Commons:
+## Brand, Trademark, and Official Products
 
-<https://creativecommons.org/licenses/by-nc-sa/4.0/>
+This license grants copyright permissions for the covered materials. It does not grant trademark rights, brand identity rights, endorsement rights, or permission to present unofficial products as official Stunspot or Collaborative Dynamics releases.
 
-## Non-Commercial Use
-
-Permitted non-commercial uses include personal study, educational use, private AI/RAG experimentation, research, criticism, commentary, citation, and non-commercial derivative works that follow the attribution and share-alike requirements.
-
-## Commercial Use Requires Permission
-
-Commercial use is **not** granted by this license.
-
-This includes, but is not limited to:
-
-- resale or paid redistribution;
-- inclusion in paid products, prompt packs, courses, subscriptions, or consulting deliverables;
-- use as training, tuning, evaluation, benchmark, or product-development material for commercial AI systems;
-- incorporation into commercial RAG products, SaaS tools, internal enterprise knowledge systems, or customer-facing AI applications; and
-- republishing substantial portions in monetized publications, gated communities, or commercial media.
-
-For commercial licensing, partnership, or permission requests, contact Sam “stunspot” Walker / Collaborative Dynamics through the official project channels.
+Official paid products, hosted systems, custom implementations, consulting, support, and partnership arrangements from Collaborative Dynamics remain separate from this public repository license.
 
 ## Third-Party Materials
 
@@ -45,7 +31,7 @@ Where third-party material appears, it is included for citation, commentary, res
 
 Recommended attribution:
 
-> Sam “stunspot” Walker / Collaborative Dynamics, *Stunspot’s Guide to AI Systems: The AI Engineering Systems Canon*, CC BY-NC-SA 4.0.
+> Sam “stunspot” Walker / Collaborative Dynamics, *Stunspot’s Guide to AI Systems: The AI Engineering Systems Canon*, Creative Commons Attribution 4.0 International.
 
 When possible, include a link to the public repository or GitHub Pages site.
 
