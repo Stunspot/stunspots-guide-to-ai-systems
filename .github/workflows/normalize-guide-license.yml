@@ -1,0 +1,107 @@
+name: Normalize guide licensing
+
+on:
+  push:
+    branches:
+      - agent/normalize-guide-license
+
+permissions:
+  contents: write
+
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/normalize-guide-license
+          fetch-depth: 0
+
+      - name: Normalize repository license declarations
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          replacements = {
+              "Licensed under **CC BY-NC-SA 4.0** unless otherwise stated.":
+                  "Licensed under **CC BY 4.0** unless otherwise stated.",
+              "Commercial use, resale, paid redistribution, inclusion in commercial training products, or incorporation into paid knowledge-base products requires prior written permission.":
+                  "Commercial use, resale, paid redistribution, inclusion in commercial training products, and incorporation into paid knowledge-base products are permitted under CC BY 4.0 with appropriate attribution; no separate permission is required.",
+              "![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/license-CC_BY--NC--SA_4.0-darkgrey)":
+                  "![License: CC BY 4.0](https://img.shields.io/badge/license-CC_BY_4.0-darkgrey)",
+          }
+
+          changed_files = []
+          replacement_counts = {old: 0 for old in replacements}
+
+          for path in Path('.').rglob('*'):
+              if not path.is_file() or '.git' in path.parts:
+                  continue
+              if path.suffix.lower() not in {'.md', '.markdown', '.html', '.yml', '.yaml', '.cff'}:
+                  continue
+
+              try:
+                  original = path.read_text(encoding='utf-8')
+              except UnicodeDecodeError:
+                  continue
+
+              updated = original
+              for old, new in replacements.items():
+                  count = updated.count(old)
+                  if count:
+                      replacement_counts[old] += count
+                      updated = updated.replace(old, new)
+
+              if updated != original:
+                  path.write_text(updated, encoding='utf-8')
+                  changed_files.append(str(path))
+
+          expected_old_fragments = [
+              "Licensed under **CC BY-NC-SA 4.0** unless otherwise stated.",
+              "Commercial use, resale, paid redistribution, inclusion in commercial training products, or incorporation into paid knowledge-base products requires prior written permission.",
+              "License: CC BY-NC-SA 4.0",
+              "license-CC_BY--NC--SA_4.0",
+          ]
+
+          residuals = []
+          for path in Path('.').rglob('*'):
+              if not path.is_file() or '.git' in path.parts:
+                  continue
+              if path.suffix.lower() not in {'.md', '.markdown', '.html', '.yml', '.yaml', '.cff'}:
+                  continue
+              try:
+                  text = path.read_text(encoding='utf-8')
+              except UnicodeDecodeError:
+                  continue
+              for fragment in expected_old_fragments:
+                  if fragment in text:
+                      residuals.append(f"{path}: {fragment}")
+
+          if residuals:
+              raise SystemExit("Residual conflicting license declarations remain:\n" + "\n".join(residuals))
+
+          if not changed_files:
+              raise SystemExit("No conflicting license declarations were found; refusing to create an empty normalization commit.")
+
+          print(f"Changed {len(changed_files)} files.")
+          for old, count in replacement_counts.items():
+              print(f"{count:4d} replacements: {old}")
+          for path in changed_files:
+              print(path)
+          PY
+
+      - name: Remove one-shot workflow and commit normalized files
+        shell: bash
+        run: |
+          rm -f .github/workflows/normalize-guide-license.yml
+          rmdir .github/workflows 2>/dev/null || true
+          rmdir .github 2>/dev/null || true
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Normalize guide licensing to CC BY 4.0"
+          git push origin HEAD:agent/normalize-guide-license
