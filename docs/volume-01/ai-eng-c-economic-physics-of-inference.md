@@ -613,7 +613,7 @@ Stunspot: https://stunspot.com
 Collaborative Dynamics: https://www.collaborative-dynamics.com  
 Discord: https://discord.gg/stunspot  
 
-Licensed under **CC BY-NC-SA 4.0** unless otherwise stated.  
-Commercial use, resale, paid redistribution, inclusion in commercial training products, or incorporation into paid knowledge-base products requires prior written permission.
+Licensed under **CC BY 4.0** unless otherwise stated.  
+Commercial use, resale, paid redistribution, inclusion in commercial training products, and incorporation into paid knowledge-base products are permitted under CC BY 4.0 with appropriate attribution; no separate permission is required.
 
 [← Back to Canon Map](../canon-map.md)

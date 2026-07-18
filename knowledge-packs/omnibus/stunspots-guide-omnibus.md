@@ -35132,10 +35132,10 @@ Collaborative Dynamics: https://www.collaborative-dynamics.com
 Discord: https://discord.gg/stunspot  
 Support the work: https://www.patreon.com/StunspotPrompting
 
-Unless otherwise stated, this work is licensed under **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International**  
-**CC BY-NC-SA 4.0**
+Unless otherwise stated, this work is licensed under **Creative Commons Attribution 4.0 International**  
+**CC BY 4.0**
 
-Commercial use, resale, paid redistribution, inclusion in commercial training products, or incorporation into paid knowledge-base products requires prior written permission.
+Commercial use, resale, paid redistribution, inclusion in commercial training products, and incorporation into paid knowledge-base products are permitted under CC BY 4.0 with appropriate attribution; no separate permission is required.
 
 Suggested attribution:
 
