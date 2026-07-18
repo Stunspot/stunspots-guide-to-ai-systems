@@ -8,13 +8,15 @@ on:
       - opened
       - synchronize
       - reopened
+  schedule:
+    - cron: '*/5 * * * *'
 
 permissions:
   contents: write
 
 jobs:
   normalize:
-    if: github.event.pull_request.head.ref == 'agent/normalize-guide-license' && github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event_name == 'schedule' || (github.event.pull_request.head.ref == 'agent/normalize-guide-license' && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     steps:
       - name: Check out normalization branch
