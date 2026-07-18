@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out main
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: main
           fetch-depth: 0
@@ -59,7 +59,7 @@ jobs:
                   path.write_text(updated, encoding='utf-8')
                   changed.append(str(path))
 
-          # The workflow is temporary and deletes itself in the same commit.
+          # This workflow is temporary and deletes itself in the repair commit.
           workflow = Path('.github/workflows/manual-license-normalization.yml')
           if workflow.exists():
               workflow.unlink()
@@ -104,6 +104,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git diff --cached --check
+          git status --short
+          git diff --cached --quiet && { echo "No staged repair changes found."; exit 1; }
           git commit -m "Normalize guide licensing to CC BY 4.0"
           git push origin HEAD:main
