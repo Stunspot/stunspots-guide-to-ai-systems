@@ -1,0 +1,109 @@
+name: Normalize guide licensing to CC BY 4.0
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: normalize-guide-license
+  cancel-in-progress: false
+
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Normalize all conflicting license declarations
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          replacements = {
+              "CC BY-NC-SA 4.0": "CC BY 4.0",
+              "Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International":
+                  "Creative Commons Attribution 4.0 International",
+              "https://creativecommons.org/licenses/by-nc-sa/4.0/":
+                  "https://creativecommons.org/licenses/by/4.0/",
+              "CC_BY--NC--SA_4.0": "CC_BY_4.0",
+              "Commercial use, resale, paid redistribution, inclusion in commercial training products, or incorporation into paid knowledge-base products requires prior written permission.":
+                  "Commercial use, resale, paid redistribution, inclusion in commercial training products, and incorporation into paid knowledge-base products are permitted under CC BY 4.0 with appropriate attribution; no separate permission is required.",
+          }
+
+          extensions = {'.md', '.markdown', '.html', '.yml', '.yaml', '.cff', '.txt'}
+          changed = []
+          counts = {old: 0 for old in replacements}
+
+          for path in Path('.').rglob('*'):
+              if not path.is_file() or '.git' in path.parts or path.suffix.lower() not in extensions:
+                  continue
+              try:
+                  original = path.read_text(encoding='utf-8')
+              except UnicodeDecodeError:
+                  continue
+
+              updated = original
+              for old, new in replacements.items():
+                  count = updated.count(old)
+                  counts[old] += count
+                  updated = updated.replace(old, new)
+
+              if updated != original:
+                  path.write_text(updated, encoding='utf-8')
+                  changed.append(str(path))
+
+          # The workflow is temporary and deletes itself in the same commit.
+          workflow = Path('.github/workflows/manual-license-normalization.yml')
+          if workflow.exists():
+              workflow.unlink()
+
+          forbidden = (
+              'CC BY-NC-SA',
+              'Attribution-NonCommercial-ShareAlike',
+              'licenses/by-nc-sa/',
+              'CC_BY--NC--SA',
+              'incorporation into paid knowledge-base products requires prior written permission',
+          )
+          residuals = []
+          for path in Path('.').rglob('*'):
+              if not path.is_file() or '.git' in path.parts or path.suffix.lower() not in extensions:
+                  continue
+              try:
+                  text = path.read_text(encoding='utf-8')
+              except UnicodeDecodeError:
+                  continue
+              for marker in forbidden:
+                  if marker in text:
+                      residuals.append(f'{path}: {marker}')
+
+          license_text = Path('LICENSE.md').read_text(encoding='utf-8')
+          if 'Creative Commons Attribution 4.0 International License' not in license_text:
+              raise SystemExit('LICENSE.md does not declare CC BY 4.0; refusing to continue.')
+          if residuals:
+              raise SystemExit('Residual conflicting declarations remain:\n' + '\n'.join(residuals))
+          if not changed:
+              raise SystemExit('No conflicting license declarations were found; refusing an empty repair.')
+
+          print(f'Changed {len(changed)} content files')
+          for old, count in counts.items():
+              print(f'{count} replacements: {old}')
+          for path in changed:
+              print(path)
+          PY
+
+      - name: Commit the normalized repository
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Normalize guide licensing to CC BY 4.0"
+          git push origin HEAD:main
